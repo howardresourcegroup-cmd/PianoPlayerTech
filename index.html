@@ -26,20 +26,10 @@
         "Cumming, GA","Dawsonville, GA","Cleveland, GA","Hiawassee, GA",
         "Ellijay, GA","Canton, GA","Blairsville, GA","Atlanta, GA"
       ],
-      "openingHoursSpecification": [
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"],
-          "opens": "09:00",
-          "closes": "18:00"
-        },
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": "Saturday",
-          "opens": "10:00",
-          "closes": "16:00"
-        }
-      ],
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "description": "By appointment — contact us to schedule"
+      },
       "priceRange": "$$",
       "serviceType": "Player Piano Repair and Restoration"
     }
@@ -675,6 +665,76 @@
         footer a { color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
         footer a:hover { color: var(--gold); }
 
+        /* ── JOIN OUR TEAM ── */
+        #join { background: var(--charcoal); }
+
+        #join .section-label { color: var(--gold-light); }
+
+        #join .section-title { color: var(--white); }
+
+        #join .section-subtitle { color: rgba(255,255,255,0.6); max-width: 640px; }
+
+        .join-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-top: 3rem;
+        }
+
+        .join-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(201,168,76,0.18);
+            border-radius: 8px;
+            padding: 1.75rem;
+        }
+
+        .join-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--gold);
+            margin-bottom: 0.75rem;
+        }
+
+        .join-card ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .join-card ul li {
+            font-size: 0.88rem;
+            color: rgba(255,255,255,0.65);
+            padding-left: 1.1rem;
+            position: relative;
+            line-height: 1.55;
+        }
+
+        .join-card ul li::before {
+            content: '—';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.75rem;
+            top: 3px;
+        }
+
+        .join-cta {
+            margin-top: 3rem;
+            background: rgba(201,168,76,0.1);
+            border: 1px solid rgba(201,168,76,0.3);
+            border-radius: 8px;
+            padding: 2rem 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .join-cta p { color: rgba(255,255,255,0.7); font-size: 0.92rem; line-height: 1.65; }
+        .join-cta strong { color: var(--gold); }
+
         /* ── MOBILE CALL BAR ── */
         .mobile-call-bar {
             display: none;
@@ -722,6 +782,7 @@
         <a href="#problems">Common Issues</a>
         <a href="#faq">FAQ</a>
         <a href="#area">Service Area</a>
+        <a href="#join">Join Our Team</a>
         <a href="#contact">Contact</a>
         <a href="tel:7065315161" class="nav-cta">Call Now</a>
     </div>
@@ -741,8 +802,7 @@
         </div>
         <div class="hero-buttons">
             <a href="tel:7065315161" class="btn-primary">Call (706) 531-5161</a>
-            <!-- REPLACE the href below with your Google Calendar booking link -->
-            <a href="#contact" class="btn-secondary" id="book-btn">Book a Service</a>
+            <a href="#contact" class="btn-secondary">Schedule an Appointment</a>
         </div>
     </div>
 </section>
@@ -895,8 +955,8 @@
                     <div class="stat-label">Makes &amp; Brands</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">M–Sat</div>
-                    <div class="stat-label">Available</div>
+                    <div class="stat-number">Appt</div>
+                    <div class="stat-label">By Appointment</div>
                 </div>
             </div>
         </div>
@@ -970,9 +1030,9 @@
             </details>
 
             <details>
-                <summary>Can I book a service appointment online?</summary>
+                <summary>How do I schedule an appointment?</summary>
                 <div class="faq-body">
-                    Yes — click the "Book a Service" button at the top of the page to schedule directly through Google Calendar. You'll pick a time that works for you, and we'll confirm within a few hours. You can also call (706) 531-5161 or send a message using the form below.
+                    The best way is to call (706) 531-5161 or fill out the contact form at the bottom of this page. Tell us your location, what's going on with the piano, and when works for you — we'll get back to you to confirm a time. We schedule around your availability and will always give you a heads-up before the visit.
                 </div>
             </details>
 
@@ -1008,6 +1068,54 @@
     </div>
 </section>
 
+<!-- JOIN OUR TEAM -->
+<section id="join">
+    <div class="section-inner">
+        <p class="section-label">Work With Us</p>
+        <h2 class="section-title">Join Our Team</h2>
+        <p class="section-subtitle">Player piano technicians are rare. We're building a team across North Georgia and looking for people who take craftsmanship seriously — whether you have years of experience or just a strong mechanical aptitude and a willingness to learn.</p>
+        <div class="join-grid">
+            <div class="join-card">
+                <h3>What the Work Looks Like</h3>
+                <ul>
+                    <li>In-home service visits throughout North Georgia</li>
+                    <li>Diagnosing and rebuilding pneumatic player systems</li>
+                    <li>Sourcing and fitting period-correct parts</li>
+                    <li>Tuning and regulating acoustic pianos</li>
+                    <li>Working directly with customers — explaining what you found and what it costs</li>
+                </ul>
+            </div>
+            <div class="join-card">
+                <h3>Who We're Looking For</h3>
+                <ul>
+                    <li>Experienced piano or player piano technicians</li>
+                    <li>RPTs (Registered Piano Technicians) open to player system work</li>
+                    <li>Mechanically skilled people with patience for detailed work</li>
+                    <li>Apprentices who want to learn a rare and in-demand trade</li>
+                    <li>Self-starters who can manage their own schedule</li>
+                </ul>
+            </div>
+            <div class="join-card">
+                <h3>What We Offer</h3>
+                <ul>
+                    <li>Flexible scheduling — work fits around your life</li>
+                    <li>Training provided for the right candidate</li>
+                    <li>Growing market with very little local competition</li>
+                    <li>Backed by Howard Resource Group's established client base</li>
+                    <li>Compensation based on experience</li>
+                </ul>
+            </div>
+        </div>
+        <div class="join-cta">
+            <div>
+                <p><strong>Interested in joining the team?</strong></p>
+                <p>Send us a message — tell us about your background, what you know, and what you're looking for. No formal application required.</p>
+            </div>
+            <a href="mailto:PianoPlayerTech@gmail.com?subject=Technician%20Application" class="btn-primary">Send an Introduction</a>
+        </div>
+    </div>
+</section>
+
 <!-- CONTACT -->
 <section id="contact">
     <div class="section-inner">
@@ -1040,15 +1148,13 @@
                 <div class="contact-item">
                     <div class="contact-icon">🕐</div>
                     <div>
-                        <h4>Hours</h4>
-                        <p>Mon–Fri: 9 AM – 6 PM &nbsp;|&nbsp; Sat: 10 AM – 4 PM</p>
+                        <h4>Availability</h4>
+                        <p>By appointment — send a message or call and we'll find a time that works</p>
                     </div>
                 </div>
 
                 <div class="contact-actions">
                     <a href="tel:7065315161" class="call-btn">📞 &nbsp;Call (706) 531-5161</a>
-                    <!-- REPLACE href with your Google Calendar appointment link -->
-                    <a href="#contact" class="book-btn" id="book-btn-contact">📅 &nbsp;Book a Service Online</a>
                 </div>
             </div>
 
