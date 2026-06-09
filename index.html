@@ -119,7 +119,9 @@
         /* ── HERO ── */
         .hero {
             min-height: 100vh;
-            background: var(--black);
+            background:
+                linear-gradient(rgba(10,10,10,0.72), rgba(10,10,10,0.82)),
+                url('Images/kawaikgii.avif') center/cover no-repeat;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -137,8 +139,8 @@
                 90deg,
                 transparent,
                 transparent 52px,
-                rgba(255,255,255,0.013) 52px,
-                rgba(255,255,255,0.013) 75px
+                rgba(255,255,255,0.01) 52px,
+                rgba(255,255,255,0.01) 75px
             );
             pointer-events: none;
         }
@@ -665,6 +667,32 @@
         footer a { color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
         footer a:hover { color: var(--gold); }
 
+        /* ── PHOTO STRIP ── */
+        #gallery { background: var(--charcoal); padding: 0; overflow: hidden; }
+
+        .gallery-strip {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 420px;
+        }
+
+        .gallery-strip img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            filter: brightness(0.88);
+            transition: filter 0.3s;
+        }
+
+        .gallery-strip img:hover { filter: brightness(1); }
+
+        @media (max-width: 600px) {
+            .gallery-strip { grid-template-columns: 1fr; height: auto; }
+            .gallery-strip img { height: 260px; }
+        }
+
         /* ── JOIN OUR TEAM ── */
         #join { background: var(--charcoal); }
 
@@ -1065,6 +1093,14 @@
             <div class="area-item">Atlanta Metro</div>
         </div>
         <p class="area-note">Not sure if we cover your area? Call (706) 531-5161 and we'll let you know.</p>
+    </div>
+</section>
+
+<!-- PHOTO STRIP -->
+<section id="gallery">
+    <div class="gallery-strip">
+        <img src="Images/IMG_3958.jpg" alt="Player piano interior — strings and soundboard" loading="lazy">
+        <img src="Images/IMG_3959.jpg" alt="Player piano mechanism close-up" loading="lazy">
     </div>
 </section>
 
