@@ -166,7 +166,68 @@
             color: rgba(201,168,76,0.18); font-weight: 600;
             user-select: none; position: absolute;
         }
-        @media (max-width: 900px) { .nav-links a:not(.nav-cta) { display: none; } }
+
+        /* ── MOBILE NAV ── */
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.35rem;
+            flex-direction: column;
+            gap: 5px;
+            margin-left: 1rem;
+        }
+        .nav-toggle span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: var(--white);
+            border-radius: 2px;
+            transition: transform 0.22s, opacity 0.22s;
+        }
+        .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .nav-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 57px; left: 0; right: 0;
+            background: rgba(13,13,13,0.98);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            flex-direction: column;
+            padding: 0.5rem 1.5rem 1.5rem;
+            border-bottom: 1px solid rgba(201,168,76,0.15);
+            z-index: 99;
+        }
+        .mobile-nav.open { display: flex; }
+        .mobile-nav a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: 0.9rem 0;
+            font-size: 0.88rem;
+            font-weight: 500;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: color 0.2s;
+        }
+        .mobile-nav a:hover, .mobile-nav a.active { color: var(--gold); }
+        .mobile-nav .mobile-cta {
+            margin-top: 1rem;
+            background: var(--gold);
+            color: var(--black) !important;
+            padding: 0.85rem 1.5rem;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 700;
+            border-bottom: none;
+        }
+        .mobile-cta:hover { background: var(--gold-light) !important; }
+        @media (max-width: 900px) { .nav-links a:not(.nav-cta) { display: none; }
+            .nav-toggle { display: flex; } }
         @media (max-width: 768px) {
             nav { padding: 0.9rem 1.25rem; }
             section { padding: 3.75rem 1.25rem; }
@@ -277,6 +338,27 @@
 </footer>
 
 <a href="tel:7065315161" class="mobile-call-bar">📞 &nbsp;Tap to Call &nbsp;(706) 531-5161</a>
+
+
+<script>
+(function(){
+    var toggle = document.getElementById('navToggle');
+    var menu   = document.getElementById('mobileNav');
+    if (!toggle || !menu) return;
+    toggle.addEventListener('click', function(){
+        var open = menu.classList.toggle('open');
+        toggle.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', open);
+    });
+    menu.querySelectorAll('a').forEach(function(a){
+        a.addEventListener('click', function(){
+            menu.classList.remove('open');
+            toggle.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+        });
+    });
+})();
+</script>
 
 </body>
 </html>
