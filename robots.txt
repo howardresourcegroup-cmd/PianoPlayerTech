@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.pianoplayertech.com/sitemap.xml
