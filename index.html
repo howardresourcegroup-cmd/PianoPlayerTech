@@ -1399,5 +1399,24 @@
 
 <a href="tel:7065315161" class="mobile-call-bar">📞 &nbsp;Tap to Call &nbsp;(706) 531-5161</a>
 
+<script>
+(function(){
+  var btn  = document.getElementById('navToggle');
+  var menu = document.getElementById('mobileNav');
+  if (!btn || !menu) return;
+  btn.addEventListener('click', function(){
+    var isOpen = menu.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    btn.setAttribute('aria-expanded', isOpen);
+  });
+  menu.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){
+      menu.classList.remove('open');
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  });
+})();
+</script>
 </body>
 </html>
