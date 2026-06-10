@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Technicians | Piano Player Tech — North Georgia</title>
-    <meta name="description" content="Meet the Piano Player Tech team — Christian Collins, piano tuner and voicing technician, and Ethan Howard, player piano repair and restoration specialist serving all of North Georgia.">
+    <meta name="description" content="Meet the Piano Player Tech technicians — certified piano tuners and player piano repair specialists serving all of North Georgia.">
     <link rel="canonical" href="https://www.pianoplayertech.com/technicians">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
 
@@ -14,19 +14,11 @@
 
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
-            --black:      #0d0d0d;
-            --charcoal:   #1a1a1a;
-            --dark:       #2a2a2a;
-            --gold:       #c9a84c;
-            --gold-light: #e4c97a;
-            --ivory:      #f5f0e8;
-            --white:      #ffffff;
-            --gray:       #888;
-            --border:     #e8e2d6;
+            --black: #0d0d0d; --charcoal: #1a1a1a; --dark: #2a2a2a;
+            --gold: #c9a84c; --gold-light: #e4c97a;
+            --ivory: #f5f0e8; --white: #ffffff; --gray: #888; --border: #e8e2d6;
         }
-
         html { scroll-behavior: smooth; }
         body { font-family: 'Inter', sans-serif; background: var(--ivory); color: var(--dark); line-height: 1.7; }
 
@@ -49,10 +41,7 @@
         }
         .nav-links a:hover { color: var(--gold); }
         .nav-links a.active { color: var(--gold); }
-        .nav-cta {
-            background: var(--gold); color: var(--black) !important;
-            padding: 0.45rem 1.1rem; border-radius: 4px; font-weight: 600 !important;
-        }
+        .nav-cta { background: var(--gold); color: var(--black) !important; padding: 0.45rem 1.1rem; border-radius: 4px; font-weight: 600 !important; }
         .nav-cta:hover { background: var(--gold-light) !important; }
 
         .page-hero {
@@ -62,35 +51,23 @@
         }
         .page-hero::after {
             content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-            height: 120px; background: linear-gradient(to top, var(--ivory), transparent);
-            pointer-events: none;
+            height: 120px; background: linear-gradient(to top, var(--ivory), transparent); pointer-events: none;
         }
         .page-hero-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
-        .hero-eyebrow {
-            font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3em;
-            text-transform: uppercase; color: var(--gold); margin-bottom: 1rem;
-        }
-        .page-hero h1 {
-            font-family: 'Cormorant Garamond', serif; font-size: clamp(2.4rem, 5vw, 3.6rem);
-            color: var(--white); line-height: 1.1; margin-bottom: 1rem;
-        }
+        .hero-eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+        .page-hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.4rem, 5vw, 3.6rem); color: var(--white); line-height: 1.1; margin-bottom: 1rem; }
         .page-hero p { font-size: 1rem; color: rgba(255,255,255,0.55); font-weight: 300; line-height: 1.8; }
 
         section { padding: 5rem 2rem; }
         .section-inner { max-width: 1020px; margin: 0 auto; }
-        .section-label {
-            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.3em;
-            text-transform: uppercase; color: var(--gold); margin-bottom: 0.65rem;
-        }
-        .section-title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(1.85rem, 3.5vw, 2.7rem);
-            color: var(--charcoal); margin-bottom: 1rem; line-height: 1.2;
-        }
+        .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.65rem; }
+        .section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.85rem, 3.5vw, 2.7rem); color: var(--charcoal); margin-bottom: 1rem; line-height: 1.2; }
 
+        /* TEAM GRID — auto-fills, works with 1 or 10 technicians */
         #team { background: var(--white); }
         .team-grid {
-            display: grid; grid-template-columns: 1fr 1fr;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 2rem; margin-top: 3rem;
         }
         .tech-card {
@@ -99,118 +76,79 @@
             transition: box-shadow 0.25s, transform 0.25s;
         }
         .tech-card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.1); transform: translateY(-3px); }
-
-        /* Photo header */
         .tech-photo-wrap {
-            width: 100%; aspect-ratio: 4/3; overflow: hidden;
+            width: 100%; aspect-ratio: 3/2; overflow: hidden;
             background: var(--charcoal); position: relative;
         }
         .tech-photo-wrap img {
-            width: 100%; height: 100%; object-fit: cover; object-position: center top;
+            width: 100%; height: 100%; object-fit: cover; object-position: center 20%;
             display: block; transition: transform 0.4s;
         }
-        .tech-card:hover .tech-photo-wrap img { transform: scale(1.03); }
+        .tech-card:hover .tech-photo-wrap img { transform: scale(1.04); }
         .tech-photo-label {
             position: absolute; bottom: 0; left: 0; right: 0;
             background: linear-gradient(to top, rgba(13,13,13,0.92), transparent);
             padding: 2rem 1.5rem 1.25rem;
         }
-        .tech-name {
-            font-family: 'Cormorant Garamond', serif; font-size: 1.65rem;
-            color: var(--white); font-weight: 600; line-height: 1.1; margin-bottom: 0.2rem;
-        }
-        .tech-title {
-            font-size: 0.72rem; color: var(--gold); font-weight: 500;
-            letter-spacing: 0.15em; text-transform: uppercase;
-        }
+        .tech-name { font-family: 'Cormorant Garamond', serif; font-size: 1.55rem; color: var(--white); font-weight: 600; line-height: 1.1; margin-bottom: 0.2rem; }
+        .tech-title { font-size: 0.7rem; color: var(--gold); font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; }
 
-        /* Initials avatar fallback */
-        .tech-avatar-wrap {
-            width: 100%; aspect-ratio: 4/3; overflow: hidden;
-            background: var(--charcoal); position: relative;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .tech-avatar-letter {
-            font-family: 'Cormorant Garamond', serif; font-size: 4.5rem;
-            color: rgba(201,168,76,0.25); font-weight: 600; letter-spacing: -0.02em;
-            user-select: none;
-        }
-
-        .tech-card-body { padding: 2rem; }
+        .tech-card-body { padding: 1.75rem; }
         .tech-specialty {
             display: inline-block; font-size: 0.68rem; font-weight: 700;
             letter-spacing: 0.15em; text-transform: uppercase;
             background: rgba(201,168,76,0.12); color: var(--gold);
             padding: 0.25rem 0.65rem; border-radius: 3px; margin-bottom: 1.1rem;
         }
-        .tech-desc { font-size: 0.93rem; color: #555; line-height: 1.8; margin-bottom: 1.5rem; }
+        .tech-desc { font-size: 0.92rem; color: #555; line-height: 1.8; margin-bottom: 1.4rem; }
         .tech-rates {
             background: var(--white); border-radius: 8px;
-            padding: 1.25rem; border: 1px solid var(--border); margin-bottom: 1.5rem;
+            padding: 1.1rem 1.25rem; border: 1px solid var(--border); margin-bottom: 1.4rem;
         }
-        .tech-rates h4 {
-            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.18em;
-            text-transform: uppercase; color: var(--gray); margin-bottom: 0.85rem;
-        }
-        .rate-line {
-            display: flex; justify-content: space-between;
-            font-size: 0.88rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border);
-        }
+        .tech-rates h4 { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray); margin-bottom: 0.75rem; }
+        .rate-line { display: flex; justify-content: space-between; font-size: 0.87rem; padding: 0.38rem 0; border-bottom: 1px solid var(--border); }
         .rate-line:last-child { border-bottom: none; }
         .rate-line span { color: #555; }
         .rate-line strong { color: var(--charcoal); font-weight: 600; }
         .tech-cta {
-            display: block; text-align: center;
-            background: var(--charcoal); color: var(--white);
-            padding: 0.8rem 1.5rem; border-radius: 6px;
-            font-weight: 600; font-size: 0.9rem; text-decoration: none;
-            transition: background 0.2s, transform 0.15s; letter-spacing: 0.04em;
+            display: block; text-align: center; background: var(--charcoal); color: var(--white);
+            padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem;
+            text-decoration: none; transition: background 0.2s, transform 0.15s; letter-spacing: 0.04em;
         }
         .tech-cta:hover { background: var(--gold); color: var(--black); transform: translateY(-1px); }
 
-        #cta {
-            background: var(--charcoal); text-align: center; padding: 4rem 2rem;
+        /* JOIN BAND */
+        #join { background: var(--charcoal); padding: 4.5rem 2rem; text-align: center; }
+        #join h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 3.5vw, 2.5rem); color: var(--white); margin-bottom: 0.85rem; }
+        #join p { color: rgba(255,255,255,0.5); font-size: 0.97rem; max-width: 460px; margin: 0 auto 2rem; line-height: 1.75; }
+        .join-btn {
+            display: inline-block; background: transparent; border: 1px solid rgba(201,168,76,0.5);
+            color: var(--gold); padding: 0.9rem 2.25rem; border-radius: 4px;
+            font-weight: 600; font-size: 0.9rem; text-decoration: none; letter-spacing: 0.05em;
+            transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
         }
-        #cta h2 {
-            font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 3.5vw, 2.5rem);
-            color: var(--white); margin-bottom: 0.85rem;
-        }
-        #cta p { color: rgba(255,255,255,0.55); font-size: 0.97rem; max-width: 480px; margin: 0 auto 2rem; }
-        .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-        .btn-gold {
-            background: var(--gold); color: var(--black); padding: 0.9rem 2rem;
-            border-radius: 4px; font-weight: 600; font-size: 0.93rem;
-            text-decoration: none; letter-spacing: 0.03em;
-            transition: background 0.2s, transform 0.15s;
-        }
-        .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
-        .btn-outline {
-            border: 1px solid rgba(255,255,255,0.22); color: var(--white);
-            padding: 0.9rem 2rem; border-radius: 4px; font-weight: 500; font-size: 0.93rem;
-            text-decoration: none; letter-spacing: 0.03em;
-            transition: border-color 0.2s, color 0.2s, transform 0.15s;
-        }
-        .btn-outline:hover { border-color: var(--gold); color: var(--gold); transform: translateY(-1px); }
+        .join-btn:hover { background: var(--gold); color: var(--black); border-color: var(--gold); transform: translateY(-1px); }
 
-        footer {
-            background: var(--black); color: rgba(255,255,255,0.38);
-            text-align: center; padding: 2.25rem 2rem; font-size: 0.82rem; line-height: 2.1;
-        }
+        /* CTA */
+        #cta { background: var(--ivory); text-align: center; padding: 4rem 2rem; }
+        #cta h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 3.5vw, 2.3rem); color: var(--charcoal); margin-bottom: 0.85rem; }
+        #cta p { color: var(--gray); font-size: 0.97rem; max-width: 440px; margin: 0 auto 2rem; }
+        .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .btn-dark { background: var(--charcoal); color: var(--white); padding: 0.9rem 2rem; border-radius: 4px; font-weight: 600; font-size: 0.93rem; text-decoration: none; letter-spacing: 0.03em; transition: background 0.2s, transform 0.15s; }
+        .btn-dark:hover { background: var(--gold); color: var(--black); transform: translateY(-1px); }
+        .btn-outline { border: 1px solid rgba(26,26,26,0.2); color: var(--charcoal); padding: 0.9rem 2rem; border-radius: 4px; font-weight: 500; font-size: 0.93rem; text-decoration: none; letter-spacing: 0.03em; transition: border-color 0.2s, transform 0.15s; }
+        .btn-outline:hover { border-color: var(--charcoal); transform: translateY(-1px); }
+
+        footer { background: var(--black); color: rgba(255,255,255,0.38); text-align: center; padding: 2.25rem 2rem; font-size: 0.82rem; line-height: 2.1; }
         footer span { color: var(--gold); }
         footer a { color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
         footer a:hover { color: var(--gold); }
-        .mobile-call-bar {
-            display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
-            background: var(--gold); color: var(--black); text-align: center;
-            padding: 1rem; font-weight: 700; font-size: 1rem;
-            text-decoration: none; letter-spacing: 0.02em;
-        }
+        .mobile-call-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: var(--gold); color: var(--black); text-align: center; padding: 1rem; font-weight: 700; font-size: 1rem; text-decoration: none; letter-spacing: 0.02em; }
 
         @media (max-width: 900px) { .nav-links a:not(.nav-cta) { display: none; } }
         @media (max-width: 768px) {
             nav { padding: 0.9rem 1.25rem; }
             section { padding: 3.75rem 1.25rem; }
-            .team-grid { grid-template-columns: 1fr; }
             .mobile-call-bar { display: block; }
             body { padding-bottom: 58px; }
         }
@@ -221,7 +159,7 @@
 <nav>
     <a href="/" class="nav-logo">Piano Player Tech</a>
     <div class="nav-links">
-        <a href="/">Services</a>
+        <a href="/">Home</a>
         <a href="/tuning.html">Tuning</a>
         <a href="/technicians.html" class="active">Technicians</a>
         <a href="/#area">Service Area</a>
@@ -232,36 +170,34 @@
 <div class="page-hero">
     <div class="page-hero-inner">
         <p class="hero-eyebrow">Piano Player Tech</p>
-        <h1>Meet Our Technicians</h1>
-        <p>Specialized piano care from technicians who know the instrument — tuning, voicing, player system repair, and full restoration.</p>
+        <h1>Our Technicians</h1>
+        <p>Certified piano technicians serving North Georgia — tuning, voicing, player system repair, and restoration.</p>
     </div>
 </div>
 
 <section id="team">
     <div class="section-inner">
         <p class="section-label">The Team</p>
-        <h2 class="section-title">Two Specialties, One Team</h2>
+        <h2 class="section-title">Certified &amp; Vetted Technicians</h2>
 
         <div class="team-grid">
 
-            <!-- Christian Collins -->
             <div class="tech-card">
                 <div class="tech-photo-wrap">
                     <img src="Images/IMG_20251020_000345_916_Original.jpeg"
-                         alt="Christian Collins — Piano Tuner, North Georgia"
+                         alt="Christian Collins — Piano Player Tech Certified Tuning Technician"
                          loading="lazy">
                     <div class="tech-photo-label">
                         <div class="tech-name">Christian Collins</div>
-                        <div class="tech-title">Piano Tuner &amp; Voicing Technician</div>
+                        <div class="tech-title">Piano Tuning &amp; Voicing</div>
                     </div>
                 </div>
                 <div class="tech-card-body">
                     <span class="tech-specialty">Piano Tuning &amp; Voicing</span>
-                    <p class="tech-desc">Christian handles all piano tuning and voicing throughout North Georgia. Whether you need a routine tune-up, a pitch raise after years of neglect, or voicing work to brighten or mellow your piano's tone, Christian brings a careful, unhurried approach to every visit.</p>
-                    <p class="tech-desc" style="margin-bottom:1.5rem;">He works with all makes and sizes — upright studio pianos to concert grands — and offers bulk rates for churches, schools, and studios with four or more instruments.</p>
+                    <p class="tech-desc">Christian is Piano Player Tech's certified tuning technician serving North Georgia. He handles all tuning appointments — from routine tune-ups and pitch raises to voicing work for homes, churches, schools, and performance venues.</p>
                     <div class="tech-rates">
                         <h4>Rates</h4>
-                        <div class="rate-line"><span>Standard tuning (1–3 pianos)</span><strong>$175/piano</strong></div>
+                        <div class="rate-line"><span>Standard tuning (1–3 pianos)</span><strong>$175</strong></div>
                         <div class="rate-line"><span>Bulk tuning (4+ pianos)</span><strong>$125/piano</strong></div>
                         <div class="rate-line"><span>Voicing — standard</span><strong>$100/hr</strong></div>
                         <div class="rate-line"><span>Voicing — bulk</span><strong>$75/hr</strong></div>
@@ -270,39 +206,21 @@
                 </div>
             </div>
 
-            <!-- Ethan Howard -->
-            <div class="tech-card">
-                <div class="tech-avatar-wrap">
-                    <span class="tech-avatar-letter">EH</span>
-                    <div class="tech-photo-label">
-                        <div class="tech-name">Ethan Howard</div>
-                        <div class="tech-title">Player Piano Technician &amp; Owner</div>
-                    </div>
-                </div>
-                <div class="tech-card-body">
-                    <span class="tech-specialty">Player Piano Repair &amp; Restoration</span>
-                    <p class="tech-desc">Ethan founded Piano Player Tech to bring specialized player piano repair back to North Georgia — a craft that few shops still practice. He handles everything from a stuck roll motor to a full pneumatic rebuild: valve work, bellows replacement, tracker bars, and the mechanical linkages that make a player system perform the way it was designed to.</p>
-                    <p class="tech-desc" style="margin-bottom:1.5rem;">All work starts with a $100 flat-rate in-home diagnosis so you know exactly what you're dealing with before any labor begins. If we can't fix it, you don't pay for the repair.</p>
-                    <div class="tech-rates">
-                        <h4>Rates</h4>
-                        <div class="rate-line"><span>In-home diagnosis</span><strong>$100 flat</strong></div>
-                        <div class="rate-line"><span>Repair labor</span><strong>$125/hr</strong></div>
-                        <div class="rate-line"><span>Diagnosis credited toward repair</span><strong>Yes</strong></div>
-                        <div class="rate-line"><span>No fix, no charge</span><strong>Guaranteed</strong></div>
-                    </div>
-                    <a href="/" class="tech-cta">View Player Piano Services →</a>
-                </div>
-            </div>
-
         </div>
     </div>
 </section>
 
+<section id="join">
+    <h2>Interested in Joining the Team?</h2>
+    <p>We're always looking for certified piano technicians to expand our coverage across North Georgia and beyond.</p>
+    <a href="mailto:PianoPlayerTech@gmail.com?subject=Technician%20Application" class="join-btn">Apply Now →</a>
+</section>
+
 <section id="cta">
-    <h2>Not Sure Which Service You Need?</h2>
-    <p>Just call — we'll talk through what your piano needs and point you in the right direction.</p>
+    <h2>Need a Piano Tuned or Repaired?</h2>
+    <p>Call or send a message and we'll get the right technician scheduled for your visit.</p>
     <div class="cta-buttons">
-        <a href="tel:7065315161" class="btn-gold">📞 Call (706) 531-5161</a>
+        <a href="tel:7065315161" class="btn-dark">📞 Call (706) 531-5161</a>
         <a href="/#contact" class="btn-outline">Send a Message</a>
     </div>
 </section>
