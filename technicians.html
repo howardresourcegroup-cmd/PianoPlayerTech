@@ -145,6 +145,18 @@
         footer a:hover { color: var(--gold); }
         .mobile-call-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: var(--gold); color: var(--black); text-align: center; padding: 1rem; font-weight: 700; font-size: 1rem; text-decoration: none; letter-spacing: 0.02em; }
 
+
+        /* Initials avatar for techs without a photo */
+        .tech-avatar-wrap {
+            width: 100%; aspect-ratio: 3/2; overflow: hidden;
+            background: var(--charcoal); position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tech-avatar-letter {
+            font-family: 'Cormorant Garamond', serif; font-size: 5rem;
+            color: rgba(201,168,76,0.18); font-weight: 600;
+            user-select: none; position: absolute;
+        }
         @media (max-width: 900px) { .nav-links a:not(.nav-cta) { display: none; } }
         @media (max-width: 768px) {
             nav { padding: 0.9rem 1.25rem; }
@@ -203,6 +215,27 @@
                         <div class="rate-line"><span>Voicing — bulk</span><strong>$75/hr</strong></div>
                     </div>
                     <a href="/tuning.html" class="tech-cta">Book a Tuning →</a>
+                </div>
+            </div>
+
+            <div class="tech-card">
+                <div class="tech-avatar-wrap">
+                    <span class="tech-avatar-letter">EH</span>
+                    <div class="tech-photo-label">
+                        <div class="tech-name">Ethan Howard</div>
+                        <div class="tech-title">Player Piano Repair &amp; Restoration</div>
+                    </div>
+                </div>
+                <div class="tech-card-body">
+                    <span class="tech-specialty">Player Piano Repair &amp; Restoration</span>
+                    <p class="tech-desc">Ethan handles player piano repair and restoration throughout North Georgia — pneumatic rebuilds, bellows replacement, valve work, tracker bars, and the mechanical linkages that make a player system perform the way it was built to. All work starts with a flat-rate in-home diagnosis so you know exactly what you're dealing with before any labor begins.</p>
+                    <div class="tech-rates">
+                        <h4>Rates</h4>
+                        <div class="rate-line"><span>In-home diagnosis</span><strong>$100 flat</strong></div>
+                        <div class="rate-line"><span>Repair labor</span><strong>$125/hr</strong></div>
+                        <div class="rate-line"><span>No fix, no charge</span><strong>Guaranteed</strong></div>
+                    </div>
+                    <a href="/" class="tech-cta">View Player Piano Services →</a>
                 </div>
             </div>
 
