@@ -667,30 +667,62 @@
         footer a { color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
         footer a:hover { color: var(--gold); }
 
-        /* ── PHOTO STRIP ── */
-        #gallery { background: var(--charcoal); padding: 0; overflow: hidden; }
+        /* ── PORTFOLIO ── */
+        #portfolio { background: var(--charcoal); }
 
-        .gallery-strip {
+        #portfolio .section-label { color: var(--gold-light); }
+        #portfolio .section-title { color: var(--white); }
+        #portfolio .section-subtitle { color: rgba(255,255,255,0.55); }
+
+        .portfolio-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            height: 420px;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 0.75rem;
+            margin-top: 2.5rem;
         }
 
-        .gallery-strip img {
+        .portfolio-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 6px;
+            aspect-ratio: 4/3;
+            background: var(--dark);
+        }
+
+        .portfolio-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center;
             display: block;
-            filter: brightness(0.88);
-            transition: filter 0.3s;
+            transition: transform 0.4s ease, filter 0.3s;
+            filter: brightness(0.82);
         }
 
-        .gallery-strip img:hover { filter: brightness(1); }
+        .portfolio-item:hover img {
+            transform: scale(1.04);
+            filter: brightness(0.55);
+        }
 
-        @media (max-width: 600px) {
-            .gallery-strip { grid-template-columns: 1fr; height: auto; }
-            .gallery-strip img { height: 260px; }
+        .portfolio-label {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            padding: 2rem 1rem 0.9rem;
+            background: linear-gradient(transparent, rgba(0,0,0,0.78));
+            color: var(--white);
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .portfolio-label span {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 400;
+            color: var(--gold);
+            letter-spacing: 0.1em;
+            margin-bottom: 0.2rem;
+            text-transform: uppercase;
         }
 
         /* ── JOIN OUR TEAM ── */
@@ -1096,11 +1128,62 @@
     </div>
 </section>
 
-<!-- PHOTO STRIP -->
-<section id="gallery">
-    <div class="gallery-strip">
-        <img src="Images/IMG_3958.jpg" alt="Player piano interior — strings and soundboard" loading="lazy">
-        <img src="Images/IMG_3959.jpg" alt="Player piano mechanism close-up" loading="lazy">
+<!-- PORTFOLIO -->
+<section id="portfolio">
+    <div class="section-inner">
+        <p class="section-label">Our Work</p>
+        <h2 class="section-title">Pianos We've Worked On</h2>
+        <p class="section-subtitle">A selection of instruments we've serviced, restored, and sold throughout North Georgia — from antique uprights to concert grands.</p>
+        <div class="portfolio-grid">
+            <div class="portfolio-item">
+                <img src="Images/Restored%20Steinway%20B%20Series/519407022_1171946531617652_2684350532202335801_n.jpg" alt="Restored Steinway B Series grand piano" loading="lazy">
+                <div class="portfolio-label"><span>Restoration</span>Steinway B Series</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Bosendorfer/546699668_1180079457471026_7073987432609089385_n.jpg" alt="Bösendorfer grand piano" loading="lazy">
+                <div class="portfolio-label"><span>Service</span>Bösendorfer Grand</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Steinway%20L%2016k/568717633_1214912547321050_2991462312197939537_n.jpg" alt="Steinway L grand piano" loading="lazy">
+                <div class="portfolio-label"><span>Service</span>Steinway L Grand</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/American%20Walnut%20Chickering/574960602_1226338379511800_8457772592120859421_n.jpg" alt="Chickering grand piano in American walnut" loading="lazy">
+                <div class="portfolio-label"><span>Restoration</span>Chickering — American Walnut</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Ibach%20/579619863_1232457085566596_5448824090013313591_n.jpg" alt="Ibach grand piano" loading="lazy">
+                <div class="portfolio-label"><span>Service</span>Ibach Grand</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Steinway%20K52%20Upright/531980426_1174394274706211_363372132747819026_n%20(1).jpg" alt="Steinway K-52 upright piano" loading="lazy">
+                <div class="portfolio-label"><span>Service</span>Steinway K-52 Upright</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Kawai%20Gs-30/547280154_1181773453968293_8314363326607374077_n.jpg" alt="Kawai GS-30 grand piano" loading="lazy">
+                <div class="portfolio-label"><span>Service</span>Kawai GS-30</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Otto%20AttenBurg%20White/545777555_1181006027378369_8170350408896159451_n%20(1).jpg" alt="Otto Attenburg white grand piano" loading="lazy">
+                <div class="portfolio-label"><span>Sale</span>Otto Attenburg — White</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Broadman%207FT%20BLACK/577663462_1226328042846167_4237023350316660195_n.jpg" alt="Broadman 7-foot black grand piano" loading="lazy">
+                <div class="portfolio-label"><span>Sale</span>Broadman 7-Foot Grand</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Broadman%20PE162/574562671_1226351406177164_6964766449198123995_n.jpg" alt="Broadman PE-162 grand piano" loading="lazy">
+                <div class="portfolio-label"><span>Sale</span>Broadman PE-162</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Weber%20Baby%20Grand%20GP50/575065321_1226308866181418_879337913082403890_n%20(1).jpg" alt="Weber GP-50 baby grand piano" loading="lazy">
+                <div class="portfolio-label"><span>Sale</span>Weber GP-50 Baby Grand</div>
+            </div>
+            <div class="portfolio-item">
+                <img src="Images/Shafer%20and%20Sons%20Piano%20Number%20One/579280448_1232540028891635_2435709252407122269_n.jpg" alt="Shafer and Sons piano" loading="lazy">
+                <div class="portfolio-label"><span>Restoration</span>Schäfer &amp; Söhne</div>
+            </div>
+        </div>
     </div>
 </section>
 
