@@ -824,27 +824,6 @@
         }
 
         /* ── RESPONSIVE ── */
-        @media (max-width: 900px) {
-            .nav-links a:not(.nav-cta) { display: none; }
-            .nav-toggle { display: flex; }
-        }
-
-        @media (max-width: 768px) {
-            nav { padding: 0.9rem 1.25rem; }
-            section { padding: 3.75rem 1.25rem; }
-            .about-grid,
-            .contact-grid { grid-template-columns: 1fr; gap: 2.5rem; }
-            .pricing-banner { flex-direction: column; text-align: center; }
-            .hero-badges { gap: 1rem; }
-            .mobile-call-bar { display: block; }
-            body { padding-bottom: 58px; }
-        }
-
-        @media (max-width: 480px) {
-            .hero h1 { font-size: 2.4rem; }
-            .hero-badges { flex-direction: column; align-items: center; gap: 0.6rem; }
-        }
-
         /* ── MOBILE HAMBURGER ── */
         .nav-toggle {
             display: none;
@@ -904,7 +883,27 @@
             font-weight: 700;
             border-bottom: none;
         }
-        .mobile-nav .mobile-cta:hover { background: var(--gold-light) !important; color: var(--black) !important; }
+        .mobile-nav .mobile-cta:hover { background: var(--gold-light) !important; }
+        @media (max-width: 900px) {
+            .nav-links a:not(.nav-cta) { display: none; }
+            .nav-toggle { display: flex; }
+        }
+
+        @media (max-width: 768px) {
+            nav { padding: 0.9rem 1.25rem; }
+            section { padding: 3.75rem 1.25rem; }
+            .about-grid,
+            .contact-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+            .pricing-banner { flex-direction: column; text-align: center; }
+            .hero-badges { gap: 1rem; }
+            .mobile-call-bar { display: block; }
+            body { padding-bottom: 58px; }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 { font-size: 2.4rem; }
+            .hero-badges { flex-direction: column; align-items: center; gap: 0.6rem; }
+        }
     </style>
 </head>
 <body>
