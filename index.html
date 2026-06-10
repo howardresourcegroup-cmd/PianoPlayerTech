@@ -683,61 +683,199 @@
 
         /* ── PORTFOLIO ── */
         #portfolio { background: var(--charcoal); }
-
         #portfolio .section-label { color: var(--gold-light); }
         #portfolio .section-title { color: var(--white); }
         #portfolio .section-subtitle { color: rgba(255,255,255,0.55); }
 
         .portfolio-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 0.75rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
             margin-top: 2.5rem;
         }
 
-        .portfolio-item {
-            position: relative;
+        .pcrd {
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
             overflow: hidden;
-            border-radius: 6px;
-            aspect-ratio: 4/3;
-            background: var(--dark);
+            cursor: pointer;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .pcrd:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.45);
         }
 
-        .portfolio-item img {
-            width: 100%;
-            height: 100%;
+        .pcrd-cover {
+            position: relative;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+        }
+        .pcrd-cover img {
+            width: 100%; height: 100%;
             object-fit: cover;
             display: block;
             transition: transform 0.4s ease, filter 0.3s;
-            filter: brightness(0.82);
+            filter: brightness(0.8);
         }
-
-        .portfolio-item:hover img {
+        .pcrd:hover .pcrd-cover img {
             transform: scale(1.04);
             filter: brightness(0.55);
         }
 
-        .portfolio-label {
+        .pcrd-label {
             position: absolute;
             bottom: 0; left: 0; right: 0;
-            padding: 2rem 1rem 0.9rem;
-            background: linear-gradient(transparent, rgba(0,0,0,0.78));
+            padding: 2rem 0.9rem 0.75rem;
+            background: linear-gradient(transparent, rgba(0,0,0,0.82));
             color: var(--white);
             font-size: 0.82rem;
             font-weight: 600;
             letter-spacing: 0.06em;
             text-transform: uppercase;
         }
-
-        .portfolio-label span {
+        .pcrd-cat {
             display: block;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 400;
             color: var(--gold);
-            letter-spacing: 0.1em;
-            margin-bottom: 0.2rem;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.18rem;
             text-transform: uppercase;
         }
+
+        .pcrd-badge {
+            position: absolute;
+            top: 0.6rem; right: 0.6rem;
+            background: rgba(0,0,0,0.6);
+            color: rgba(255,255,255,0.8);
+            font-size: 0.7rem;
+            font-family: 'Inter', sans-serif;
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            letter-spacing: 0.04em;
+        }
+
+        .pcrd-thumbs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            background: rgba(0,0,0,0.3);
+        }
+        .pcrd-thumbs img {
+            width: 100%; aspect-ratio: 4/3;
+            object-fit: cover;
+            display: block;
+            filter: brightness(0.75);
+            transition: filter 0.2s, transform 0.2s;
+            cursor: pointer;
+        }
+        .pcrd-thumbs img:hover {
+            filter: brightness(1);
+            transform: scale(1.05);
+            z-index: 1;
+            position: relative;
+        }
+
+        /* ── LIGHTBOX ── */
+        #plb {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.93);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        #plb.open { display: flex; }
+
+        #plb-img-wrap {
+            position: relative;
+            max-width: min(90vw, 1000px);
+            max-height: 78vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #plb-img {
+            max-width: 100%;
+            max-height: 78vh;
+            object-fit: contain;
+            border-radius: 4px;
+            display: block;
+        }
+
+        #plb-close {
+            position: fixed;
+            top: 1rem; right: 1.2rem;
+            background: none; border: none;
+            color: rgba(255,255,255,0.7);
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0.25rem 0.5rem;
+            transition: color 0.2s;
+        }
+        #plb-close:hover { color: var(--gold); }
+
+        #plb-prev, #plb-next {
+            position: fixed;
+            top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: var(--white);
+            font-size: 1.8rem;
+            width: 3rem; height: 3rem;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        #plb-prev:hover, #plb-next:hover { background: rgba(201,168,76,0.35); }
+        #plb-prev { left: 1rem; }
+        #plb-next { right: 1rem; }
+
+        #plb-meta {
+            margin-top: 1rem;
+            text-align: center;
+        }
+        #plb-name {
+            color: var(--white);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            letter-spacing: 0.04em;
+        }
+        #plb-counter {
+            display: block;
+            color: rgba(255,255,255,0.4);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78rem;
+            margin-top: 0.3rem;
+            letter-spacing: 0.06em;
+        }
+
+        #plb-strip {
+            display: flex;
+            gap: 6px;
+            margin-top: 0.8rem;
+            max-width: min(90vw, 700px);
+            overflow-x: auto;
+            padding: 2px 0 6px;
+            scrollbar-width: none;
+        }
+        #plb-strip::-webkit-scrollbar { display: none; }
+        #plb-strip img {
+            height: 52px;
+            width: 70px;
+            object-fit: cover;
+            border-radius: 3px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s, outline 0.2s;
+            flex-shrink: 0;
+        }
+        #plb-strip img.active { opacity: 1; outline: 2px solid var(--gold); }
 
         /* ── JOIN OUR TEAM ── */
         #join { background: var(--charcoal); }
@@ -1221,59 +1359,261 @@
     <div class="section-inner">
         <p class="section-label">Our Work</p>
         <h2 class="section-title">Pianos We've Worked On</h2>
-        <p class="section-subtitle">A selection of instruments we've serviced, restored, and sold throughout North Georgia — from antique uprights to concert grands.</p>
+        <p class="section-subtitle">A selection of instruments we've serviced, restored, and sold throughout North Georgia. Click any piano to browse every photo — soundboards, action, keys, and all.</p>
         <div class="portfolio-grid">
-            <div class="portfolio-item">
-                <img src="Images/Restored%20Steinway%20B%20Series/519407022_1171946531617652_2684350532202335801_n.jpg" alt="Restored Steinway B Series grand piano" loading="lazy">
-                <div class="portfolio-label"><span>Restoration</span>Steinway B Series</div>
+            <div class="pcrd" onclick="pLightbox(0,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Restored%20Steinway%20B%20Series/519407022_1171946531617652_2684350532202335801_n.jpg" alt="Steinway B Series piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Restoration</span>
+                        Steinway B Series
+                    </div>
+                    <div class="pcrd-badge">14 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Restored%20Steinway%20B%20Series/539181654_1171946764950962_8603927953976914257_n.jpg" alt="Steinway B Series piano detail" loading="lazy" onclick="pLightbox(0,1)">
+                    <img src="Images/Restored%20Steinway%20B%20Series/539602720_1171946601617645_8519621251333624322_n.jpg" alt="Steinway B Series piano detail" loading="lazy" onclick="pLightbox(0,2)">
+                    <img src="Images/Restored%20Steinway%20B%20Series/540416857_1171947734950865_3868021648619090916_n.jpg" alt="Steinway B Series piano detail" loading="lazy" onclick="pLightbox(0,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Bosendorfer/546699668_1180079457471026_7073987432609089385_n.jpg" alt="Bösendorfer grand piano" loading="lazy">
-                <div class="portfolio-label"><span>Service</span>Bösendorfer Grand</div>
+            <div class="pcrd" onclick="pLightbox(1,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Bosendorfer/546699668_1180079457471026_7073987432609089385_n.jpg" alt="Bösendorfer Grand piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Service</span>
+                        Bösendorfer Grand
+                    </div>
+                    <div class="pcrd-badge">10 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Bosendorfer/546808836_1180079714137667_685102127522560056_n.jpg" alt="Bösendorfer Grand piano detail" loading="lazy" onclick="pLightbox(1,1)">
+                    <img src="Images/Bosendorfer/546843088_1180079190804386_282687874555150848_n.jpg" alt="Bösendorfer Grand piano detail" loading="lazy" onclick="pLightbox(1,2)">
+                    <img src="Images/Bosendorfer/547222561_1180079354137703_2749459013404898597_n.jpg" alt="Bösendorfer Grand piano detail" loading="lazy" onclick="pLightbox(1,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Steinway%20L%2016k/568717633_1214912547321050_2991462312197939537_n.jpg" alt="Steinway L grand piano" loading="lazy">
-                <div class="portfolio-label"><span>Service</span>Steinway L Grand</div>
+            <div class="pcrd" onclick="pLightbox(2,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547064146_1180136697465302_1557932207845546047_n.jpg" alt="Steinway Model B piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Restoration</span>
+                        Steinway Model B
+                    </div>
+                    <div class="pcrd-badge">11 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547181330_1180136524131986_5871752686440619906_n.jpg" alt="Steinway Model B piano detail" loading="lazy" onclick="pLightbox(2,1)">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547271945_1180136334132005_6152818538602360694_n.jpg" alt="Steinway Model B piano detail" loading="lazy" onclick="pLightbox(2,2)">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547305802_1180136070798698_4823525624339850120_n.jpg" alt="Steinway Model B piano detail" loading="lazy" onclick="pLightbox(2,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/American%20Walnut%20Chickering/574960602_1226338379511800_8457772592120859421_n.jpg" alt="Chickering grand piano in American walnut" loading="lazy">
-                <div class="portfolio-label"><span>Restoration</span>Chickering — American Walnut</div>
+            <div class="pcrd" onclick="pLightbox(3,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/546527786_1180129580799347_728396455891903853_n.jpg" alt="A. Geyer GG-150 piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Restoration</span>
+                        A. Geyer GG-150
+                    </div>
+                    <div class="pcrd-badge">11 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/547261936_1180129907465981_6953664862296398833_n%20%281%29.jpg" alt="A. Geyer GG-150 piano detail" loading="lazy" onclick="pLightbox(3,1)">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/547261936_1180129907465981_6953664862296398833_n.jpg" alt="A. Geyer GG-150 piano detail" loading="lazy" onclick="pLightbox(3,2)">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/547469897_1180129784132660_1016831302372729982_n%20%281%29.jpg" alt="A. Geyer GG-150 piano detail" loading="lazy" onclick="pLightbox(3,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Ibach%20/579619863_1232457085566596_5448824090013313591_n.jpg" alt="Ibach grand piano" loading="lazy">
-                <div class="portfolio-label"><span>Service</span>Ibach Grand</div>
+            <div class="pcrd" onclick="pLightbox(4,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/American%20Walnut%20Chickering/574960602_1226338379511800_8457772592120859421_n.jpg" alt="Chickering — American Walnut piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Restoration</span>
+                        Chickering — American Walnut
+                    </div>
+                    <div class="pcrd-badge">9 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/American%20Walnut%20Chickering/575095553_1226338236178481_3461009846787837995_n.jpg" alt="Chickering — American Walnut piano detail" loading="lazy" onclick="pLightbox(4,1)">
+                    <img src="Images/American%20Walnut%20Chickering/575620967_1226339002845071_2502963509955345118_n.jpg" alt="Chickering — American Walnut piano detail" loading="lazy" onclick="pLightbox(4,2)">
+                    <img src="Images/American%20Walnut%20Chickering/575626823_1226339086178396_691347279049203305_n.jpg" alt="Chickering — American Walnut piano detail" loading="lazy" onclick="pLightbox(4,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Steinway%20K52%20Upright/531980426_1174394274706211_363372132747819026_n%20(1).jpg" alt="Steinway K-52 upright piano" loading="lazy">
-                <div class="portfolio-label"><span>Service</span>Steinway K-52 Upright</div>
+            <div class="pcrd" onclick="pLightbox(5,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Steinway%20L%2016k/568717633_1214912547321050_2991462312197939537_n.jpg" alt="Steinway L Grand piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Service</span>
+                        Steinway L Grand
+                    </div>
+                    <div class="pcrd-badge">9 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Steinway%20L%2016k/568790127_1214914367320868_7657491506502750896_n.jpg" alt="Steinway L Grand piano detail" loading="lazy" onclick="pLightbox(5,1)">
+                    <img src="Images/Steinway%20L%2016k/569139834_1214912497321055_7066835869387311641_n.jpg" alt="Steinway L Grand piano detail" loading="lazy" onclick="pLightbox(5,2)">
+                    <img src="Images/Steinway%20L%2016k/569617229_1214914230654215_5209080032897217609_n.jpg" alt="Steinway L Grand piano detail" loading="lazy" onclick="pLightbox(5,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Kawai%20Gs-30/547280154_1181773453968293_8314363326607374077_n.jpg" alt="Kawai GS-30 grand piano" loading="lazy">
-                <div class="portfolio-label"><span>Service</span>Kawai GS-30</div>
+            <div class="pcrd" onclick="pLightbox(6,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/546850020_1180147737464198_8246917597364911778_n.jpg" alt="Wilhelm Steinberg piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Service</span>
+                        Wilhelm Steinberg
+                    </div>
+                    <div class="pcrd-badge">10 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/547012098_1180147414130897_2214774169844385489_n.jpg" alt="Wilhelm Steinberg piano detail" loading="lazy" onclick="pLightbox(6,1)">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/547261928_1180147657464206_3649981197221193498_n.jpg" alt="Wilhelm Steinberg piano detail" loading="lazy" onclick="pLightbox(6,2)">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/547414579_1180147220797583_6963052719108105252_n.jpg" alt="Wilhelm Steinberg piano detail" loading="lazy" onclick="pLightbox(6,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Otto%20AttenBurg%20White/545777555_1181006027378369_8170350408896159451_n%20(1).jpg" alt="Otto Attenburg white grand piano" loading="lazy">
-                <div class="portfolio-label"><span>Sale</span>Otto Attenburg — White</div>
+            <div class="pcrd" onclick="pLightbox(7,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/546484912_1180157747463197_3903683694812362732_n.jpg" alt="Yamaha Studio Upright T118 piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Service</span>
+                        Yamaha Studio Upright T118
+                    </div>
+                    <div class="pcrd-badge">7 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/547199711_1180157957463176_5995398971457440540_n.jpg" alt="Yamaha Studio Upright T118 piano detail" loading="lazy" onclick="pLightbox(7,1)">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/547696759_1180157817463190_7813145843775021874_n.jpg" alt="Yamaha Studio Upright T118 piano detail" loading="lazy" onclick="pLightbox(7,2)">
+                    <img src="Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/547767114_1180157904129848_463204704314337546_n.jpg" alt="Yamaha Studio Upright T118 piano detail" loading="lazy" onclick="pLightbox(7,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Broadman%207FT%20BLACK/577663462_1226328042846167_4237023350316660195_n.jpg" alt="Broadman 7-foot black grand piano" loading="lazy">
-                <div class="portfolio-label"><span>Sale</span>Broadman 7-Foot Grand</div>
+            <div class="pcrd" onclick="pLightbox(8,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Kawai%20Gs-30/547280154_1181773453968293_8314363326607374077_n.jpg" alt="Kawai GS-30 piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Service</span>
+                        Kawai GS-30
+                    </div>
+                    <div class="pcrd-badge">11 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Kawai%20Gs-30/547892443_1181773787301593_8267763645489026460_n%20%281%29.jpg" alt="Kawai GS-30 piano detail" loading="lazy" onclick="pLightbox(8,1)">
+                    <img src="Images/Kawai%20Gs-30/547892443_1181773787301593_8267763645489026460_n.jpg" alt="Kawai GS-30 piano detail" loading="lazy" onclick="pLightbox(8,2)">
+                    <img src="Images/Kawai%20Gs-30/547994581_1181773940634911_8590914984864148745_n.jpg" alt="Kawai GS-30 piano detail" loading="lazy" onclick="pLightbox(8,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Broadman%20PE162/574562671_1226351406177164_6964766449198123995_n.jpg" alt="Broadman PE-162 grand piano" loading="lazy">
-                <div class="portfolio-label"><span>Sale</span>Broadman PE-162</div>
+            <div class="pcrd" onclick="pLightbox(9,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Ibach%20/579619863_1232457085566596_5448824090013313591_n.jpg" alt="Ibach Grand piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Service</span>
+                        Ibach Grand
+                    </div>
+                    <div class="pcrd-badge">11 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Ibach%20/579625321_1232457382233233_5860796304764423151_n.jpg" alt="Ibach Grand piano detail" loading="lazy" onclick="pLightbox(9,1)">
+                    <img src="Images/Ibach%20/579744419_1232457945566510_7125174297859867834_n.jpg" alt="Ibach Grand piano detail" loading="lazy" onclick="pLightbox(9,2)">
+                    <img src="Images/Ibach%20/580042054_1232456848899953_5147910551808721572_n.jpg" alt="Ibach Grand piano detail" loading="lazy" onclick="pLightbox(9,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Weber%20Baby%20Grand%20GP50/575065321_1226308866181418_879337913082403890_n%20(1).jpg" alt="Weber GP-50 baby grand piano" loading="lazy">
-                <div class="portfolio-label"><span>Sale</span>Weber GP-50 Baby Grand</div>
+            <div class="pcrd" onclick="pLightbox(10,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Steinway%20K52%20Upright/531980426_1174394274706211_363372132747819026_n%20%281%29.jpg" alt="Steinway K-52 Upright piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Service</span>
+                        Steinway K-52 Upright
+                    </div>
+                    <div class="pcrd-badge">9 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Steinway%20K52%20Upright/531980426_1174394274706211_363372132747819026_n.jpg" alt="Steinway K-52 Upright piano detail" loading="lazy" onclick="pLightbox(10,1)">
+                    <img src="Images/Steinway%20K52%20Upright/542671644_1174394114706227_5066807267303767234_n.jpg" alt="Steinway K-52 Upright piano detail" loading="lazy" onclick="pLightbox(10,2)">
+                    <img src="Images/Steinway%20K52%20Upright/542760142_1174394471372858_993280481821543284_n.jpg" alt="Steinway K-52 Upright piano detail" loading="lazy" onclick="pLightbox(10,3)">
+                </div>
             </div>
-            <div class="portfolio-item">
-                <img src="Images/Shafer%20and%20Sons%20Piano%20Number%20One/579280448_1232540028891635_2435709252407122269_n.jpg" alt="Shafer and Sons piano" loading="lazy">
-                <div class="portfolio-label"><span>Restoration</span>Schäfer &amp; Söhne</div>
+            <div class="pcrd" onclick="pLightbox(11,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Otto%20AttenBurg%20White/545777555_1181006027378369_8170350408896159451_n%20%281%29.jpg" alt="Otto Attenburg — White Grand piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Sale</span>
+                        Otto Attenburg — White Grand
+                    </div>
+                    <div class="pcrd-badge">11 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Otto%20AttenBurg%20White/545777555_1181006027378369_8170350408896159451_n.jpg" alt="Otto Attenburg — White Grand piano detail" loading="lazy" onclick="pLightbox(11,1)">
+                    <img src="Images/Otto%20AttenBurg%20White/546366053_1181005807378391_2321699158337059091_n%20%281%29.jpg" alt="Otto Attenburg — White Grand piano detail" loading="lazy" onclick="pLightbox(11,2)">
+                    <img src="Images/Otto%20AttenBurg%20White/546366053_1181005807378391_2321699158337059091_n.jpg" alt="Otto Attenburg — White Grand piano detail" loading="lazy" onclick="pLightbox(11,3)">
+                </div>
+            </div>
+            <div class="pcrd" onclick="pLightbox(12,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Weber%20Baby%20Grand%20GP50/575065321_1226308866181418_879337913082403890_n%20%281%29.jpg" alt="Weber GP-50 Baby Grand piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Sale</span>
+                        Weber GP-50 Baby Grand
+                    </div>
+                    <div class="pcrd-badge">12 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Weber%20Baby%20Grand%20GP50/575065321_1226308866181418_879337913082403890_n.jpg" alt="Weber GP-50 Baby Grand piano detail" loading="lazy" onclick="pLightbox(12,1)">
+                    <img src="Images/Weber%20Baby%20Grand%20GP50/575167179_1226308799514758_876769719209092879_n%20%281%29.jpg" alt="Weber GP-50 Baby Grand piano detail" loading="lazy" onclick="pLightbox(12,2)">
+                    <img src="Images/Weber%20Baby%20Grand%20GP50/575167179_1226308799514758_876769719209092879_n.jpg" alt="Weber GP-50 Baby Grand piano detail" loading="lazy" onclick="pLightbox(12,3)">
+                </div>
+            </div>
+            <div class="pcrd" onclick="pLightbox(13,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Broadman%20PE162/574562671_1226351406177164_6964766449198123995_n.jpg" alt="Broadman PE-162 piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Sale</span>
+                        Broadman PE-162
+                    </div>
+                    <div class="pcrd-badge">9 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Broadman%20PE162/574907370_1226350536177251_836365105401770843_n.jpg" alt="Broadman PE-162 piano detail" loading="lazy" onclick="pLightbox(13,1)">
+                    <img src="Images/Broadman%20PE162/575174607_1226351306177174_3889006337084807898_n.jpg" alt="Broadman PE-162 piano detail" loading="lazy" onclick="pLightbox(13,2)">
+                    <img src="Images/Broadman%20PE162/575178683_1226350952843876_6092149146713253880_n.jpg" alt="Broadman PE-162 piano detail" loading="lazy" onclick="pLightbox(13,3)">
+                </div>
+            </div>
+            <div class="pcrd" onclick="pLightbox(14,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Broadman%207FT%20BLACK/577663462_1226328042846167_4237023350316660195_n.jpg" alt="Broadman 7-Foot Grand piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Sale</span>
+                        Broadman 7-Foot Grand
+                    </div>
+                    <div class="pcrd-badge">1 photos</div>
+                </div>
+            </div>
+            <div class="pcrd" onclick="pLightbox(15,0)">
+                <div class="pcrd-cover">
+                    <img src="Images/Shafer%20and%20Sons%20Piano%20Number%20One/579280448_1232540028891635_2435709252407122269_n.jpg" alt="Schäfer & Söhne piano" loading="lazy">
+                    <div class="pcrd-label">
+                        <span class="pcrd-cat">Restoration</span>
+                        Schäfer & Söhne
+                    </div>
+                    <div class="pcrd-badge">9 photos</div>
+                </div>
+                <div class="pcrd-thumbs">
+                    <img src="Images/Shafer%20and%20Sons%20Piano%20Number%20One/579882395_1232540408891597_191993438009844281_n.jpg" alt="Schäfer & Söhne piano detail" loading="lazy" onclick="pLightbox(15,1)">
+                    <img src="Images/Shafer%20and%20Sons%20Piano%20Number%20One/579888062_1232539968891641_8900729795401789458_n.jpg" alt="Schäfer & Söhne piano detail" loading="lazy" onclick="pLightbox(15,2)">
+                    <img src="Images/Shafer%20and%20Sons%20Piano%20Number%20One/580920113_1232540258891612_824825212213218787_n.jpg" alt="Schäfer & Söhne piano detail" loading="lazy" onclick="pLightbox(15,3)">
+                </div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- LIGHTBOX -->
+<div id="plb" onclick="plbClose()">
+    <button id="plb-close" onclick="plbClose()" aria-label="Close">&#215;</button>
+    <button id="plb-prev" onclick="plbPrev(event)" aria-label="Previous">&#8249;</button>
+    <div id="plb-img-wrap" onclick="event.stopPropagation()">
+        <img id="plb-img" src="" alt="Piano photo">
+    </div>
+    <button id="plb-next" onclick="plbNext(event)" aria-label="Next">&#8250;</button>
+    <div id="plb-meta" onclick="event.stopPropagation()">
+        <div id="plb-name"></div>
+        <span id="plb-counter"></span>
+        <div id="plb-strip"></div>
+    </div>
+</div>
 
 <!-- JOIN OUR TEAM -->
 <section id="join">
@@ -1419,6 +1759,81 @@
     });
   });
 })();
+</script>
+<script>
+// Piano gallery lightbox
+const PIANO_DATA = {
+  0: { name: "Steinway B Series", photos: ["Images/Restored%20Steinway%20B%20Series/519407022_1171946531617652_2684350532202335801_n.jpg", "Images/Restored%20Steinway%20B%20Series/539181654_1171946764950962_8603927953976914257_n.jpg", "Images/Restored%20Steinway%20B%20Series/539602720_1171946601617645_8519621251333624322_n.jpg", "Images/Restored%20Steinway%20B%20Series/540416857_1171947734950865_3868021648619090916_n.jpg", "Images/Restored%20Steinway%20B%20Series/540480335_1171947218284250_4968954426603568261_n.jpg", "Images/Restored%20Steinway%20B%20Series/540693111_1171947441617561_8790632095649752311_n.jpg", "Images/Restored%20Steinway%20B%20Series/540705593_1171947621617543_7668339914562157892_n.jpg", "Images/Restored%20Steinway%20B%20Series/540732213_1171947281617577_851705625915289786_n.jpg", "Images/Restored%20Steinway%20B%20Series/540760226_1171947341617571_2980716053937194405_n.jpg", "Images/Restored%20Steinway%20B%20Series/540995697_1171947148284257_4268237362557212747_n.jpg", "Images/Restored%20Steinway%20B%20Series/541627245_1171946908284281_1790276088473100329_n.jpg", "Images/Restored%20Steinway%20B%20Series/541634322_1171947078284264_7880160985739250679_n.jpg", "Images/Restored%20Steinway%20B%20Series/541763812_1171946834950955_8922216077486268562_n.jpg", "Images/Restored%20Steinway%20B%20Series/541810332_1171946678284304_1793312664510049887_n.jpg"] },
+  1: { name: "Bösendorfer Grand", photos: ["Images/Bosendorfer/546699668_1180079457471026_7073987432609089385_n.jpg", "Images/Bosendorfer/546808836_1180079714137667_685102127522560056_n.jpg", "Images/Bosendorfer/546843088_1180079190804386_282687874555150848_n.jpg", "Images/Bosendorfer/547222561_1180079354137703_2749459013404898597_n.jpg", "Images/Bosendorfer/547401555_1180079254137713_58588884847318401_n.jpg", "Images/Bosendorfer/547484560_1180079427471029_1616359125415554394_n.jpg", "Images/Bosendorfer/547584306_1180079544137684_6139515971069093136_n.jpg", "Images/Bosendorfer/547827224_1180079310804374_8707415825708324990_n.jpg", "Images/Bosendorfer/547842905_1180079604137678_5598109687388877613_n.jpg", "Images/Bosendorfer/548116008_1180079650804340_966285373432672318_n.jpg"] },
+  2: { name: "Steinway Model B", photos: ["Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547064146_1180136697465302_1557932207845546047_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547181330_1180136524131986_5871752686440619906_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547271945_1180136334132005_6152818538602360694_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547305802_1180136070798698_4823525624339850120_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547380027_1180136580798647_2644607743183809499_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547385082_1180136134132025_6172530616771975830_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547497169_1180136180798687_7545644138665572960_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547512674_1180136737465298_2260878240424733945_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/547812274_1180136437465328_8522528519852242642_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/548201832_1180135970798708_2416728237858493372_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/548211899_1180136630798642_7287962133821799150_n.jpg"] },
+  3: { name: "A. Geyer GG-150", photos: ["Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/546527786_1180129580799347_728396455891903853_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/547261936_1180129907465981_6953664862296398833_n%20%281%29.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/547261936_1180129907465981_6953664862296398833_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/547469897_1180129784132660_1016831302372729982_n%20%281%29.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/547469897_1180129784132660_1016831302372729982_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/547987608_1180129727465999_5768612988849652561_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/548195789_1180129474132691_8804849388536106634_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/548218927_1180130017465970_4529234368657567358_n%20%281%29.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/548218927_1180130017465970_4529234368657567358_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/548282513_1180129790799326_1836264785759240637_n%20%281%29.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/Restored%20Steinway%20one-fone-%20bodel%20b/A.%20Geyer%20GG%20150/548282513_1180129790799326_1836264785759240637_n.jpg"] },
+  4: { name: "Chickering — American Walnut", photos: ["Images/American%20Walnut%20Chickering/574960602_1226338379511800_8457772592120859421_n.jpg", "Images/American%20Walnut%20Chickering/575095553_1226338236178481_3461009846787837995_n.jpg", "Images/American%20Walnut%20Chickering/575620967_1226339002845071_2502963509955345118_n.jpg", "Images/American%20Walnut%20Chickering/575626823_1226339086178396_691347279049203305_n.jpg", "Images/American%20Walnut%20Chickering/575635488_1226338742845097_8162032316421334414_n.jpg", "Images/American%20Walnut%20Chickering/575679889_1226339152845056_3273543984361557835_n.jpg", "Images/American%20Walnut%20Chickering/576425712_1226338916178413_7519320792628332706_n.jpg", "Images/American%20Walnut%20Chickering/576923429_1226338306178474_7924346891168845761_n.jpg", "Images/American%20Walnut%20Chickering/577331273_1226338622845109_2115234318886654014_n.jpg"] },
+  5: { name: "Steinway L Grand", photos: ["Images/Steinway%20L%2016k/568717633_1214912547321050_2991462312197939537_n.jpg", "Images/Steinway%20L%2016k/568790127_1214914367320868_7657491506502750896_n.jpg", "Images/Steinway%20L%2016k/569139834_1214912497321055_7066835869387311641_n.jpg", "Images/Steinway%20L%2016k/569617229_1214914230654215_5209080032897217609_n.jpg", "Images/Steinway%20L%2016k/571113891_1214912960654342_5978842732548567647_n.jpg", "Images/Steinway%20L%2016k/571142045_1214912410654397_9203519181183095876_n.jpg", "Images/Steinway%20L%2016k/571152722_1214914487320856_7587104011831698992_n.jpg", "Images/Steinway%20L%2016k/571158405_1214912703987701_3672011357190901255_n.jpg", "Images/Steinway%20L%2016k/571203613_1214914913987480_6779896049128805489_n.jpg"] },
+  6: { name: "Wilhelm Steinberg", photos: ["Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/546850020_1180147737464198_8246917597364911778_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/547012098_1180147414130897_2214774169844385489_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/547261928_1180147657464206_3649981197221193498_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/547414579_1180147220797583_6963052719108105252_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/547525178_1180147547464217_463801769297599006_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/547634180_1180147840797521_1727939767840740649_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/548199043_1180147284130910_7986496685856425372_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/548201842_1180147344130904_919367807865110034_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/548215974_1180147477464224_108607233033520587_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/Wilhem%20Steinberg/548376082_1180147794130859_2878725726788069314_n.jpg"] },
+  7: { name: "Yamaha Studio Upright T118", photos: ["Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/546484912_1180157747463197_3903683694812362732_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/547199711_1180157957463176_5995398971457440540_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/547696759_1180157817463190_7813145843775021874_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/547767114_1180157904129848_463204704314337546_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/548196502_1180157707463201_3835871155424953007_n%20%281%29.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/548196502_1180157707463201_3835871155424953007_n.jpg", "Images/Bosendorfer/Yahama%20Studio%20UIpright%20t118/548219345_1180158017463170_6355942599562828941_n.jpg"] },
+  8: { name: "Kawai GS-30", photos: ["Images/Kawai%20Gs-30/547280154_1181773453968293_8314363326607374077_n.jpg", "Images/Kawai%20Gs-30/547892443_1181773787301593_8267763645489026460_n%20%281%29.jpg", "Images/Kawai%20Gs-30/547892443_1181773787301593_8267763645489026460_n.jpg", "Images/Kawai%20Gs-30/547994581_1181773940634911_8590914984864148745_n.jpg", "Images/Kawai%20Gs-30/548217548_1181773873968251_939314991468110979_n.jpg", "Images/Kawai%20Gs-30/548217558_1181773723968266_7559585378206782809_n%20%281%29.jpg", "Images/Kawai%20Gs-30/548217558_1181773723968266_7559585378206782809_n.jpg", "Images/Kawai%20Gs-30/548219019_1181774023968236_611271969577630577_n.jpg", "Images/Kawai%20Gs-30/548268758_1181773653968273_2196161006108901236_n.jpg", "Images/Kawai%20Gs-30/548302722_1181773557301616_2390438172182344854_n.jpg", "Images/Kawai%20Gs-30/kawai%20gs30.jpg"] },
+  9: { name: "Ibach Grand", photos: ["Images/Ibach%20/579619863_1232457085566596_5448824090013313591_n.jpg", "Images/Ibach%20/579625321_1232457382233233_5860796304764423151_n.jpg", "Images/Ibach%20/579744419_1232457945566510_7125174297859867834_n.jpg", "Images/Ibach%20/580042054_1232456848899953_5147910551808721572_n.jpg", "Images/Ibach%20/580045369_1232457822233189_8238581643077264734_n.jpg", "Images/Ibach%20/580107079_1232456972233274_8374125149007072627_n.jpg", "Images/Ibach%20/580510886_1232457562233215_7695129113552929827_n.jpg", "Images/Ibach%20/580615302_1232456778899960_8890242146938740579_n.jpg", "Images/Ibach%20/580915809_1232457155566589_8663356514833937981_n.jpg", "Images/Ibach%20/580918822_1232458015566503_6137116054025630462_n.jpg", "Images/Ibach%20/581523501_1232456708899967_2182481792635394180_n.jpg"] },
+  10: { name: "Steinway K-52 Upright", photos: ["Images/Steinway%20K52%20Upright/531980426_1174394274706211_363372132747819026_n%20%281%29.jpg", "Images/Steinway%20K52%20Upright/531980426_1174394274706211_363372132747819026_n.jpg", "Images/Steinway%20K52%20Upright/542671644_1174394114706227_5066807267303767234_n.jpg", "Images/Steinway%20K52%20Upright/542760142_1174394471372858_993280481821543284_n.jpg", "Images/Steinway%20K52%20Upright/542760767_1174394331372872_9013849861528458821_n.jpg", "Images/Steinway%20K52%20Upright/543416057_1174394208039551_8420716075978050437_n%20%281%29.jpg", "Images/Steinway%20K52%20Upright/543416057_1174394208039551_8420716075978050437_n.jpg", "Images/Steinway%20K52%20Upright/543419503_1174394594706179_7185589887551865641_n.jpg", "Images/Steinway%20K52%20Upright/544839247_1174394534706185_712511106616480819_n.jpg"] },
+  11: { name: "Otto Attenburg — White Grand", photos: ["Images/Otto%20AttenBurg%20White/545777555_1181006027378369_8170350408896159451_n%20%281%29.jpg", "Images/Otto%20AttenBurg%20White/545777555_1181006027378369_8170350408896159451_n.jpg", "Images/Otto%20AttenBurg%20White/546366053_1181005807378391_2321699158337059091_n%20%281%29.jpg", "Images/Otto%20AttenBurg%20White/546366053_1181005807378391_2321699158337059091_n.jpg", "Images/Otto%20AttenBurg%20White/546616208_1181005674045071_2442192094576924261_n%20%281%29.jpg", "Images/Otto%20AttenBurg%20White/546616208_1181005674045071_2442192094576924261_n.jpg", "Images/Otto%20AttenBurg%20White/547350417_1181006307378341_815284909271762819_n.jpg", "Images/Otto%20AttenBurg%20White/547451026_1181005970711708_21662399427834022_n.jpg", "Images/Otto%20AttenBurg%20White/547498367_1181005877378384_929554027180908089_n%20%281%29.jpg", "Images/Otto%20AttenBurg%20White/547498367_1181005877378384_929554027180908089_n.jpg", "Images/Otto%20AttenBurg%20White/548296202_1181006080711697_2520172971241206750_n.jpg"] },
+  12: { name: "Weber GP-50 Baby Grand", photos: ["Images/Weber%20Baby%20Grand%20GP50/575065321_1226308866181418_879337913082403890_n%20%281%29.jpg", "Images/Weber%20Baby%20Grand%20GP50/575065321_1226308866181418_879337913082403890_n.jpg", "Images/Weber%20Baby%20Grand%20GP50/575167179_1226308799514758_876769719209092879_n%20%281%29.jpg", "Images/Weber%20Baby%20Grand%20GP50/575167179_1226308799514758_876769719209092879_n.jpg", "Images/Weber%20Baby%20Grand%20GP50/575169945_1226309482848023_5699949751630782025_n.jpg", "Images/Weber%20Baby%20Grand%20GP50/575197969_1226308702848101_1352610169397972489_n%20%281%29.jpg", "Images/Weber%20Baby%20Grand%20GP50/575197969_1226308702848101_1352610169397972489_n.jpg", "Images/Weber%20Baby%20Grand%20GP50/575768889_1226309436181361_2849368827062889736_n.jpg", "Images/Weber%20Baby%20Grand%20GP50/576529646_1226309036181401_5641206849319346051_n.jpg", "Images/Weber%20Baby%20Grand%20GP50/576686826_1226308946181410_2392188043813648165_n.jpg", "Images/Weber%20Baby%20Grand%20GP50/577022752_1226309366181368_5773719575657964464_n.jpg", "Images/Weber%20Baby%20Grand%20GP50/577838912_1226309292848042_3261956648227351924_n.jpg"] },
+  13: { name: "Broadman PE-162", photos: ["Images/Broadman%20PE162/574562671_1226351406177164_6964766449198123995_n.jpg", "Images/Broadman%20PE162/574907370_1226350536177251_836365105401770843_n.jpg", "Images/Broadman%20PE162/575174607_1226351306177174_3889006337084807898_n.jpg", "Images/Broadman%20PE162/575178683_1226350952843876_6092149146713253880_n.jpg", "Images/Broadman%20PE162/575672379_1226350876177217_4637784752312011683_n.jpg", "Images/Broadman%20PE162/576363358_1226350806177224_8410863835784691623_n.jpg", "Images/Broadman%20PE162/577198455_1226350672843904_3633478450172668282_n.jpg", "Images/Broadman%20PE162/577568732_1226350469510591_287743016176642584_n.jpg", "Images/Broadman%20PE162/577800903_1226351082843863_2120117877768297369_n.jpg"] },
+  14: { name: "Broadman 7-Foot Grand", photos: ["Images/Broadman%207FT%20BLACK/577663462_1226328042846167_4237023350316660195_n.jpg"] },
+  15: { name: "Schäfer & Söhne", photos: ["Images/Shafer%20and%20Sons%20Piano%20Number%20One/579280448_1232540028891635_2435709252407122269_n.jpg", "Images/Shafer%20and%20Sons%20Piano%20Number%20One/579882395_1232540408891597_191993438009844281_n.jpg", "Images/Shafer%20and%20Sons%20Piano%20Number%20One/579888062_1232539968891641_8900729795401789458_n.jpg", "Images/Shafer%20and%20Sons%20Piano%20Number%20One/580920113_1232540258891612_824825212213218787_n.jpg", "Images/Shafer%20and%20Sons%20Piano%20Number%20One/580937930_1232540085558296_1774248796430105908_n.jpg", "Images/Shafer%20and%20Sons%20Piano%20Number%20One/581263360_1232540352224936_2756629192290277581_n.jpg", "Images/Shafer%20and%20Sons%20Piano%20Number%20One/581642447_1232540305558274_4895707924107670105_n.jpg", "Images/Shafer%20and%20Sons%20Piano%20Number%20One/582015280_1232540152224956_5215528356479272699_n.jpg", "Images/Shafer%20and%20Sons%20Piano%20Number%20One/582460184_1232539928891645_153372828707879151_n.jpg"] }
+};
+
+let _plbPiano = null, _plbIdx = 0;
+
+function pLightbox(pianoId, photoIdx) {
+    if (event) event.stopPropagation();
+    _plbPiano = PIANO_DATA[pianoId];
+    _plbIdx = photoIdx;
+    _plbRender();
+    document.getElementById('plb').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function _plbRender() {
+    const d = _plbPiano;
+    document.getElementById('plb-img').src = d.photos[_plbIdx];
+    document.getElementById('plb-name').textContent = d.name;
+    document.getElementById('plb-counter').textContent = (_plbIdx + 1) + ' / ' + d.photos.length;
+    const strip = document.getElementById('plb-strip');
+    strip.innerHTML = '';
+    d.photos.forEach(function(src, i) {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = d.name + ' photo ' + (i + 1);
+        if (i === _plbIdx) img.classList.add('active');
+        img.onclick = function(e) { e.stopPropagation(); _plbIdx = i; _plbRender(); };
+        strip.appendChild(img);
+    });
+    const active = strip.querySelector('.active');
+    if (active) active.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+}
+
+function plbClose() {
+    document.getElementById('plb').classList.remove('open');
+    document.body.style.overflow = '';
+    _plbPiano = null;
+}
+function plbPrev(e) {
+    e.stopPropagation();
+    _plbIdx = (_plbIdx - 1 + _plbPiano.photos.length) % _plbPiano.photos.length;
+    _plbRender();
+}
+function plbNext(e) {
+    e.stopPropagation();
+    _plbIdx = (_plbIdx + 1) % _plbPiano.photos.length;
+    _plbRender();
+}
+
+document.addEventListener('keydown', function(e) {
+    const lb = document.getElementById('plb');
+    if (!lb || !lb.classList.contains('open')) return;
+    if (e.key === 'Escape') plbClose();
+    if (e.key === 'ArrowLeft') { _plbIdx = (_plbIdx - 1 + _plbPiano.photos.length) % _plbPiano.photos.length; _plbRender(); }
+    if (e.key === 'ArrowRight') { _plbIdx = (_plbIdx + 1) % _plbPiano.photos.length; _plbRender(); }
+});
 </script>
 </body>
 </html>
