@@ -135,6 +135,18 @@
         .pricing-card.standard .pricing-note { color: var(--gray); }
         .pricing-card.bulk .pricing-note { color: rgba(255,255,255,0.4); }
 
+        .pricing-btn {
+            display: block; text-align: center; margin-top: 1.5rem;
+            background: var(--charcoal); color: var(--white);
+            padding: 0.8rem 1.5rem; border-radius: 6px;
+            font-weight: 600; font-size: 0.9rem; text-decoration: none;
+            letter-spacing: 0.04em; transition: background 0.2s, transform 0.15s;
+        }
+        .pricing-btn:hover { background: var(--gold); color: var(--black); transform: translateY(-1px); }
+        .pricing-btn--gold {
+            background: var(--gold); color: var(--black);
+        }
+        .pricing-btn--gold:hover { background: var(--gold-light); transform: translateY(-1px); }
         /* TECHNICIAN */
         #technician { background: var(--white); }
         .tech-feature { display: grid; grid-template-columns: 380px 1fr; gap: 4rem; align-items: center; }
@@ -315,6 +327,7 @@
                 <div class="price-line"><span>Voicing</span><strong>$100/hr</strong></div>
                 <div class="price-line"><span>In-home service</span><strong>Included</strong></div>
                 <p class="pricing-note">Pricing is per piano. Travel within North Georgia included.</p>
+                <a href="#contact" class="pricing-btn">Schedule a Tuning &rarr;</a>
             </div>
             <div class="pricing-card bulk">
                 <div class="pricing-badge">Best Value</div>
@@ -329,6 +342,7 @@
                 <div class="price-line"><span>Voicing</span><strong>$75/hr</strong></div>
                 <div class="price-line"><span>Minimum for bulk rate</span><strong>4 pianos</strong></div>
                 <p class="pricing-note">Can be split across multiple visits while keeping bulk rate.</p>
+                <a href="#contact" class="pricing-btn pricing-btn--gold">Schedule Bulk Tuning &rarr;</a>
             </div>
         </div>
     </div>
