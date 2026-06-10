@@ -348,7 +348,7 @@
     toggle.addEventListener('click', function(){
         var open = menu.classList.toggle('open');
         toggle.classList.toggle('open', open);
-        toggle.setAttribute('aria-expanded', open);
+        toggle.setAttribute('aria-expanded', String(open));
     });
     menu.querySelectorAll('a').forEach(function(a){
         a.addEventListener('click', function(){
@@ -359,6 +359,7 @@
     });
 })();
 </script>
+
 
 </body>
 </html>

@@ -826,6 +826,7 @@
         /* ── RESPONSIVE ── */
         @media (max-width: 900px) {
             .nav-links a:not(.nav-cta) { display: none; }
+            .nav-toggle { display: flex; }
         }
 
         @media (max-width: 768px) {
@@ -843,6 +844,67 @@
             .hero h1 { font-size: 2.4rem; }
             .hero-badges { flex-direction: column; align-items: center; gap: 0.6rem; }
         }
+
+        /* ── MOBILE HAMBURGER ── */
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.4rem 0.25rem;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+        .nav-toggle span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: var(--white);
+            border-radius: 2px;
+            transition: transform 0.22s, opacity 0.22s;
+        }
+        .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .nav-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 57px; left: 0; right: 0; z-index: 99;
+            background: rgba(13,13,13,0.98);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            flex-direction: column;
+            padding: 0.5rem 1.5rem 1.5rem;
+            border-bottom: 1px solid rgba(201,168,76,0.15);
+        }
+        .mobile-nav.open { display: flex; }
+        .mobile-nav a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: 0.9rem 0;
+            font-size: 0.88rem;
+            font-weight: 500;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            transition: color 0.2s;
+        }
+        .mobile-nav a:last-child { border-bottom: none; }
+        .mobile-nav a:hover,
+        .mobile-nav a.active { color: var(--gold); }
+        .mobile-nav .mobile-cta {
+            margin-top: 0.75rem;
+            background: var(--gold);
+            color: var(--black) !important;
+            padding: 0.85rem 1.5rem;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 700;
+            border-bottom: none;
+        }
+        .mobile-nav .mobile-cta:hover { background: var(--gold-light) !important; color: var(--black) !important; }
     </style>
 </head>
 <body>
