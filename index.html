@@ -682,6 +682,107 @@
         footer a { color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
         footer a:hover { color: var(--gold); }
 
+        /* ── HOW IT WORKS ── */
+        #how-it-works { background: var(--white); }
+        .hiw-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2.5rem;
+        }
+        @media (max-width: 700px) {
+            .hiw-grid { grid-template-columns: 1fr; }
+        }
+        .hiw-track {
+            background: var(--ivory);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 2rem;
+        }
+        .hiw-track-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.2rem;
+            color: var(--charcoal);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--gold);
+        }
+        .hiw-steps { list-style: none; padding: 0; margin: 0 0 1.5rem; }
+        .hiw-step {
+            display: flex;
+            gap: 1rem;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .hiw-step:last-child { border-bottom: none; }
+        .hiw-num {
+            flex-shrink: 0;
+            width: 1.75rem; height: 1.75rem;
+            border-radius: 50%;
+            background: var(--gold);
+            color: var(--black);
+            font-size: 0.78rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            margin-top: 0.1rem;
+        }
+        .hiw-step-body strong {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--charcoal);
+            margin-bottom: 0.2rem;
+        }
+        .hiw-step-body p {
+            font-size: 0.84rem;
+            color: var(--gray);
+            margin: 0;
+            line-height: 1.6;
+        }
+        .hiw-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .hiw-btn-primary {
+            display: block;
+            text-align: center;
+            background: var(--gold);
+            color: var(--black);
+            padding: 0.75rem 1.25rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            text-decoration: none;
+            letter-spacing: 0.03em;
+            transition: background 0.2s;
+        }
+        .hiw-btn-primary:hover { background: var(--gold-light); }
+        .hiw-btn-secondary {
+            display: block;
+            text-align: center;
+            background: transparent;
+            color: var(--charcoal);
+            padding: 0.7rem 1.25rem;
+            border-radius: 4px;
+            border: 1.5px solid var(--border);
+            font-weight: 500;
+            font-size: 0.88rem;
+            text-decoration: none;
+            letter-spacing: 0.02em;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .hiw-btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+        .hiw-or {
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--gray);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
         /* ── PORTFOLIO ── */
         #portfolio { background: var(--charcoal); }
         #portfolio .section-label { color: var(--gold-light); }
@@ -1086,7 +1187,7 @@
             <span class="hero-badge">All makes &amp; brands</span>
         </div>
         <div class="hero-buttons">
-            <a href="tel:7065315161" class="btn-primary">Call (706) 531-5161</a>
+            <a href="https://buy.stripe.com/5kQbJ2b930LfbIl6IGgjC0w" target="_blank" rel="noopener" class="btn-primary">Book a Diagnosis — $100</a>
             <a href="#contact" class="btn-secondary">Schedule an Appointment</a>
         </div>
     </div>
@@ -1141,7 +1242,82 @@
                 <p><strong>$125/hour for repair work</strong></p>
                 <p>Written estimates. Transparent pricing. No surprises.</p>
             </div>
-            <a href="tel:7065315161" class="btn-primary">Call (706) 531-5161</a>
+            <a href="https://buy.stripe.com/5kQbJ2b930LfbIl6IGgjC0w" target="_blank" rel="noopener" class="btn-primary">Book a Diagnosis — $100</a>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+    <div class="section-inner">
+        <p class="section-label">Getting Started</p>
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">Two services, two simple paths. Both start with a payment that books your spot — no back-and-forth before we commit.</p>
+        <div class="hiw-grid">
+
+            <div class="hiw-track">
+                <div class="hiw-track-title">Piano Tuning</div>
+                <ol class="hiw-steps">
+                    <li class="hiw-step">
+                        <div class="hiw-num">1</div>
+                        <div class="hiw-step-body">
+                            <strong>Book &amp; pay online</strong>
+                            <p>$175 standard (1–3 pianos) or $125/piano for 4 or more. Payment confirms your booking.</p>
+                        </div>
+                    </li>
+                    <li class="hiw-step">
+                        <div class="hiw-num">2</div>
+                        <div class="hiw-step-body">
+                            <strong>Christian contacts you within 24 hours</strong>
+                            <p>Our certified tuning technician reaches out to confirm your date and time.</p>
+                        </div>
+                    </li>
+                    <li class="hiw-step">
+                        <div class="hiw-num">3</div>
+                        <div class="hiw-step-body">
+                            <strong>In-home tuning — done</strong>
+                            <p>60–90 minutes at your piano. You'll hear the difference before we leave.</p>
+                        </div>
+                    </li>
+                </ol>
+                <div class="hiw-actions">
+                    <a href="https://buy.stripe.com/bJe3cw90VctXbIl1omgjC0u" target="_blank" rel="noopener" class="hiw-btn-primary">Book Standard Tuning — $175</a>
+                    <a href="https://buy.stripe.com/28E5kE1yt51v7s5eb8gjC0v" target="_blank" rel="noopener" class="hiw-btn-primary">Book Bulk Tuning — $125/piano</a>
+                </div>
+            </div>
+
+            <div class="hiw-track">
+                <div class="hiw-track-title">Player Piano Repair</div>
+                <ol class="hiw-steps">
+                    <li class="hiw-step">
+                        <div class="hiw-num">1</div>
+                        <div class="hiw-step-body">
+                            <strong>Book a diagnosis or contact us first</strong>
+                            <p>Pay the $100 flat-rate diagnosis to get on the schedule, or reach out first if you're not sure what you're dealing with — we're happy to talk it through.</p>
+                        </div>
+                    </li>
+                    <li class="hiw-step">
+                        <div class="hiw-num">2</div>
+                        <div class="hiw-step-body">
+                            <strong>In-home assessment</strong>
+                            <p>We come to you, inspect the system, and give you a full written estimate. No repair happens without your approval.</p>
+                        </div>
+                    </li>
+                    <li class="hiw-step">
+                        <div class="hiw-num">3</div>
+                        <div class="hiw-step-body">
+                            <strong>Repair or no charge</strong>
+                            <p>Approve the quote and we schedule the repair. If we can't fix it, you don't pay for labor — guaranteed.</p>
+                        </div>
+                    </li>
+                </ol>
+                <div class="hiw-actions">
+                    <a href="https://buy.stripe.com/5kQbJ2b930LfbIl6IGgjC0w" target="_blank" rel="noopener" class="hiw-btn-primary">Book a Diagnosis — $100</a>
+                    <div class="hiw-or">or</div>
+                    <a href="#contact" class="hiw-btn-secondary">Contact Us First →</a>
+                </div>
+            </div>
+
         </div>
     </div>
 </section>
