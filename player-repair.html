@@ -21,7 +21,7 @@
         "name": "Piano Player Tech",
         "url": "https://pianoplayertech.com",
         "telephone": "+17065315161",
-        "email": "PianoPlayerTech@gmail.com",
+        "email": "info@pianoplayertech.com",
         "areaServed": ["Dahlonega, GA","Gainesville, GA","Blue Ridge, GA","Helen, GA","Cumming, GA","Dawsonville, GA","Canton, GA","Ellijay, GA","Atlanta, GA"]
       },
       "description": "In-home repair for electric player piano systems throughout North Georgia — Yamaha Disklavier, PianoDisc, QRS Pianomation, Steinway Spirio.",
@@ -355,7 +355,7 @@
             <div class="how-step">
                 <div class="how-step-num">2</div>
                 <h3>In-home assessment</h3>
-                <p>We come to you. Ethan assesses the system on-site — no moving the piano, no hauling it anywhere. At the end of the visit you get a full written estimate.</p>
+                <p>We come to you. Our technician assesses the system on-site — no moving the piano, no hauling it anywhere. At the end of the visit you get a full written estimate.</p>
             </div>
             <div class="how-step">
                 <div class="how-step-num">3</div>
@@ -428,7 +428,7 @@
             </details>
             <details>
                 <summary>How do I get started?</summary>
-                <div class="faq-body">Either call us at (706) 531-5161 to talk through what's going on, or book and pay the $100 diagnosis online to get on the schedule. Ethan will reach out to confirm your appointment time.</div>
+                <div class="faq-body">Fill out the intake form below with your system details and we'll follow up to confirm your appointment. Or call us at (706) 531-5161 to talk it through first.</div>
             </details>
         </div>
     </div>
@@ -440,45 +440,47 @@
         <div class="contact-grid">
             <div class="contact-info">
                 <p class="section-label">Get Started</p>
-                <h2 class="section-title">Book a Diagnosis or Call First</h2>
-                <p>Player piano repair scheduling is handled directly by Ethan. Call to talk through what your system is doing, or book the $100 diagnosis online to get on the schedule.</p>
+                <h2 class="section-title">Tell Us About Your System</h2>
+                <p>Fill out the form with your system make, model, and what it's doing. We'll follow up within one business day to confirm your appointment and answer any questions before you pay.</p>
                 <div class="contact-detail">
                     <div class="contact-detail-icon">—</div>
                     <div><h4>Phone</h4><a href="tel:7065315161">(706) 531-5161</a></div>
                 </div>
                 <div class="contact-detail">
                     <div class="contact-detail-icon">—</div>
-                    <div><h4>Email</h4><a href="mailto:PianoPlayerTech@gmail.com">PianoPlayerTech@gmail.com</a></div>
+                    <div><h4>Email</h4><a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a></div>
                 </div>
                 <div class="contact-detail">
                     <div class="contact-detail-icon">—</div>
-                    <div><h4>Service Area</h4><p>All of North Georgia — we come to you</p></div>
+                    <div><h4>Service Area</h4><p>Metro Atlanta &amp; all of North Georgia — we come to you</p></div>
                 </div>
                 <div class="contact-detail">
                     <div class="contact-detail-icon">—</div>
                     <div><h4>Response Time</h4><p>We return calls and messages within one business day</p></div>
                 </div>
-                <a href="https://buy.stripe.com/5kQbJ2b930LfbIl6IGgjC0w" target="_blank" rel="noopener" class="call-cta">Book Diagnosis — $100</a>
-                <br>
-                <a href="tel:7065315161" class="diagnosis-cta">Call (706) 531-5161</a>
+                <a href="tel:7065315161" class="diagnosis-cta" style="margin-top:1.5rem;">Prefer to call? (706) 531-5161</a>
             </div>
             <div class="contact-form-wrap">
-                <h3>Send a Message</h3>
-                <form action="https://formspree.io/f/mnjlobjg" method="POST">
-                    <input type="hidden" name="_subject" value="Player Piano Repair Inquiry — Piano Player Tech">
-                    <input type="hidden" name="service_type" value="Player Piano Repair">
+                <h3>Book Your Diagnosis — $100</h3>
+                <p style="font-size:0.85rem;color:var(--gray);margin-bottom:1rem;line-height:1.65;">Tell us about your system. After submitting we'll send you to payment — diagnosis fee is $100 flat, in-home.</p>
+                <form id="diagnosis-intake">
+                    <input type="hidden" name="_subject" value="Player Piano Diagnosis Booking — Piano Player Tech">
+                    <input type="hidden" name="service_type" value="Player Piano Diagnosis — $100">
                     <label for="c-name">Name</label>
                     <input type="text" id="c-name" name="name" placeholder="Your name" required>
                     <label for="c-email">Email</label>
                     <input type="email" id="c-email" name="email" placeholder="your@email.com" required>
                     <label for="c-phone">Phone</label>
-                    <input type="tel" id="c-phone" name="phone" placeholder="(706) 000-0000">
-                    <label for="c-system">Player system make / model</label>
-                    <input type="text" id="c-system" name="system" placeholder="e.g. Yamaha Disklavier Mark II, QRS Pianomation">
-                    <label for="c-issue">What's happening?</label>
-                    <textarea id="c-issue" name="issue" placeholder="Describe what the system is doing — or not doing. The more detail, the better."></textarea>
-                    <button type="submit">Send Message →</button>
+                    <input type="tel" id="c-phone" name="phone" placeholder="(706) 000-0000" required>
+                    <label for="c-city">City / town</label>
+                    <input type="text" id="c-city" name="city" placeholder="e.g. Gainesville, GA" required>
+                    <label for="c-system">Player system make &amp; model</label>
+                    <input type="text" id="c-system" name="system" placeholder="e.g. Yamaha Disklavier Mark III, QRS CD2000" required>
+                    <label for="c-issue">What's it doing?</label>
+                    <textarea id="c-issue" name="issue" placeholder="Describe the problem — what happens when you turn it on, what's missing, any error lights or sounds. The more detail, the better." required></textarea>
+                    <button type="submit" id="intake-submit">Book &amp; Pay — $100 →</button>
                 </form>
+                <p id="intake-status" style="display:none;margin-top:0.75rem;font-size:0.85rem;color:var(--gray);"></p>
             </div>
         </div>
     </div>
@@ -488,7 +490,7 @@
     <p>
         &copy; 2026 <span>Piano Player Tech</span> &nbsp;|&nbsp; North Georgia Player Piano Repair &amp; Tuning<br>
         <a href="tel:7065315161">(706) 531-5161</a> &nbsp;&middot;&nbsp;
-        <a href="mailto:PianoPlayerTech@gmail.com">PianoPlayerTech@gmail.com</a> &nbsp;&middot;&nbsp;
+        <a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a> &nbsp;&middot;&nbsp;
         <a href="/">pianoplayertech.com</a> &nbsp;&middot;&nbsp;
         <a href="https://howardresourcegroup.com/websites.html" target="_blank" rel="noopener">Website by Howard Resource Group</a>
     </p>
@@ -507,6 +509,41 @@ if (btn && nav) {
             nav.classList.remove('open');
             btn.setAttribute('aria-expanded', false);
         }
+    });
+}
+
+var intakeForm = document.getElementById('diagnosis-intake');
+var intakeStatus = document.getElementById('intake-status');
+var intakeSubmit = document.getElementById('intake-submit');
+if (intakeForm) {
+    intakeForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        intakeSubmit.disabled = true;
+        intakeSubmit.textContent = 'Sending…';
+        var data = new FormData(intakeForm);
+        fetch('https://formspree.io/f/mnjlobjg', {
+            method: 'POST',
+            body: data,
+            headers: { 'Accept': 'application/json' }
+        }).then(function(res) {
+            if (res.ok) {
+                intakeStatus.style.display = 'block';
+                intakeStatus.textContent = 'Got it — redirecting you to payment…';
+                setTimeout(function() {
+                    window.location.href = 'https://buy.stripe.com/5kQbJ2b930LfbIl6IGgjC0w';
+                }, 1200);
+            } else {
+                intakeSubmit.disabled = false;
+                intakeSubmit.textContent = 'Book & Pay — $100 →';
+                intakeStatus.style.display = 'block';
+                intakeStatus.textContent = 'Something went wrong — please call us at (706) 531-5161.';
+            }
+        }).catch(function() {
+            intakeSubmit.disabled = false;
+            intakeSubmit.textContent = 'Book & Pay — $100 →';
+            intakeStatus.style.display = 'block';
+            intakeStatus.textContent = 'Could not connect — please call us at (706) 531-5161.';
+        });
     });
 }
 </script>
