@@ -50,19 +50,12 @@
     <script src="https://js.stripe.com/v3/"></script>
     <script>
     var params = new URLSearchParams(window.location.search);
-    var sessionId = params.get('session_id');
-    if (!sessionId) {
-        document.getElementById('status-loading').style.display = 'none';
+    var redirectStatus = params.get('redirect_status');
+    document.getElementById('status-loading').style.display = 'none';
+    if (!redirectStatus || redirectStatus === 'succeeded') {
         document.getElementById('status-success').style.display = 'block';
     } else {
-        fetch('/checkout?session_id=' + sessionId)
-          .then(function(r) { return r.json(); })
-          .catch(function() { return {}; })
-          .then(function(d) {
-            document.getElementById('status-loading').style.display = 'none';
-            // If session_id present + no error = treat as success
-            document.getElementById('status-success').style.display = 'block';
-          });
+        document.getElementById('status-error').style.display = 'block';
     }
     </script>
 </body>
