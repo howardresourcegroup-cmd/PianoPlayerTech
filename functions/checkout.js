@@ -28,7 +28,6 @@ export async function onRequest(context) {
     line_items: [{ price: priceId, quantity: 1 }],
     ui_mode: 'embedded',
     return_url: 'https://pianoplayertech.com/checkout-return?session_id={CHECKOUT_SESSION_ID}',
-    statement_descriptor_suffix: "PIANO PLAYER TECH",
     custom_text: { submit: { message: "Piano Player Tech — North Georgia" } },
     phone_number_collection: { enabled: true },
     ...(customerEmail ? { customer_email: customerEmail } : {}),
