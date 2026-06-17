@@ -496,6 +496,7 @@
     </p>
 </footer>
 
+<script src="/ppt-checkout.js"></script>
 <script>
 var btn = document.getElementById('navToggle');
 var nav = document.getElementById('mobileNav');
@@ -519,8 +520,9 @@ if (intakeForm) {
     intakeForm.addEventListener('submit', function(e) {
         e.preventDefault();
         intakeSubmit.disabled = true;
-        intakeSubmit.textContent = 'Sending…';
+        intakeSubmit.textContent = 'One moment…';
         var data = new FormData(intakeForm);
+        var email = data.get('email') || '';
         fetch('https://formspree.io/f/mnjlobjg', {
             method: 'POST',
             body: data,
@@ -528,10 +530,10 @@ if (intakeForm) {
         }).then(function(res) {
             if (res.ok) {
                 intakeStatus.style.display = 'block';
-                intakeStatus.textContent = 'Got it — redirecting you to payment…';
-                setTimeout(function() {
-                    window.location.href = 'https://buy.stripe.com/5kQbJ2b930LfbIl6IGgjC0w';
-                }, 1200);
+                intakeStatus.textContent = 'Details saved — opening secure payment…';
+                pptCheckout(window.PPT_PRICES.diagnosis, email);
+                intakeSubmit.disabled = false;
+                intakeSubmit.textContent = 'Book & Pay — $100 →';
             } else {
                 intakeSubmit.disabled = false;
                 intakeSubmit.textContent = 'Book & Pay — $100 →';

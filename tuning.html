@@ -728,11 +728,12 @@
   });
 })();
 </script>
+<script src="/ppt-checkout.js"></script>
 <script>
-// Tuning booking form — submit details to Formspree then redirect to Stripe
+// Tuning booking form — submit details to Formspree then open embedded Stripe checkout
 (function() {
-    var STANDARD_LINK = 'https://buy.stripe.com/bJe3cw90VctXbIl1omgjC0u';
-    var BULK_LINK     = 'https://buy.stripe.com/28E5kE1yt51v7s5eb8gjC0v';
+    var STANDARD_PRICE = 'price_1The4pKUqvlOAPcx5t5xtN1w';
+    var BULK_PRICE     = 'price_1The4qKUqvlOAPcxeXhFVaUt';
 
     var form = document.getElementById('tuning-booking-form');
     if (!form) return;
@@ -745,10 +746,10 @@
         btn.disabled = true;
 
         var pianos = document.getElementById('t-pianos').value;
-        var stripeUrl = (pianos === '4+') ? BULK_LINK : STANDARD_LINK;
+        var priceId = (pianos === '4+') ? BULK_PRICE : STANDARD_PRICE;
 
         // Set fallback link
-        document.getElementById('stripe-fallback').href = stripeUrl;
+        // fallback handled by pptCheckout error state
 
         var data = {
             _subject:        form.querySelector('[name="_subject"]').value,
@@ -769,11 +770,11 @@
         .then(function() {
             form.style.display = 'none';
             document.getElementById('booking-success').style.display = 'block';
-            setTimeout(function() { window.location.href = stripeUrl; }, 1500);
+            setTimeout(function() { pptCheckout(priceId, email); }, 800);
         })
         .catch(function() {
             // Even if Formspree fails, still redirect to Stripe
-            window.location.href = stripeUrl;
+            pptCheckout(priceId, email);
         });
     });
 })();

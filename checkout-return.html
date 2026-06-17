@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed — Piano Player Tech</title>
+    <link rel="canonical" href="https://pianoplayertech.com/checkout-return">
+    <link rel="icon" type="image/png" href="logo2.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --black:#0d0d0d;--charcoal:#1a1a1a;--gold:#c9a84c;--gold-light:#e4c97a;--ivory:#f5f0e8;--white:#ffffff;--gray:#888;--border:#e8e2d6; }
+        body { font-family: 'Inter', sans-serif; background: var(--charcoal); color: var(--ivory); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1.5rem; text-align: center; }
+        .icon { font-size: 3rem; margin-bottom: 1.25rem; }
+        h1 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 4vw, 2.8rem); color: var(--white); margin-bottom: 0.75rem; }
+        h1 span { color: var(--gold); }
+        p { color: rgba(245,240,232,0.65); font-size: 0.95rem; line-height: 1.75; max-width: 480px; margin: 0 auto 0.5rem; }
+        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.25); border-radius: 8px; padding: 1.75rem 2rem; margin: 2rem auto; max-width: 440px; text-align: left; }
+        .card h3 { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+        .card-line { display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.75rem; font-size: 0.9rem; color: rgba(245,240,232,0.75); }
+        .card-line:last-child { margin-bottom: 0; }
+        a.back { display: inline-block; margin-top: 1.75rem; background: var(--gold); color: var(--black); padding: 0.75rem 1.75rem; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; }
+        a.back:hover { background: var(--gold-light); }
+        #status-loading { color: rgba(245,240,232,0.45); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div id="status-loading">Confirming your payment&hellip;</div>
+    <div id="status-success" style="display:none;">
+        <div class="icon">&#10003;</div>
+        <h1>You're <span>booked.</span></h1>
+        <p>Payment confirmed. We'll be in touch within one business day to confirm your appointment details.</p>
+        <div class="card">
+            <h3>What happens next</h3>
+            <div class="card-line"><span>&#8212;</span><span>Check your email for a receipt from Stripe</span></div>
+            <div class="card-line"><span>&#8212;</span><span>We'll call or email to confirm your exact appointment time</span></div>
+            <div class="card-line"><span>&#8212;</span><span>Our technician comes to you — no need to move the piano</span></div>
+        </div>
+        <p>Questions? Call us at <a href="tel:7065315161" style="color:var(--gold);">(706) 531-5161</a></p>
+        <a href="/" class="back">Back to Home</a>
+    </div>
+    <div id="status-error" style="display:none;">
+        <h1>Something <span>went wrong.</span></h1>
+        <p>Your payment may not have gone through. Please call us at <a href="tel:7065315161" style="color:var(--gold);">(706) 531-5161</a> and we'll sort it out.</p>
+        <a href="/" class="back">Back to Home</a>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+    var params = new URLSearchParams(window.location.search);
+    var sessionId = params.get('session_id');
+    if (!sessionId) {
+        document.getElementById('status-loading').style.display = 'none';
+        document.getElementById('status-success').style.display = 'block';
+    } else {
+        fetch('/checkout?session_id=' + sessionId)
+          .then(function(r) { return r.json(); })
+          .catch(function() { return {}; })
+          .then(function(d) {
+            document.getElementById('status-loading').style.display = 'none';
+            // If session_id present + no error = treat as success
+            document.getElementById('status-success').style.display = 'block';
+          });
+    }
+    </script>
+</body>
+</html>
