@@ -31,16 +31,7 @@ export async function onRequest(context) {
     custom_text: { submit: { message: 'Piano Player Tech — North Georgia' } },
     phone_number_collection: { enabled: true },
     ...(customerEmail ? { customer_email: customerEmail } : {}),
-    appearance: {
-      theme: 'night',
-      variables: {
-        colorPrimary: '#c9a84c',
-        colorBackground: '#111111',
-        colorText: '#f5f0e8',
-        fontFamily: 'Inter, -apple-system, sans-serif',
-        borderRadius: '4px',
-      },
-    },
+
   };
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
