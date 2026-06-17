@@ -93,12 +93,12 @@
         loadStripeAndMount(d.clientSecret);
       } else {
         document.getElementById('ppt-co-loading').innerHTML =
-          '<p>Something went wrong. Please call us at (706) 531-5161.</p>';
+          '<p>Something went wrong. Please call us at (470) 758-9572.</p>';
       }
     })
     .catch(function() {
       document.getElementById('ppt-co-loading').innerHTML =
-        '<p>Could not connect. Please call us at (706) 531-5161.</p>';
+        '<p>Could not connect. Please call us at (470) 758-9572.</p>';
     });
   };
 })();
