@@ -1,9 +1,9 @@
 /* PPT Stripe checkout — call pptCheckout(priceId, email) */
 (function () {
-  var PK = 'pk_test_51TjLwhB3gZVLUU4jEQ9Ao4T4NfMwsuAMtgDUuB0BKAd3OzpKUMbWH8zLPZMVSNH3IfoqP1Ey4SVlO72fWSYfBOF200hUeYR8lM';
-  var STANDARD_PRICE  = 'price_1TjM1gB3gZVLUU4jymKmZdS3';
-  var BULK_PRICE      = 'price_1TjM2JB3gZVLUU4jQl20btyU';
-  var DIAGNOSIS_PRICE = 'price_1TjM1NB3gZVLUU4jf61090zE';
+  var PK = 'pk_live_51TjLwYBmP21fsanu09EUMI42o9NF5oIu94SpjuydXrQYwTLASfSrQkcdScY9MDZHAtpJiK57nLmcwNXz0nYfNzqr00IsgUkHgv';
+  var STANDARD_PRICE  = 'price_1TjTApBmP21fsanuIfmJ93d9';
+  var BULK_PRICE      = 'price_1TjTApBmP21fsanuR2QOaYui';
+  var DIAGNOSIS_PRICE = 'price_1TjTApBmP21fsanuzzToLLl3';
 
   var LABELS = {};
   LABELS[STANDARD_PRICE]  = '$175';
