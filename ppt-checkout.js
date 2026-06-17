@@ -48,7 +48,9 @@
     // Load Stripe.js once
     function mountCheckout(clientSecret) {
       if (!stripe) stripe = Stripe(PUBLISHABLE_KEY);
-      stripe.initEmbeddedCheckout({ clientSecret: clientSecret })
+      stripe.initEmbeddedCheckout({
+        fetchClientSecret: function() { return Promise.resolve(clientSecret); }
+      })
         .then(function(co) {
           checkout = co;
           document.getElementById('ppt-co-loading').style.display = 'none';
