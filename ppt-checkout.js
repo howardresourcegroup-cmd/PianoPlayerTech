@@ -48,29 +48,16 @@
     // Load Stripe.js once
     function mountCheckout(clientSecret) {
       if (!stripe) stripe = Stripe(PUBLISHABLE_KEY);
-      var appearance = {
-        theme: 'night',
-        variables: {
-          colorPrimary: '#c9a84c',
-          colorBackground: '#111111',
-          colorText: '#f5f0e8',
-          colorTextSecondary: 'rgba(245,240,232,0.55)',
-          colorDanger: '#e05252',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          borderRadius: '4px',
-          spacingUnit: '5px',
-        },
-        rules: {
-          '.Input': { border: '1.5px solid rgba(201,168,76,0.35)', backgroundColor: '#1a1a1a' },
-          '.Input:focus': { border: '1.5px solid #c9a84c', boxShadow: 'none' },
-          '.Label': { color: 'rgba(245,240,232,0.75)', fontWeight: '500' },
-        }
-      };
-      stripe.initEmbeddedCheckout({ clientSecret: clientSecret, appearance: appearance })
+      stripe.initEmbeddedCheckout({ clientSecret: clientSecret })
         .then(function(co) {
           checkout = co;
           document.getElementById('ppt-co-loading').style.display = 'none';
           co.mount('#ppt-co-mount');
+        })
+        .catch(function(err) {
+          document.getElementById('ppt-co-loading').innerHTML =
+            '<p>Checkout failed to load. Please call us at (470) 758-9572.</p>';
+          console.error('Stripe initEmbeddedCheckout error:', err);
         });
     }
 
