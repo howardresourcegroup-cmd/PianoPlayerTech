@@ -1,9 +1,9 @@
 /* PPT embedded Stripe checkout — call pptCheckout(priceId, email) */
 (function () {
-  var PUBLISHABLE_KEY = 'pk_live_51SntOIKUqvlOAPcxuXEtYclQnSC9hx09UTj1QKnniZN6zIr8XeuO453C9eQ6JUYFKplMokljvF5RFGuoHehI6P4B00iRH0Wonz';
-  var STANDARD_PRICE  = 'price_1The4pKUqvlOAPcx5t5xtN1w';  // tuning $175
-  var BULK_PRICE      = 'price_1The4qKUqvlOAPcxeXhFVaUt';  // tuning $125
-  var DIAGNOSIS_PRICE = 'price_1The93KUqvlOAPcx1mOLTkKf';  // diagnosis $100
+  var PUBLISHABLE_KEY = 'pk_test_51TjLwhB3gZVLUU4jEQ9Ao4T4NfMwsuAMtgDUuB0BKAd3OzpKUMbWH8zLPZMVSNH3IfoqP1Ey4SVlO72fWSYfBOF200hUeYR8lM';
+  var STANDARD_PRICE  = 'price_1TjM1gB3gZVLUU4jymKmZdS3';  // tuning $175
+  var BULK_PRICE      = 'price_1TjM2JB3gZVLUU4jQl20btyU';  // tuning $125
+  var DIAGNOSIS_PRICE = 'price_1TjM1NB3gZVLUU4jf61090zE';  // diagnosis $100
 
   window.PPT_PRICES = { standard: STANDARD_PRICE, bulk: BULK_PRICE, diagnosis: DIAGNOSIS_PRICE };
 
