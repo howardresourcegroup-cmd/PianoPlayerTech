@@ -1,6 +1,6 @@
 /* PPT embedded Stripe checkout — call pptCheckout(priceId, email) */
 (function () {
-  var PUBLISHABLE_KEY = 'pk_live_REPLACE_ME';
+  var PUBLISHABLE_KEY = 'pk_live_51SntOIKUqvlOAPcxuXEtYclQnSC9hx09UTj1QKnniZN6zIr8XeuO453C9eQ6JUYFKplMokljvF5RFGuoHehI6P4B00iRH0Wonz';
   var STANDARD_PRICE  = 'price_1The4pKUqvlOAPcx5t5xtN1w';  // tuning $175
   var BULK_PRICE      = 'price_1The4qKUqvlOAPcxeXhFVaUt';  // tuning $125
   var DIAGNOSIS_PRICE = 'price_1The93KUqvlOAPcx1mOLTkKf';  // diagnosis $100
