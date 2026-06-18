@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave a Review — Piano Player Tech</title>
+    <meta name="description" content="Loved your piano tuning or player piano repair? Leave Piano Player Tech a quick review — it takes 30 seconds and helps other piano owners find us.">
+    <meta name="robots" content="noindex,follow">
+    <link rel="canonical" href="https://pianoplayertech.com/review">
+    <link rel="icon" type="image/png" href="logo2.png">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --black:#0d0d0d;--charcoal:#1a1a1a;--gold:#c9a84c;--gold-light:#e4c97a;--ivory:#f5f0e8;--white:#fff;--gray:#888;--border:#e8e2d6; }
+        html { scroll-behavior: smooth; }
+        body { font-family:'Inter',sans-serif; background:var(--ivory); color:var(--charcoal); line-height:1.7; min-height:100vh; display:flex; flex-direction:column; }
+
+        nav { background:rgba(13,13,13,0.97); display:flex; align-items:center; justify-content:space-between; padding:1rem 2.5rem; border-bottom:1px solid rgba(201,168,76,0.2); }
+        .nav-logo { font-weight:700; color:var(--gold); font-size:0.82rem; letter-spacing:0.2em; text-transform:uppercase; text-decoration:none; }
+        .nav-logo:hover { color:var(--gold-light); }
+        nav .call { color:rgba(255,255,255,0.75); text-decoration:none; font-size:0.84rem; }
+        nav .call:hover { color:var(--white); }
+
+        main { flex:1; display:flex; align-items:center; justify-content:center; padding:3.5rem 1.5rem; }
+        .card { background:var(--white); border:1px solid var(--border); border-radius:14px; max-width:560px; width:100%; padding:3rem 2.5rem; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.08); }
+        .stars { color:var(--gold); font-size:1.6rem; letter-spacing:0.25em; margin-bottom:1.25rem; }
+        .eyebrow { font-size:0.72rem; font-weight:600; letter-spacing:0.28em; text-transform:uppercase; color:var(--gold); margin-bottom:0.85rem; }
+        h1 { font-family:'DM Serif Display',serif; font-size:clamp(1.9rem,4.5vw,2.7rem); line-height:1.15; color:var(--charcoal); margin-bottom:1rem; }
+        h1 span { color:var(--gold); }
+        .lead { color:#555; font-size:1rem; max-width:420px; margin:0 auto 2rem; }
+        .review-btn { display:inline-block; background:var(--gold); color:var(--black); padding:1.05rem 2.5rem; border-radius:6px; font-weight:700; font-size:1.05rem; text-decoration:none; letter-spacing:0.02em; transition:background 0.2s, transform 0.15s; }
+        .review-btn:hover { background:var(--gold-light); transform:translateY(-2px); }
+        .sub { font-size:0.85rem; color:var(--gray); margin-top:1rem; }
+
+        .qr-wrap { margin-top:2.5rem; padding-top:2.25rem; border-top:1px solid var(--border); }
+        .qr-label { font-size:0.74rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--gray); margin-bottom:1rem; }
+        #qr { display:inline-flex; padding:14px; background:var(--white); border:1px solid var(--border); border-radius:10px; }
+        #qr img, #qr canvas { display:block; }
+        .qr-hint { font-size:0.82rem; color:var(--gray); margin-top:0.9rem; }
+        .qr-download { display:inline-block; margin-top:0.6rem; font-size:0.82rem; color:var(--gold); text-decoration:none; font-weight:600; }
+        .qr-download:hover { text-decoration:underline; }
+
+        footer { background:var(--black); color:rgba(255,255,255,0.4); text-align:center; padding:1.75rem 2rem; font-size:0.8rem; line-height:1.9; }
+        footer span { color:var(--gold); }
+        footer a { color:rgba(255,255,255,0.5); text-decoration:none; }
+        footer a:hover { color:var(--gold); }
+
+        @media print {
+            nav, footer, .review-btn, .sub, .lead .alt { display:none !important; }
+            body { background:#fff; }
+            .card { box-shadow:none; border:none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="/" class="nav-logo">Piano Player Tech</a>
+    <a href="tel:4707589572" class="call">(470) 758-9572</a>
+</nav>
+
+<main>
+    <div class="card">
+        <div class="stars">★ ★ ★ ★ ★</div>
+        <p class="eyebrow">Thank You</p>
+        <h1>How did we <span>do?</span></h1>
+        <p class="lead">If we got your piano sounding right, a quick review means the world — and it helps other piano owners in the area find us. It takes about 30 seconds.</p>
+
+        <a id="review-link" href="#" class="review-btn" target="_blank" rel="noopener">Leave a Google Review →</a>
+        <p class="sub">You'll be taken straight to our Google review form.</p>
+
+        <div class="qr-wrap">
+            <p class="qr-label">Or scan with your phone</p>
+            <div id="qr"></div>
+            <p class="qr-hint">Point your camera here to open the review form.</p>
+            <a id="qr-download" class="qr-download" href="#" download="piano-player-tech-review-qr.png">Download QR code</a>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2026 <span>Piano Player Tech</span> &nbsp;|&nbsp;
+        <a href="tel:4707589572">(470) 758-9572</a> &nbsp;&middot;&nbsp;
+        <a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a> &nbsp;&middot;&nbsp;
+        <a href="/">pianoplayertech.com</a>
+    </p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@master/qrcode.min.js"></script>
+<script>
+(function () {
+    // ⬇️  PASTE THE GOOGLE BUSINESS PROFILE REVIEW LINK HERE  ⬇️
+    //  Get it: Google Business Profile → "Ask for reviews" → copy the short link (looks like https://g.page/r/XXXX/review)
+    var REVIEW_URL = 'REPLACE_WITH_GOOGLE_REVIEW_LINK';
+
+    var link = document.getElementById('review-link');
+    var ready = REVIEW_URL && REVIEW_URL.indexOf('REPLACE_WITH') === -1;
+
+    if (ready) {
+        link.href = REVIEW_URL;
+    } else {
+        link.textContent = 'Review link coming soon';
+        link.style.opacity = '0.5';
+        link.style.pointerEvents = 'none';
+    }
+
+    // Render QR code
+    try {
+        var qr = new QRCode(document.getElementById('qr'), {
+            text: ready ? REVIEW_URL : 'https://pianoplayertech.com/review',
+            width: 200, height: 200,
+            colorDark: '#1a1a1a', colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        // Wire the download link to the generated QR canvas/img
+        setTimeout(function () {
+            var canvas = document.querySelector('#qr canvas');
+            var dl = document.getElementById('qr-download');
+            if (canvas && dl) {
+                try { dl.href = canvas.toDataURL('image/png'); }
+                catch (e) { dl.style.display = 'none'; }
+            } else if (dl) {
+                dl.style.display = 'none';
+            }
+        }, 300);
+    } catch (e) {
+        document.querySelector('.qr-wrap').style.display = 'none';
+    }
+})();
+</script>
+</body>
+</html>
