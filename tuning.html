@@ -206,6 +206,11 @@
 
         /* CONTACT */
         #contact { background: var(--white); }
+        .calendar-callout { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; background: var(--ivory); border: 1px solid rgba(201,168,76,0.4); border-radius: 10px; padding: 1.5rem 2rem; margin-bottom: 2.75rem; }
+        .calendar-callout h3 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--charcoal); margin-bottom: 0.25rem; }
+        .calendar-callout p { font-size: 0.9rem; color: var(--gray); margin: 0; max-width: 460px; }
+        .calendar-callout .btn-primary { flex-shrink: 0; }
+        @media (max-width: 600px) { .calendar-callout { flex-direction: column; align-items: flex-start; } }
         .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
         .contact-item { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.65rem; }
         .contact-icon { width: 42px; height: 42px; background: var(--ivory); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; border: 1px solid var(--border); }
@@ -406,8 +411,8 @@
             <span class="hero-badge">In-home service</span>
         </div>
         <div class="hero-buttons">
-            <a href="tel:4707589572" class="btn-primary">Call (470) 758-9572</a>
-            <a href="#contact" class="btn-secondary">Request a Tuning</a>
+            <a href="https://calendar.app.google/cpSXEyKxxxmE69HU8" target="_blank" rel="noopener" class="btn-primary">Book a Time on Our Calendar</a>
+            <a href="tel:4707589572" class="btn-secondary">Call (470) 758-9572</a>
         </div>
     </div>
 </section>
@@ -621,6 +626,13 @@
 <!-- CONTACT -->
 <section id="contact">
     <div class="section-inner">
+        <div class="calendar-callout">
+            <div>
+                <h3>Prefer to pick your own time?</h3>
+                <p>See Christian's live availability and grab a tuning slot directly — no waiting on a callback.</p>
+            </div>
+            <a href="https://calendar.app.google/cpSXEyKxxxmE69HU8" target="_blank" rel="noopener" class="btn-primary">View Calendar &amp; Book &rarr;</a>
+        </div>
         <div class="contact-grid">
             <div class="contact-info">
                 <p class="section-label">Book a Tuning</p>
@@ -732,9 +744,6 @@
 <script>
 // Tuning booking form — submit details to Formspree then open embedded Stripe checkout
 (function() {
-    var STANDARD_PRICE = 'price_1The4pKUqvlOAPcx5t5xtN1w';
-    var BULK_PRICE     = 'price_1The4qKUqvlOAPcxeXhFVaUt';
-
     var form = document.getElementById('tuning-booking-form');
     if (!form) return;
 
@@ -746,16 +755,15 @@
         btn.disabled = true;
 
         var pianos = document.getElementById('t-pianos').value;
-        var priceId = (pianos === '4+') ? BULK_PRICE : STANDARD_PRICE;
-
-        // Set fallback link
-        // fallback handled by pptCheckout error state
+        var P = window.PPT_PRICES || {};
+        var priceId = (pianos === '4+') ? P.bulk : P.standard;
+        var email = document.getElementById('t-email').value;
 
         var data = {
             _subject:        form.querySelector('[name="_subject"]').value,
             service_type:    form.querySelector('[name="service_type"]').value,
             name:            document.getElementById('t-name').value,
-            email:           document.getElementById('t-email').value,
+            email:           email,
             phone:           document.getElementById('t-phone').value,
             pianos:          pianos,
             preferred_dates: document.getElementById('t-dates').value,
@@ -773,7 +781,7 @@
             setTimeout(function() { pptCheckout(priceId, email); }, 800);
         })
         .catch(function() {
-            // Even if Formspree fails, still redirect to Stripe
+            // Even if Formspree fails, still open checkout
             pptCheckout(priceId, email);
         });
     });
