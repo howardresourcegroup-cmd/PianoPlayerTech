@@ -492,7 +492,7 @@
                 <div class="price-line"><span>Voicing</span><strong>$100/hr</strong></div>
                 <div class="price-line"><span>In-home service</span><strong>Included</strong></div>
                 <p class="pricing-note">Pricing is per piano. Travel within metro Atlanta and North Georgia included.</p>
-                <a href="#contact" class="pricing-btn">Book &amp; Pay — $150 &rarr;</a>
+                <a href="#contact" class="pricing-btn">Book a Tuning &rarr;</a>
             </div>
             <div class="pricing-card bulk">
                 <div class="pricing-badge">Best Value</div>
@@ -507,7 +507,7 @@
                 <div class="price-line"><span>Voicing</span><strong>$75/hr</strong></div>
                 <div class="price-line"><span>Minimum for bulk rate</span><strong>4 pianos</strong></div>
                 <p class="pricing-note">Can be split across multiple visits while keeping bulk rate.</p>
-                <a href="#contact" class="pricing-btn pricing-btn--gold">Book &amp; Pay — $125/piano &rarr;</a>
+                <a href="#contact" class="pricing-btn pricing-btn--gold">Book a Tuning &rarr;</a>
             </div>
         </div>
     </div>
@@ -655,8 +655,8 @@
         <div class="contact-grid">
             <div class="contact-info">
                 <p class="section-label">Book a Tuning</p>
-                <h2 class="section-title">Book &amp; Pay in One Step</h2>
-                <p style="color:var(--gray);font-size:0.93rem;line-height:1.7;margin-bottom:1.5rem;">Fill in your details and preferred times, then complete payment on the next screen. Christian will confirm your exact appointment within 24 hours based on his availability.</p>
+                <h2 class="section-title">Book Your Tuning</h2>
+                <p style="color:var(--gray);font-size:0.93rem;line-height:1.7;margin-bottom:1.5rem;">Pick a time on the calendar above, or send your details below — Christian will confirm your appointment within one business day. No payment now; you pay after your tuning.</p>
                 <div class="contact-item">
                     <div class="contact-icon">—</div>
                     <div><h4>Rates</h4><p>$150 June special <s style="opacity:0.6;">$175</s> (1–3 pianos) &nbsp;|&nbsp; $125/piano bulk (4+)</p></div>
@@ -674,8 +674,8 @@
             <div class="contact-form-wrap">
                 <h3>Book a Tuning</h3>
                 <div id="booking-success" style="display:none;padding:1.5rem;background:#f0faf0;border-radius:6px;text-align:center;">
-                    <p style="font-weight:600;color:#2d6a2d;margin-bottom:0.5rem;">Details saved — redirecting to payment...</p>
-                    <p style="font-size:0.85rem;color:#555;">If you are not redirected automatically, <a id="stripe-fallback" href="#" style="color:var(--gold)">click here</a>.</p>
+                    <p style="font-weight:600;color:#2d6a2d;margin-bottom:0.5rem;">Thanks — your request is in.</p>
+                    <p style="font-size:0.85rem;color:#555;">Christian will reach out within one business day to confirm your appointment. You'll pay after the tuning.</p>
                 </div>
                 <form id="tuning-booking-form">
                     <input type="hidden" name="_subject" value="New Tuning Booking — PianoPlayerTech">
@@ -698,7 +698,7 @@
                     <input type="text" id="t-dates" name="preferred_dates" placeholder="e.g. weekday mornings, any Saturday in July" required>
                     <label for="t-notes">Anything else we should know? <span style="font-weight:400;color:var(--gray)">(optional)</span></label>
                     <textarea id="t-notes" name="notes" placeholder="Piano make/model, address, last tuned, etc."></textarea>
-                    <button type="submit" id="booking-submit-btn">Book &amp; Pay →</button>
+                    <button type="submit" id="booking-submit-btn">Request a Tuning →</button>
                 </form>
             </div>
         </div>
@@ -760,36 +760,26 @@
   });
 })();
 </script>
-<script src="/ppt-checkout.js"></script>
 <script>
-// Tuning booking form — submit details to Formspree then open embedded Stripe checkout
+// Tuning booking request — submit details to Formspree (no payment; client pays after the tuning)
 (function() {
     var form = document.getElementById('tuning-booking-form');
     if (!form) return;
-
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-
         var btn = document.getElementById('booking-submit-btn');
-        btn.textContent = 'Saving details...';
+        btn.textContent = 'Sending...';
         btn.disabled = true;
-
-        var pianos = document.getElementById('t-pianos').value;
-        var P = window.PPT_PRICES || {};
-        var priceId = (pianos === '4+') ? P.bulk : P.standard;
-        var email = document.getElementById('t-email').value;
-
         var data = {
             _subject:        form.querySelector('[name="_subject"]').value,
             service_type:    form.querySelector('[name="service_type"]').value,
             name:            document.getElementById('t-name').value,
-            email:           email,
+            email:           document.getElementById('t-email').value,
             phone:           document.getElementById('t-phone').value,
-            pianos:          pianos,
+            pianos:          document.getElementById('t-pianos').value,
             preferred_dates: document.getElementById('t-dates').value,
             notes:           document.getElementById('t-notes').value
         };
-
         fetch('https://formspree.io/f/mnjlobjg', {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -798,11 +788,11 @@
         .then(function() {
             form.style.display = 'none';
             document.getElementById('booking-success').style.display = 'block';
-            setTimeout(function() { pptCheckout(priceId, email); }, 800);
         })
         .catch(function() {
-            // Even if Formspree fails, still open checkout
-            pptCheckout(priceId, email);
+            btn.textContent = 'Request a Tuning \u2192';
+            btn.disabled = false;
+            alert('Something went wrong — please call us at (470) 758-9572.');
         });
     });
 })();
