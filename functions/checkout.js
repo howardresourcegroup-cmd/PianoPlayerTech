@@ -31,11 +31,19 @@ export async function onRequest(context) {
     return json({ error: price.error?.message || 'Could not load price' }, 400);
   }
 
+  // June 2026 promo — standard tuning drops to $150. Auto-reverts July 1 (UTC) with no action needed.
+  const STANDARD_TUNING = 'price_1TjTApBmP21fsanuIfmJ93d9';
+  const now = new Date();
+  const isJune2026 = now.getUTCFullYear() === 2026 && now.getUTCMonth() === 5; // month 5 = June
+  const promoApplied = isJune2026 && priceId === STANDARD_TUNING;
+  const amount = promoApplied ? 15000 : price.unit_amount;
+
   const payload = {
-    amount: price.unit_amount,
+    amount: amount,
     currency: price.currency,
     'automatic_payment_methods[enabled]': 'true',
     'metadata[priceId]': priceId,
+    ...(promoApplied ? { 'metadata[promo]': 'june2026-150' } : {}),
     ...(customerEmail ? { receipt_email: customerEmail } : {}),
   };
 
