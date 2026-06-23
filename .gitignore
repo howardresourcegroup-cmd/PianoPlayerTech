@@ -3,3 +3,9 @@
 *.html.tmp
 Images/**/*.html
 Images/**/*_files/
+
+# Internal business docs — never publish
+PianoPlayerTech-Contractor-Agreement-Christian.md
+PianoPlayerTech-Contractor-Agreement-Christian.docx
+PianoPlayerTech-Payout-Log.csv
+PianoPlayerTech-Workflow.md
