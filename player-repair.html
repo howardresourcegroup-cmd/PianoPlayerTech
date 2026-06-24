@@ -186,6 +186,20 @@
         footer a { color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
         footer a:hover { color: var(--gold); }
     </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type":"Question","name":"How much does it cost to repair a player piano system?","acceptedAnswer":{"@type":"Answer","text":"Every system is different, so we don't quote costs sight-unseen. The in-home diagnosis is $100 flat — at the end you'll know exactly what's wrong and what repair will cost. Repair labor is $125/hour with a written estimate before we start. A power supply replacement or driver board repair might run 1–3 hours. Multi-component failures take more. Parts are billed at cost on top of labor."}},
+        {"@type":"Question","name":"Do you work on Yamaha Disklavier pianos?","acceptedAnswer":{"@type":"Answer","text":"Yes — Disklavier is one of the most common systems we service. We work on all generations: Mark II (floppy drive era), Mark III and IV (CD), and current ENSPIRE models. Power supply failures and solenoid calibration are the most frequent issues in older units."}},
+        {"@type":"Question","name":"My Steinway Spirio won't connect to the app. Is that a repair?","acceptedAnswer":{"@type":"Answer","text":"Often it's a firmware or network configuration issue — not hardware. We'll diagnose on-site and determine whether it's a software fix or a component failure. Spirio systems also require periodic calibration; heavy use accelerates wear and can cause the system to shut down as a protective measure."}},
+        {"@type":"Question","name":"Can you upgrade an older player system to work with streaming or USB?","acceptedAnswer":{"@type":"Answer","text":"In many cases, yes. Older Disklavier and QRS units can have their floppy or CD drives replaced with USB adapters. Some systems support full controller upgrades. We'll assess what's available for your specific model during the diagnosis visit."}},
+        {"@type":"Question","name":"Do I need to move the piano for repair?","acceptedAnswer":{"@type":"Answer","text":"No. All diagnosis and most repair work is done in-home, right where the piano sits. Moving a grand piano is expensive and risky — we come to you and work on-site."}},
+        {"@type":"Question","name":"How do I get started with a player piano repair?","acceptedAnswer":{"@type":"Answer","text":"Fill out the intake form on our player repair page with your system details and we'll follow up to confirm your appointment. Or call us at (470) 758-9572 to talk it through first."}}
+      ]
+    }
+    </script>
 </head>
 <body>
 
@@ -467,6 +481,7 @@
                     <div><h4>Response Time</h4><p>We'll call to verify within 30 minutes to an hour</p></div>
                 </div>
                 <a href="tel:4707589572" class="diagnosis-cta" style="margin-top:1.5rem;">Prefer to call? (470) 758-9572</a>
+                <p class="repair-call-note" style="margin-top:0.75rem;font-size:0.85rem;opacity:0.75;line-height:1.5;">Player piano repair is scheduled by phone &mdash; give us a call.</p>
             </div>
             <div class="contact-form-wrap">
                 <h3>Book Your Diagnosis — $100</h3>
@@ -500,7 +515,7 @@
         <a href="tel:4707589572">(470) 758-9572</a> &nbsp;&middot;&nbsp;
         <a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a> &nbsp;&middot;&nbsp;
         <a href="/">pianoplayertech.com</a> &nbsp;&middot;&nbsp;
-        <a href="/piano-cleaning.html">Piano Cleaning</a> &nbsp;&middot;&nbsp; <a href="/piano-teachers.html">For Piano Teachers</a> &nbsp;&middot;&nbsp; <a href="/review">Leave a Review</a> &nbsp;&middot;&nbsp;
+        <a href="/piano-tuning-cost.html">Piano Tuning Cost</a> &nbsp;&middot;&nbsp; <a href="/piano-cleaning.html">Piano Cleaning</a> &nbsp;&middot;&nbsp; <a href="/piano-teachers.html">For Piano Teachers</a> &nbsp;&middot;&nbsp; <a href="/review">Leave a Review</a> &nbsp;&middot;&nbsp;
         <a href="https://howardresourcegroup.com/websites.html" target="_blank" rel="noopener">Website by Howard Resource Group</a>
     </p>
 </footer>
@@ -559,5 +574,6 @@ if (intakeForm) {
 }
 </script>
 
+    <script src="/ppt-tracking.js"></script>
 </body>
 </html>
