@@ -244,7 +244,7 @@
             <span class="hero-badge">All makes &amp; brands</span>
         </div>
         <div class="hero-buttons">
-            <a href="#contact" class="btn-primary">Book Player System Diagnosis — $100</a>
+            <a href="#contact" class="btn-primary">Book a Player System Diagnosis</a>
             <a href="#contact" class="btn-secondary">Contact Us First</a>
         </div>
     </div>
@@ -403,7 +403,7 @@
             <div class="price-card">
                 <h3>In-Home Diagnosis</h3>
                 <div class="amount">$100 <span>flat rate</span></div>
-                <p>Full assessment of your player system, on-site. Includes a written explanation of the problem and a repair estimate. Paid upfront to book your visit.</p>
+                <p>Full assessment of your player system, on-site. Includes a written explanation of the problem and a repair estimate. Paid after the diagnosis — or rolled into the repair if you go ahead.</p>
             </div>
             <div class="price-card">
                 <h3>Repair Labor</h3>
@@ -463,7 +463,7 @@
             <div class="contact-info">
                 <p class="section-label">Get Started</p>
                 <h2 class="section-title">Tell Us About Your System</h2>
-                <p>Fill out the form with your system make, model, and what it's doing, then pay the $100 diagnosis. Someone will call you within the next 30 minutes to an hour to verify your details and set up a time. Any repair work is billed after it's done.</p>
+                <p>Fill out the form with your system make, model, and what it's doing. Someone will call you within the next 30 minutes to an hour to verify your details and set up a time. The $100 diagnosis is paid after the visit — or rolled into the repair — and any repair work is billed after it's done.</p>
                 <div class="contact-detail">
                     <div class="contact-detail-icon">—</div>
                     <div><h4>Phone</h4><a href="tel:4707589572">(470) 758-9572</a></div>
@@ -484,8 +484,8 @@
                 <p class="repair-call-note" style="margin-top:0.75rem;font-size:0.85rem;opacity:0.75;line-height:1.5;">Player piano repair is scheduled by phone &mdash; give us a call.</p>
             </div>
             <div class="contact-form-wrap">
-                <h3>Book Your Diagnosis — $100</h3>
-                <p style="font-size:0.85rem;color:var(--gray);margin-bottom:1rem;line-height:1.65;">Tell us about your system, then pay the $100 diagnosis. We'll call within 30 min–1 hr to verify and schedule. Repair work is billed after it's done.</p>
+                <h3>Book Your Diagnosis</h3>
+                <p style="font-size:0.85rem;color:var(--gray);margin-bottom:1rem;line-height:1.65;">Tell us about your system and we'll call within 30 min–1 hr to verify and schedule. The $100 diagnosis is paid after the visit (or rolled into the repair), and any repair work is billed after it's done.</p>
                 <form id="diagnosis-intake">
                     <input type="hidden" name="_subject" value="Player Piano Diagnosis Booking — PianoPlayerTech">
                     <input type="hidden" name="service_type" value="Player Piano Diagnosis — $100">
@@ -501,7 +501,7 @@
                     <input type="text" id="c-system" name="system" placeholder="e.g. Yamaha Disklavier Mark III, QRS CD2000" required>
                     <label for="c-issue">What's it doing?</label>
                     <textarea id="c-issue" name="issue" placeholder="Describe the problem — what happens when you turn it on, what's missing, any error lights or sounds. The more detail, the better." required></textarea>
-                    <button type="submit" id="intake-submit">Book &amp; Pay — $100 →</button>
+                    <button type="submit" id="intake-submit">Request My Diagnosis →</button>
                 </form>
                 <p id="intake-status" style="display:none;margin-top:0.75rem;font-size:0.85rem;color:var(--gray);"></p>
             </div>
@@ -520,7 +520,6 @@
     </p>
 </footer>
 
-<script src="/ppt-checkout.js"></script>
 <script>
 var btn = document.getElementById('navToggle');
 var nav = document.getElementById('mobileNav');
@@ -544,29 +543,26 @@ if (intakeForm) {
     intakeForm.addEventListener('submit', function(e) {
         e.preventDefault();
         intakeSubmit.disabled = true;
-        intakeSubmit.textContent = 'One moment…';
+        intakeSubmit.textContent = 'Sending…';
         var data = new FormData(intakeForm);
-        var email = data.get('email') || '';
         fetch('https://formspree.io/f/mnjlobjg', {
             method: 'POST',
             body: data,
             headers: { 'Accept': 'application/json' }
         }).then(function(res) {
             if (res.ok) {
+                intakeForm.style.display = 'none';
                 intakeStatus.style.display = 'block';
-                intakeStatus.textContent = 'Details saved — opening secure payment…';
-                pptCheckout(window.PPT_PRICES.diagnosis, email);
-                intakeSubmit.disabled = false;
-                intakeSubmit.textContent = 'Book & Pay — $100 →';
+                intakeStatus.textContent = "Got it — we'll call you within 30 min–1 hr to verify your details and set up a time. The $100 diagnosis is paid after the visit (or with the repair).";
             } else {
                 intakeSubmit.disabled = false;
-                intakeSubmit.textContent = 'Book & Pay — $100 →';
+                intakeSubmit.textContent = 'Request My Diagnosis →';
                 intakeStatus.style.display = 'block';
                 intakeStatus.textContent = 'Something went wrong — please call us at (470) 758-9572.';
             }
         }).catch(function() {
             intakeSubmit.disabled = false;
-            intakeSubmit.textContent = 'Book & Pay — $100 →';
+            intakeSubmit.textContent = 'Request My Diagnosis →';
             intakeStatus.style.display = 'block';
             intakeStatus.textContent = 'Could not connect — please call us at (470) 758-9572.';
         });
