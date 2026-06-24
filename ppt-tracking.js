@@ -11,7 +11,7 @@
 (function () {
   window.PPT_CONV = window.PPT_CONV || {
     lead: 'AW-18254090927/XVSRCPr89MQcEK-lnYBE', // "Submit lead form" conversion
-    call: 'AW-18254090927/REPLACE_WITH_CALL_LABEL'  // "Phone call clicks" conversion
+    call: 'AW-18254090927/K0HlCPu8icUcEK-lnYBE'  // "Phone call clicks" conversion
   };
 
   function fire(sendTo) {
