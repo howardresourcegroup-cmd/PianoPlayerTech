@@ -551,9 +551,7 @@ if (intakeForm) {
             headers: { 'Accept': 'application/json' }
         }).then(function(res) {
             if (res.ok) {
-                intakeForm.style.display = 'none';
-                intakeStatus.style.display = 'block';
-                intakeStatus.textContent = "Got it — we'll call you within 30 min–1 hr to verify your details and set up a time. The $100 diagnosis is paid after the visit (or with the repair).";
+                window.location = '/thank-you';
             } else {
                 intakeSubmit.disabled = false;
                 intakeSubmit.textContent = 'Request My Diagnosis →';
