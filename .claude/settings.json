@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(perl -i -pe 's{formspree\\\\.io/f/mnjlobjg}{formspree.io/f/xzdlraeq}g' index.html)",
+      "Bash(perl -i -pe 's{formspree\\\\.io/f/mnjlobjg}{formspree.io/f/xeebglab}g' piano-repair.html)",
+      "Bash(perl -i -pe 's{\\(method=\"POST\">\\)}{$1\\\\n                    <input type=\"hidden\" name=\"_next\" value=\"https://pianoplayertech.com/thank-you\">}' index.html piano-tuning-atlanta.html piano-tuning-marietta-ga.html piano-tuning-cumming-ga.html piano-tuning-gainesville-ga.html disklavier-repair.html pianodisc-repair.html qrs-repair.html spirio-repair.html)"
+    ]
+  }
+}
