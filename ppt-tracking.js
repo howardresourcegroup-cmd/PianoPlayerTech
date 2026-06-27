@@ -29,6 +29,9 @@
   // Lead form submit — capture phase so it fires even when a handler
   // calls preventDefault() (e.g. the AJAX fetch forms).
   document.addEventListener('submit', function (e) {
-    if (e.target && e.target.tagName === 'FORM') fire(window.PPT_CONV.lead);
+    var f = e.target;
+    if (f && f.tagName === 'FORM' && !f.hasAttribute('data-no-conversion')) {
+      fire(window.PPT_CONV.lead);
+    }
   }, true);
 })();

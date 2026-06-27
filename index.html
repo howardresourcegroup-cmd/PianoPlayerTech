@@ -849,6 +849,39 @@
         .join-cta p { color: rgba(255,255,255,0.7); font-size: 0.92rem; line-height: 1.65; }
         .join-cta strong { color: var(--gold); }
 
+        .apply-wrap {
+            margin-top: 2rem;
+            background: var(--white);
+            border-radius: 10px;
+            padding: 2.5rem;
+            max-width: 640px;
+            scroll-margin-top: 90px;
+        }
+        .apply-wrap h3 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.55rem;
+            color: var(--charcoal);
+            margin-bottom: 1.5rem;
+        }
+        .apply-wrap form select {
+            width: 100%;
+            padding: 0.72rem 1rem;
+            border: 1.5px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.92rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--white);
+            color: var(--charcoal);
+            margin-bottom: 1rem;
+            transition: border-color 0.2s;
+        }
+        .apply-wrap form select:focus { outline: none; border-color: var(--gold); }
+        .apply-success { display: none; text-align: center; padding: 1rem 0; }
+        .apply-success.show { display: block; }
+        .apply-success strong { display: block; font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--charcoal); margin-bottom: 0.75rem; }
+        .apply-success p { color: #555; font-size: 0.95rem; line-height: 1.7; }
+        .apply-success a { color: var(--gold); font-weight: 600; text-decoration: none; }
+
         /* ── MOBILE CALL BAR ── */
         .mobile-call-bar {
             display: none;
@@ -1376,9 +1409,48 @@
         <div class="join-cta">
             <div>
                 <p><strong>Interested in joining the team?</strong></p>
-                <p>Send us a message — tell us about your background, what you know, and what you're looking for. No formal application required.</p>
+                <p>Tell us about your background, what you know, and what you're looking for. No formal resume required — just fill out the form and we'll be in touch.</p>
             </div>
-            <a href="mailto:info@pianoplayertech.com?subject=Technician%20Application" class="btn-primary">Send an Introduction</a>
+            <a href="#apply" class="btn-primary">Apply Now</a>
+        </div>
+
+        <div class="apply-wrap" id="apply">
+            <h3>Apply to Join Our Team</h3>
+            <form id="apply-form" action="https://formspree.io/f/xeebglab" method="POST" data-no-conversion>
+                <input type="hidden" name="_subject" value="New Technician Application — PianoPlayerTech">
+                <input type="hidden" name="form_type" value="Technician Application">
+
+                <label for="apply-name">Name</label>
+                <input type="text" id="apply-name" name="name" placeholder="Your name" required>
+
+                <label for="apply-email">Email</label>
+                <input type="email" id="apply-email" name="email" placeholder="your@email.com" required>
+
+                <label for="apply-phone">Phone</label>
+                <input type="tel" id="apply-phone" name="phone" placeholder="(706) 000-0000">
+
+                <label for="apply-location">Where are you based?</label>
+                <input type="text" id="apply-location" name="location" placeholder="City / area in North Georgia">
+
+                <label for="apply-experience">Your experience</label>
+                <select id="apply-experience" name="experience">
+                    <option value="">Select one…</option>
+                    <option>Experienced piano / player piano technician</option>
+                    <option>Registered Piano Technician (RPT)</option>
+                    <option>Mechanically skilled, new to pianos</option>
+                    <option>Apprentice — eager to learn</option>
+                    <option>Other</option>
+                </select>
+
+                <label for="apply-message">Tell us about your background</label>
+                <textarea id="apply-message" name="message" placeholder="What you've worked on, what you know, and what you're looking for." required></textarea>
+
+                <button type="submit">Submit Application →</button>
+            </form>
+            <div class="apply-success" id="apply-success">
+                <strong>Thanks — your application is in.</strong>
+                <p>We've received your details and we'll reach out personally to talk it through. In the meantime, feel free to call us at <a href="tel:4707589572">(470) 758-9572</a>.</p>
+            </div>
         </div>
     </div>
 </section>
@@ -1481,6 +1553,33 @@
       menu.classList.remove('open');
       btn.classList.remove('open');
       btn.setAttribute('aria-expanded', 'false');
+    });
+  });
+})();
+
+// Technician application — AJAX submit with inline success
+(function(){
+  var form = document.getElementById('apply-form');
+  if (!form) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'Accept': 'application/json' }
+    }).then(function(res){
+      if (res.ok) {
+        form.style.display = 'none';
+        document.getElementById('apply-success').classList.add('show');
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = 'Submit Application →'; }
+        alert('Something went wrong. Please call us at (470) 758-9572.');
+      }
+    }).catch(function(){
+      if (btn) { btn.disabled = false; btn.textContent = 'Submit Application →'; }
+      alert('Something went wrong. Please call us at (470) 758-9572.');
     });
   });
 })();
