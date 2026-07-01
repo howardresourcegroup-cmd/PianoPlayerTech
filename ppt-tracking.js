@@ -26,11 +26,42 @@
     if (a) fire(window.PPT_CONV.call);
   });
 
+  // Lead capture -> Airtable (via the /api/lead Pages Function, which holds
+  // the Airtable token server-side). Uses sendBeacon so the write survives
+  // the page navigation that native (non-AJAX) form submits trigger. It is
+  // fire-and-forget and wrapped in try/catch, so it can never block or break
+  // the Formspree submission. Add data-no-airtable to a form to skip it.
+  function toAirtable(form) {
+    try {
+      if (!form || form.hasAttribute('data-no-airtable')) return;
+      var fields = {};
+      new FormData(form).forEach(function (value, key) {
+        // Skip Formspree meta/honeypot fields (_subject, _next, _gotcha…) and blanks.
+        if (key && key.charAt(0) !== '_' && String(value).trim() !== '') {
+          fields[key] = value;
+        }
+      });
+      var payload = {
+        source: (location.pathname || '/') + (form.id ? ' #' + form.id : ''),
+        page: location.href,
+        fields: fields
+      };
+      var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/lead', blob);
+      } else {
+        fetch('/api/lead', { method: 'POST', body: blob, keepalive: true }).catch(function () {});
+      }
+    } catch (err) { /* never let lead capture affect the form */ }
+  }
+
   // Lead form submit — capture phase so it fires even when a handler
   // calls preventDefault() (e.g. the AJAX fetch forms).
   document.addEventListener('submit', function (e) {
     var f = e.target;
-    if (f && f.tagName === 'FORM' && !f.hasAttribute('data-no-conversion')) {
+    if (!f || f.tagName !== 'FORM') return;
+    toAirtable(f);
+    if (!f.hasAttribute('data-no-conversion')) {
       fire(window.PPT_CONV.lead);
     }
   }, true);
