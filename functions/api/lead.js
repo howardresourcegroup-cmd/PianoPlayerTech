@@ -29,7 +29,7 @@ export async function onRequestGet(context) {
     hasToken: Boolean(env.AIRTABLE_TOKEN),
     tokenLen: env.AIRTABLE_TOKEN ? String(env.AIRTABLE_TOKEN).length : 0,
     hasBaseId: Boolean(env.AIRTABLE_BASE_ID),
-    baseIdPrefix: env.AIRTABLE_BASE_ID ? String(env.AIRTABLE_BASE_ID).slice(0, 3) : '',
+    baseId: env.AIRTABLE_BASE_ID ? String(env.AIRTABLE_BASE_ID) : '',
     table: env.AIRTABLE_TABLE || 'Leads (default)'
   };
   if (env.AIRTABLE_TOKEN && env.AIRTABLE_BASE_ID) {
