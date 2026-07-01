@@ -21,6 +21,43 @@
 // Until the env vars are set the endpoint no-ops with 204, so shipping this
 // never affects the live forms.
 
+// Temporary diagnostic: read the Leads table schema and report the options
+// for single-select fields (so we can map service_type -> "Type"). Remove
+// once the mapping is set. Requires the token to have schema.bases:read.
+export async function onRequestGet(context) {
+  const { env } = context;
+  const out = {};
+  try {
+    const res = await fetch(
+      `https://api.airtable.com/v0/meta/bases/${env.AIRTABLE_BASE_ID}/tables`,
+      { headers: { Authorization: `Bearer ${env.AIRTABLE_TOKEN}` } }
+    );
+    out.status = res.status;
+    if (!res.ok) {
+      out.body = (await res.text()).slice(0, 400);
+    } else {
+      const data = await res.json();
+      const wanted = (env.AIRTABLE_TABLE || 'Leads').toLowerCase();
+      const table = (data.tables || []).find((t) => t.name.toLowerCase() === wanted);
+      out.fields = table
+        ? table.fields.map((f) => ({
+            name: f.name,
+            type: f.type,
+            choices: f.options && f.options.choices
+              ? f.options.choices.map((c) => c.name)
+              : undefined
+          }))
+        : `table "${wanted}" not found`;
+    }
+  } catch (e) {
+    out.threw = String(e);
+  }
+  return new Response(JSON.stringify(out), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
