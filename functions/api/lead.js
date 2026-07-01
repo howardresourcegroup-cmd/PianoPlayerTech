@@ -21,68 +21,6 @@
 // Until the env vars are set the endpoint no-ops with 204, so shipping this
 // never affects the live forms.
 
-// Temporary diagnostic: GET /api/lead reports whether the runtime can see the
-// env vars, WITHOUT leaking the token. Remove once Airtable is confirmed.
-export async function onRequestGet(context) {
-  const { env, request } = context;
-  const wantWrite = new URL(request.url).searchParams.get('write') === '1';
-  const out = {
-    hasToken: Boolean(env.AIRTABLE_TOKEN),
-    tokenLen: env.AIRTABLE_TOKEN ? String(env.AIRTABLE_TOKEN).length : 0,
-    hasBaseId: Boolean(env.AIRTABLE_BASE_ID),
-    baseId: env.AIRTABLE_BASE_ID ? String(env.AIRTABLE_BASE_ID) : '',
-    table: env.AIRTABLE_TABLE || 'Leads (default)'
-  };
-  if (env.AIRTABLE_TOKEN && env.AIRTABLE_BASE_ID) {
-    out.baseIdLen = String(env.AIRTABLE_BASE_ID).length;
-    const candidates = [env.AIRTABLE_TABLE || 'Leads', 'Leads', 'LEADS', 'leads', 'Table 1'];
-    out.probes = [];
-    for (const name of candidates) {
-      try {
-        const url = `https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/${encodeURIComponent(name)}?maxRecords=1`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${env.AIRTABLE_TOKEN}` } });
-        out.probes.push({ table: name, status: res.status });
-      } catch (e) {
-        out.probes.push({ table: name, threw: String(e) });
-      }
-    }
-
-    if (wantWrite) {
-      try {
-        const table = encodeURIComponent(env.AIRTABLE_TABLE || 'Leads');
-        const url = `https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/${table}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${env.AIRTABLE_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            records: [{
-              fields: {
-                Name: 'Diag Write — delete me',
-                Email: 'test@pianoplayertech.com',
-                Phone: '470-000-0000',
-                Message: 'Diagnostic write. Safe to delete.',
-                Source: 'diagnostic ?write=1',
-                Details: 'Diagnostic write. Safe to delete.'
-              }
-            }],
-            typecast: true
-          })
-        });
-        out.writeTest = { status: res.status, body: (await res.text()).slice(0, 500) };
-      } catch (e) {
-        out.writeTest = { threw: String(e) };
-      }
-    }
-  }
-  return new Response(JSON.stringify(out), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}
-
 export async function onRequestPost(context) {
   const { request, env } = context;
 
