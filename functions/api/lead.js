@@ -21,41 +21,19 @@
 // Until the env vars are set the endpoint no-ops with 204, so shipping this
 // never affects the live forms.
 
-// Temporary diagnostic: read the Leads table schema and report the options
-// for single-select fields (so we can map service_type -> "Type"). Remove
-// once the mapping is set. Requires the token to have schema.bases:read.
-export async function onRequestGet(context) {
-  const { env } = context;
-  const out = {};
-  try {
-    const res = await fetch(
-      `https://api.airtable.com/v0/meta/bases/${env.AIRTABLE_BASE_ID}/tables`,
-      { headers: { Authorization: `Bearer ${env.AIRTABLE_TOKEN}` } }
-    );
-    out.status = res.status;
-    if (!res.ok) {
-      out.body = (await res.text()).slice(0, 400);
-    } else {
-      const data = await res.json();
-      const wanted = (env.AIRTABLE_TABLE || 'Leads').toLowerCase();
-      const table = (data.tables || []).find((t) => t.name.toLowerCase() === wanted);
-      out.fields = table
-        ? table.fields.map((f) => ({
-            name: f.name,
-            type: f.type,
-            choices: f.options && f.options.choices
-              ? f.options.choices.map((c) => c.name)
-              : undefined
-          }))
-        : `table "${wanted}" not found`;
-    }
-  } catch (e) {
-    out.threw = String(e);
-  }
-  return new Response(JSON.stringify(out), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
+// Map a submission to one of the "Type" single-select options in the Leads
+// table: Tuning | Player Repair | Detailing | Diagnosis | Unknown. All five
+// strings below match existing options exactly, so writing them never creates
+// new options (even with typecast on). Driven mainly by the form's
+// service_type value, with the source path as a fallback signal.
+function classifyType(source, serviceType) {
+  const hay = ((serviceType || '') + ' ' + (source || '')).toLowerCase();
+  // Player-piano systems are the most specific, so check them first.
+  if (/disklavier|pianodisc|qrs|pianomation|spirio/.test(hay)) return 'Player Repair';
+  if (/detail|clean/.test(hay)) return 'Detailing';
+  if (/tuning|tune/.test(hay)) return 'Tuning';
+  if (/diagnos|repair/.test(hay)) return 'Diagnosis';
+  return 'Unknown';
 }
 
 export async function onRequestPost(context) {
@@ -91,13 +69,15 @@ export async function onRequestPost(context) {
     .map((k) => `${k}: ${fields[k]}`)
     .join('\n');
 
+  const source = body.source || body.page || '';
   const record = {
     fields: {
       Name: pick('name', 'full_name'),
       Email: pick('email'),
       Phone: pick('phone', 'tel'),
       Message: pick('message', 'notes', 'issue', 'details'),
-      Source: body.source || body.page || '',
+      Type: classifyType(source, pick('service_type', 'lead_type', 'form_type')),
+      Source: source,
       Details: details
     }
   };
