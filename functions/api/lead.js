@@ -21,6 +21,22 @@
 // Until the env vars are set the endpoint no-ops with 204, so shipping this
 // never affects the live forms.
 
+// Temporary diagnostic: GET /api/lead reports whether the runtime can see the
+// env vars, WITHOUT leaking the token. Remove once Airtable is confirmed.
+export async function onRequestGet(context) {
+  const { env } = context;
+  return new Response(
+    JSON.stringify({
+      hasToken: Boolean(env.AIRTABLE_TOKEN),
+      tokenLen: env.AIRTABLE_TOKEN ? String(env.AIRTABLE_TOKEN).length : 0,
+      hasBaseId: Boolean(env.AIRTABLE_BASE_ID),
+      baseIdPrefix: env.AIRTABLE_BASE_ID ? String(env.AIRTABLE_BASE_ID).slice(0, 3) : '',
+      table: env.AIRTABLE_TABLE || 'Leads (default)'
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  );
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
