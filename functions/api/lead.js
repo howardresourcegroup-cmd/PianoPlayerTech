@@ -33,13 +33,17 @@ export async function onRequestGet(context) {
     table: env.AIRTABLE_TABLE || 'Leads (default)'
   };
   if (env.AIRTABLE_TOKEN && env.AIRTABLE_BASE_ID) {
-    try {
-      const table = encodeURIComponent(env.AIRTABLE_TABLE || 'Leads');
-      const url = `https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/${table}?maxRecords=1`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${env.AIRTABLE_TOKEN}` } });
-      out.airtableProbe = { status: res.status, body: (await res.text()).slice(0, 400) };
-    } catch (e) {
-      out.airtableProbe = { threw: String(e) };
+    out.baseIdLen = String(env.AIRTABLE_BASE_ID).length;
+    const candidates = [env.AIRTABLE_TABLE || 'Leads', 'Leads', 'LEADS', 'leads', 'Table 1'];
+    out.probes = [];
+    for (const name of candidates) {
+      try {
+        const url = `https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/${encodeURIComponent(name)}?maxRecords=1`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${env.AIRTABLE_TOKEN}` } });
+        out.probes.push({ table: name, status: res.status });
+      } catch (e) {
+        out.probes.push({ table: name, threw: String(e) });
+      }
     }
   }
   return new Response(JSON.stringify(out), {
