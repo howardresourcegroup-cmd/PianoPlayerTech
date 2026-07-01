@@ -24,7 +24,8 @@
 // Temporary diagnostic: GET /api/lead reports whether the runtime can see the
 // env vars, WITHOUT leaking the token. Remove once Airtable is confirmed.
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { env, request } = context;
+  const wantWrite = new URL(request.url).searchParams.get('write') === '1';
   const out = {
     hasToken: Boolean(env.AIRTABLE_TOKEN),
     tokenLen: env.AIRTABLE_TOKEN ? String(env.AIRTABLE_TOKEN).length : 0,
@@ -43,6 +44,36 @@ export async function onRequestGet(context) {
         out.probes.push({ table: name, status: res.status });
       } catch (e) {
         out.probes.push({ table: name, threw: String(e) });
+      }
+    }
+
+    if (wantWrite) {
+      try {
+        const table = encodeURIComponent(env.AIRTABLE_TABLE || 'Leads');
+        const url = `https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/${table}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${env.AIRTABLE_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            records: [{
+              fields: {
+                Name: 'Diag Write — delete me',
+                Email: 'test@pianoplayertech.com',
+                Phone: '470-000-0000',
+                Message: 'Diagnostic write. Safe to delete.',
+                Source: 'diagnostic ?write=1',
+                Details: 'Diagnostic write. Safe to delete.'
+              }
+            }],
+            typecast: true
+          })
+        });
+        out.writeTest = { status: res.status, body: (await res.text()).slice(0, 500) };
+      } catch (e) {
+        out.writeTest = { threw: String(e) };
       }
     }
   }
