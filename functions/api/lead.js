@@ -25,16 +25,27 @@
 // env vars, WITHOUT leaking the token. Remove once Airtable is confirmed.
 export async function onRequestGet(context) {
   const { env } = context;
-  return new Response(
-    JSON.stringify({
-      hasToken: Boolean(env.AIRTABLE_TOKEN),
-      tokenLen: env.AIRTABLE_TOKEN ? String(env.AIRTABLE_TOKEN).length : 0,
-      hasBaseId: Boolean(env.AIRTABLE_BASE_ID),
-      baseIdPrefix: env.AIRTABLE_BASE_ID ? String(env.AIRTABLE_BASE_ID).slice(0, 3) : '',
-      table: env.AIRTABLE_TABLE || 'Leads (default)'
-    }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } }
-  );
+  const out = {
+    hasToken: Boolean(env.AIRTABLE_TOKEN),
+    tokenLen: env.AIRTABLE_TOKEN ? String(env.AIRTABLE_TOKEN).length : 0,
+    hasBaseId: Boolean(env.AIRTABLE_BASE_ID),
+    baseIdPrefix: env.AIRTABLE_BASE_ID ? String(env.AIRTABLE_BASE_ID).slice(0, 3) : '',
+    table: env.AIRTABLE_TABLE || 'Leads (default)'
+  };
+  if (env.AIRTABLE_TOKEN && env.AIRTABLE_BASE_ID) {
+    try {
+      const table = encodeURIComponent(env.AIRTABLE_TABLE || 'Leads');
+      const url = `https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/${table}?maxRecords=1`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${env.AIRTABLE_TOKEN}` } });
+      out.airtableProbe = { status: res.status, body: (await res.text()).slice(0, 400) };
+    } catch (e) {
+      out.airtableProbe = { threw: String(e) };
+    }
+  }
+  return new Response(JSON.stringify(out), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
 
 export async function onRequestPost(context) {
