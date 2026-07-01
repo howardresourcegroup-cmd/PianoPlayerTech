@@ -77,6 +77,9 @@ export async function onRequestPost(context) {
       Phone: pick('phone', 'tel'),
       Message: pick('message', 'notes', 'issue', 'details'),
       Type: classifyType(source, pick('service_type', 'lead_type', 'form_type')),
+      // "piano" (tuning/repair/detailing) or "system" (player pages) — whichever
+      // the form collected — describes the instrument. Free-text column.
+      'Type of Piano': pick('piano', 'system', 'make', 'model'),
       Source: source,
       Details: details
     }
