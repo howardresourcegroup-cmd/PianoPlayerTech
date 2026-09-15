@@ -64,11 +64,41 @@ function originAllowed(request) {
   return !sawOne;
 }
 
+// Submissions allowed from one IP inside RATE_WINDOW_S. Generous for a human
+// filling in a form twice; restrictive for anything automated.
+const RATE_MAX = 5;
+const RATE_WINDOW_S = 600;
+
+// Pages Functions are stateless, so this needs a KV namespace bound as
+// RATE_LIMIT. Until that binding exists the check is a deliberate no-op —
+// shipping it inert is better than shipping nothing, and it means enabling
+// rate limiting later is a binding away rather than a code change.
+async function rateLimited(env, request) {
+  if (!env.RATE_LIMIT) return false;
+  const ip = request.headers.get('CF-Connecting-IP');
+  if (!ip) return false;
+  const key = `lead:${ip}`;
+  try {
+    const n = parseInt((await env.RATE_LIMIT.get(key)) || '0', 10);
+    if (n >= RATE_MAX) return true;
+    await env.RATE_LIMIT.put(key, String(n + 1), { expirationTtl: RATE_WINDOW_S });
+    return false;
+  } catch (err) {
+    // A KV problem must never cost a real lead.
+    console.error('rate limit check failed', err && err.message);
+    return false;
+  }
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
   if (!originAllowed(request)) {
     return new Response('forbidden', { status: 403 });
+  }
+
+  if (await rateLimited(env, request)) {
+    return new Response('too many requests', { status: 429 });
   }
 
   if (!env.AIRTABLE_TOKEN || !env.AIRTABLE_BASE_ID) {

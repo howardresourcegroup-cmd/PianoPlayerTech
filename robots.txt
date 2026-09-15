@@ -1,3 +1,17 @@
 User-agent: *
+# Content Signals (contentsignals.org) — how AI may use this site's content.
+# search = appear in search · ai-input = assistants may use content to answer · ai-train = model training
+Content-Signal: search=yes, ai-input=yes, ai-train=no
 Allow: /
+
+# Cloudflare internal paths — not real pages, stops 404 noise in Search Console
+Disallow: /cdn-cgi/
+
+# Endpoints, not content
+Disallow: /api/
+
+# Post-submission pages — no search value, and indexing them skews conversion data
+Disallow: /thank-you
+Disallow: /checkout-return
+
 Sitemap: https://pianoplayertech.com/sitemap.xml
