@@ -11,8 +11,8 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piano Tuning, Player Piano Repair & Restoration | North Georgia | PianoPlayerTech</title>
-    <meta name="description" content="Piano tuning and player piano repair in North Georgia. Nordiska, Aeolian, Gulbransen, all makes. $100 flat-rate diagnosis. In-home service in Dahlonega, Gainesville, Blue Ridge, Helen, Canton, Ellijay & Atlanta metro. Call (470) 758-9572.">
+    <title>Player Piano Repair &amp; Restoration | Atlanta &amp; North Georgia</title>
+    <meta name="description" content="Player unit repair, pneumatic restoration, and tuning by referral across metro Atlanta and North Georgia. $100 flat-rate in-home diagnosis.">
     <meta name="google-site-verification" content="gNXsQ9-DU0j5De3BrLql1R69q4I69p_9tZ0FqUKY1fo">
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
     <link rel="icon" type="image/png" href="logo2.png">
@@ -50,8 +50,8 @@
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://pianoplayertech.com/">
-    <meta property="og:title" content="Piano Tuning & Player Piano Repair | North Georgia | PianoPlayerTech">
-    <meta property="og:description" content="Piano tuning and player piano repair in North Georgia. Nordiska, Aeolian, Gulbransen, all makes. $100 flat-rate diagnosis. In-home service. Call (470) 758-9572.">
+    <meta property="og:title" content="Player Piano Repair &amp; Restoration | Atlanta &amp; North Georgia">
+    <meta property="og:description" content="Player unit repair, pneumatic restoration, and tuning by referral across metro Atlanta and North Georgia. $100 flat-rate in-home diagnosis.">
     <meta property="og:image" content="https://pianoplayertech.com/Images/piano-strings-og.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="900">
@@ -65,15 +65,17 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --black:      #0d0d0d;
-            --charcoal:   #1a1a1a;
-            --dark:       #2a2a2a;
+            --black:      #100c09;
+            --charcoal:   #2b221a;
+            --dark:       #241d16;
             --gold:       #c9a84c;
             --gold-light: #e4c97a;
-            --ivory:      #f5f0e8;
-            --white:      #ffffff;
-            --gray:       #888;
-            --border:     #e8e2d6;
+            --ivory:      #17120e;
+            --white:      #211a14;
+            --gray:       #a8998a;
+            --border:     #3a2f24;
+            --text:       #f0e6d8;
+            --muted:      #c2b3a2;
         }
 
         html { scroll-behavior: smooth; }
@@ -81,7 +83,7 @@
         body {
             font-family: 'Inter', sans-serif;
             background: var(--ivory);
-            color: var(--dark);
+            color: var(--text);
             line-height: 1.7;
         }
 
@@ -113,9 +115,9 @@
 
         .nav-links { display: flex; align-items: center; gap: 1.75rem; }
 
-        .nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.84rem; transition: color 0.2s; letter-spacing: 0.02em; }
+        .nav-links a { color: rgba(240,230,216,0.7); text-decoration: none; font-size: 0.84rem; transition: color 0.2s; letter-spacing: 0.02em; }
 
-        .nav-links a:hover, .nav-links a.active { color: var(--white); }
+        .nav-links a:hover, .nav-links a.active { color: var(--text); }
 
         .nav-cta {
             background: var(--gold);
@@ -150,8 +152,8 @@
                 90deg,
                 transparent,
                 transparent 52px,
-                rgba(255,255,255,0.01) 52px,
-                rgba(255,255,255,0.01) 75px
+                rgba(240,230,216,0.01) 52px,
+                rgba(240,230,216,0.01) 75px
             );
             pointer-events: none;
         }
@@ -179,7 +181,7 @@
         .hero h1 {
             font-family: 'DM Serif Display', serif;
             font-size: clamp(2.6rem, 5.5vw, 4.6rem);
-            color: var(--white);
+            color: var(--text);
             line-height: 1.1;
             margin-bottom: 1.5rem;
         }
@@ -188,7 +190,7 @@
 
         .hero-desc {
             font-size: 1.05rem;
-            color: rgba(255,255,255,0.6);
+            color: rgba(240,230,216,0.6);
             max-width: 560px;
             margin: 0 auto 2.25rem;
             font-weight: 300;
@@ -205,7 +207,7 @@
 
         .hero-badge {
             font-size: 0.77rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(240,230,216,0.5);
             display: flex;
             align-items: center;
             gap: 0.4rem;
@@ -243,14 +245,14 @@
 
         .btn-secondary {
             background: transparent;
-            color: var(--white);
+            color: var(--text);
             padding: 0.9rem 2rem;
             border-radius: 4px;
             font-weight: 500;
             font-size: 0.93rem;
             text-decoration: none;
             letter-spacing: 0.03em;
-            border: 1px solid rgba(255,255,255,0.22);
+            border: 1px solid rgba(240,230,216,0.22);
             transition: border-color 0.2s, color 0.2s, transform 0.15s;
             display: inline-block;
         }
@@ -273,7 +275,7 @@
         .section-title {
             font-family: 'DM Serif Display', serif;
             font-size: clamp(1.85rem, 3.5vw, 2.7rem);
-            color: var(--charcoal);
+            color: var(--text);
             margin-bottom: 1rem;
             line-height: 1.2;
         }
@@ -315,7 +317,7 @@
         .service-card h3 {
             font-family: 'DM Serif Display', serif;
             font-size: 1.1rem;
-            color: var(--charcoal);
+            color: var(--text);
             margin-bottom: 0.4rem;
         }
 
@@ -337,7 +339,7 @@
             gap: 1.5rem;
         }
 
-        .pricing-banner p { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+        .pricing-banner p { color: rgba(240,230,216,0.7); font-size: 0.9rem; }
         .pricing-banner strong { color: var(--gold); font-size: 1.05rem; }
 
         /* ── COMMON PROBLEMS ── */
@@ -378,7 +380,7 @@
         .problem-card h3 {
             font-size: 0.93rem;
             font-weight: 600;
-            color: var(--charcoal);
+            color: var(--text);
             margin-bottom: 0.35rem;
         }
 
@@ -399,7 +401,7 @@
         }
 
         .about-text p {
-            color: #555;
+            color: var(--muted);
             font-size: 0.97rem;
             margin-bottom: 1.2rem;
             line-height: 1.85;
@@ -458,7 +460,7 @@
             padding: 1.2rem 1.5rem;
             font-weight: 600;
             font-size: 0.95rem;
-            color: var(--charcoal);
+            color: var(--text);
             cursor: pointer;
             display: flex;
             justify-content: space-between;
@@ -486,7 +488,7 @@
         .faq-body {
             padding: 1.25rem 1.5rem 1.5rem;
             font-size: 0.91rem;
-            color: #555;
+            color: var(--muted);
             line-height: 1.8;
             border-top: 1px solid var(--border);
         }
@@ -506,7 +508,7 @@
             border-radius: 6px;
             padding: 0.7rem 1rem;
             font-size: 0.88rem;
-            color: var(--charcoal);
+            color: var(--text);
             font-weight: 500;
             text-align: center;
             border: 1px solid var(--border);
@@ -559,7 +561,7 @@
         .contact-item a,
         .contact-item p {
             font-size: 0.95rem;
-            color: var(--charcoal);
+            color: var(--text);
             text-decoration: none;
             font-weight: 500;
         }
@@ -578,7 +580,7 @@
             align-items: center;
             gap: 0.6rem;
             background: var(--charcoal);
-            color: var(--white);
+            color: var(--text);
             padding: 0.95rem 1.75rem;
             border-radius: 6px;
             font-weight: 600;
@@ -609,7 +611,7 @@
         .contact-form-wrap h3 {
             font-family: 'DM Serif Display', serif;
             font-size: 1.45rem;
-            color: var(--charcoal);
+            color: var(--text);
             margin-bottom: 1.5rem;
         }
 
@@ -632,7 +634,7 @@
             font-size: 0.92rem;
             font-family: 'Inter', sans-serif;
             background: var(--white);
-            color: var(--charcoal);
+            color: var(--text);
             margin-bottom: 1rem;
             transition: border-color 0.2s;
             -webkit-appearance: none;
@@ -649,7 +651,7 @@
 
         form button {
             background: var(--charcoal);
-            color: var(--white);
+            color: var(--text);
             border: none;
             padding: 0.85rem 2rem;
             border-radius: 6px;
@@ -667,7 +669,7 @@
         /* ── FOOTER ── */
         footer {
             background: var(--black);
-            color: rgba(255,255,255,0.38);
+            color: rgba(240,230,216,0.38);
             text-align: center;
             padding: 2.25rem 2rem;
             font-size: 0.82rem;
@@ -675,7 +677,7 @@
         }
 
         footer span { color: var(--gold); }
-        footer a { color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
+        footer a { color: rgba(240,230,216,0.45); text-decoration: none; transition: color 0.2s; }
         footer a:hover { color: var(--gold); }
 
         /* ── HOW IT WORKS ── */
@@ -698,7 +700,7 @@
         .hiw-track-title {
             font-family: 'DM Serif Display', serif;
             font-size: 1.2rem;
-            color: var(--charcoal);
+            color: var(--text);
             margin-bottom: 1.5rem;
             padding-bottom: 0.75rem;
             border-bottom: 2px solid var(--gold);
@@ -727,7 +729,7 @@
             display: block;
             font-size: 0.88rem;
             font-weight: 600;
-            color: var(--charcoal);
+            color: var(--text);
             margin-bottom: 0.2rem;
         }
         .hiw-step-body p {
@@ -759,7 +761,7 @@
             display: block;
             text-align: center;
             background: transparent;
-            color: var(--charcoal);
+            color: var(--text);
             padding: 0.7rem 1.25rem;
             border-radius: 4px;
             border: 1.5px solid var(--border);
@@ -784,9 +786,9 @@
 
         #join .section-label { color: var(--gold-light); }
 
-        #join .section-title { color: var(--white); }
+        #join .section-title { color: var(--text); }
 
-        #join .section-subtitle { color: rgba(255,255,255,0.6); max-width: 640px; }
+        #join .section-subtitle { color: rgba(240,230,216,0.6); max-width: 640px; }
 
         .join-grid {
             display: grid;
@@ -796,7 +798,7 @@
         }
 
         .join-card {
-            background: rgba(255,255,255,0.05);
+            background: rgba(240,230,216,0.05);
             border: 1px solid rgba(201,168,76,0.18);
             border-radius: 8px;
             padding: 1.75rem;
@@ -818,7 +820,7 @@
 
         .join-card ul li {
             font-size: 0.88rem;
-            color: rgba(255,255,255,0.65);
+            color: rgba(240,230,216,0.65);
             padding-left: 1.1rem;
             position: relative;
             line-height: 1.55;
@@ -846,7 +848,7 @@
             gap: 1.5rem;
         }
 
-        .join-cta p { color: rgba(255,255,255,0.7); font-size: 0.92rem; line-height: 1.65; }
+        .join-cta p { color: rgba(240,230,216,0.7); font-size: 0.92rem; line-height: 1.65; }
         .join-cta strong { color: var(--gold); }
 
         .apply-wrap {
@@ -860,7 +862,7 @@
         .apply-wrap h3 {
             font-family: 'DM Serif Display', serif;
             font-size: 1.55rem;
-            color: var(--charcoal);
+            color: var(--text);
             margin-bottom: 1.5rem;
         }
         .apply-wrap form select {
@@ -871,15 +873,15 @@
             font-size: 0.92rem;
             font-family: 'Inter', sans-serif;
             background: var(--white);
-            color: var(--charcoal);
+            color: var(--text);
             margin-bottom: 1rem;
             transition: border-color 0.2s;
         }
         .apply-wrap form select:focus { outline: none; border-color: var(--gold); }
         .apply-success { display: none; text-align: center; padding: 1rem 0; }
         .apply-success.show { display: block; }
-        .apply-success strong { display: block; font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--charcoal); margin-bottom: 0.75rem; }
-        .apply-success p { color: #555; font-size: 0.95rem; line-height: 1.7; }
+        .apply-success strong { display: block; font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--text); margin-bottom: 0.75rem; }
+        .apply-success p { color: var(--muted); font-size: 0.95rem; line-height: 1.7; }
         .apply-success a { color: var(--gold); font-weight: 600; text-decoration: none; }
 
         /* ── MOBILE CALL BAR ── */
@@ -935,14 +937,14 @@
         }
         .mobile-nav.open { display: flex; }
         .mobile-nav a {
-            color: rgba(255,255,255,0.7);
+            color: rgba(240,230,216,0.7);
             text-decoration: none;
             padding: 0.9rem 0;
             font-size: 0.88rem;
             font-weight: 500;
             letter-spacing: 0.07em;
             text-transform: uppercase;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(240,230,216,0.06);
             transition: color 0.2s;
         }
         .mobile-nav a:last-child { border-bottom: none; }
@@ -981,7 +983,19 @@
         }
             a.area-item { color: inherit; text-decoration: none; }
         a.area-item:hover { color: var(--gold); }
-    </style>
+    
+        /* ---- Dark Natural theme corrections ---- */
+        body { background: var(--ivory); color: var(--text); }
+        input, textarea, select {
+            background: var(--dark); color: var(--text); border-color: var(--border);
+        }
+        input::placeholder, textarea::placeholder { color: #8d8073; }
+        input:focus, textarea:focus, select:focus { border-color: var(--gold); outline: none; }
+        select option { background: var(--dark); color: var(--text); }
+        details { border: 1px solid var(--border); }
+        hr { border-color: var(--border); }
+        ::selection { background: var(--gold); color: #17120e; }
+</style>
 </head>
 <body>
 
@@ -990,9 +1004,8 @@
         <div class="nav-links">
         <a href="/" class="active">Home</a>
         <a href="/player-repair.html">Player Repair</a>
+        <a href="/antique-player-piano.html">Restoration</a>
         <a href="/tuning.html">Tuning</a>
-        <a href="/piano-cleaning.html">Cleaning</a>
-        <a href="/technicians.html">Technicians</a>
         <a href="#contact">Contact</a>
         <a href="tel:4707589572" class="nav-cta">Call Now</a>
     </div>
@@ -1004,9 +1017,8 @@
 <div class="mobile-nav" id="mobileNav">
     <a href="/" class="active">Home</a>
     <a href="/player-repair.html">Player Repair</a>
+    <a href="/antique-player-piano.html">Restoration</a>
     <a href="/tuning.html">Tuning</a>
-    <a href="/piano-cleaning.html">Cleaning</a>
-    <a href="/technicians.html">Technicians</a>
     <a href="#contact">Contact</a>
     <a href="tel:4707589572" class="mobile-cta">Call (470) 758-9572</a>
 </div>
@@ -1014,11 +1026,11 @@
 <!-- HERO -->
 <section class="hero" id="home">
     <div class="hero-content">
-        <p class="hero-eyebrow">North Georgia's Player Piano Service &amp; Piano Tuning</p>
-        <h1>Piano Tuning &amp;<br><span>Player Piano Repair</span></h1>
-        <p class="hero-desc">Certified tuning and player piano repair throughout North Georgia — Disklavier, PianoDisc, QRS, Spirio, and acoustic pianos of all makes. We come to you.</p>
+        <p class="hero-eyebrow">Metro Atlanta &amp; North Georgia Player Piano Specialists</p>
+        <h1>Player Piano Repair &amp;<br><span>Pneumatic Restoration</span></h1>
+        <p class="hero-desc">Three things we do: electronic player unit repair (Disklavier, PianoDisc, QRS, Spirio), pneumatic restoration of antique roll-operated players, and tuning through our partner. In-home across metro Atlanta and North Georgia.</p>
         <div class="hero-badges">
-            <span class="hero-badge">Piano tuning &amp; repair</span>
+            <span class="hero-badge">Electronic &amp; pneumatic systems</span>
             <span class="hero-badge">$100 flat-rate diagnosis</span>
             <span class="hero-badge">In-home service — we come to you</span>
             <span class="hero-badge">All makes &amp; brands</span>
@@ -1035,8 +1047,8 @@
     <div class="section-inner">
         <div class="services-header">
             <p class="section-label">What We Do</p>
-            <h2 class="section-title">Player Piano Repair &amp; Tuning</h2>
-            <p class="section-subtitle">Yamaha Disklavier, PianoDisc, QRS, Steinway Spirio, and more — we service modern electric player systems throughout North Georgia, in your home.</p>
+            <h2 class="section-title">Three Things We Do</h2>
+            <p class="section-subtitle">Electronic player unit repair, pneumatic restoration of antique players, and tuning handled by our partner &mdash; all in your home, across metro Atlanta and North Georgia.</p>
         </div>
         <div class="services-grid">
             <div class="service-card">
@@ -1066,8 +1078,13 @@
             </div>
             <div class="service-card">
 
-                <h3>Piano Tuning</h3>
-                <p>Precision tuning handled alongside any player system work, or as a standalone visit. A well-tuned piano makes the player system sound the way it was designed to.</p>
+                <h3>Pneumatic Restoration</h3>
+                <p>Antique roll-operated players &mdash; Ampico, Duo-Art, Welte-Mignon, Aeolian, Gulbransen. Perished tubing, leaking bellows, dead notes, and roll tracking brought back to working order. <a href="/antique-player-piano.html" style="color:var(--gold);text-decoration:none;font-weight:600;">Restoration details &rarr;</a></p>
+            </div>
+            <div class="service-card">
+
+                <h3>Piano Tuning &mdash; Via Our Partner</h3>
+                <p>Tuning is performed by our partner, <strong>World Class Piano Tuners</strong> of Alpharetta. You book and schedule through us exactly as before &mdash; they bring the tools. <a href="/tuning.html" style="color:var(--gold);text-decoration:none;font-weight:600;">Tuning details &rarr;</a></p>
             </div>
             <div class="service-card">
 
@@ -1094,7 +1111,7 @@
     <div class="section-inner">
         <p class="section-label">Getting Started</p>
         <h2 class="section-title">How It Works</h2>
-        <p class="section-subtitle">Two services, two simple paths. Both start with a payment that books your spot — no back-and-forth before we commit.</p>
+        <p class="section-subtitle">Two services, two simple paths. Tell us what you need and we'll confirm the details before any work begins.</p>
         <div class="hiw-grid">
 
             <div class="hiw-track">
@@ -1110,8 +1127,8 @@
                     <li class="hiw-step">
                         <div class="hiw-num">2</div>
                         <div class="hiw-step-body">
-                            <strong>Complete payment to confirm</strong>
-                            <p>$175 standard (1–3 pianos) or $125/piano for 4 or more. Payment locks in your booking.</p>
+                            <strong>We confirm your booking</strong>
+                            <p>Standard rate for 1–3 pianos, with a reduced rate for 4 or more. We confirm your rate when we schedule you.</p>
                         </div>
                     </li>
                     <li class="hiw-step">
@@ -1278,7 +1295,7 @@
             <details>
                 <summary>How much does it cost to repair a player piano?</summary>
                 <div class="faq-body">
-                    Every system is different, so we don't quote costs sight-unseen. The in-home diagnosis is $100 flat — at the end you'll know exactly what's wrong and what repair will cost. Repair labor is $125/hour with a written estimate before we start. A power supply replacement or driver board repair might run 1–2 hours. A full solenoid rebuild or multi-component failure can be more. You'll always approve the estimate before any work begins. Piano tuning is separate — $175 standard, $125/piano for 4 or more.
+                    Every system is different, so we don't quote costs sight-unseen. The in-home diagnosis is $100 flat — at the end you'll know exactly what's wrong and what repair will cost. Repair labor is $125/hour with a written estimate before we start. A power supply replacement or driver board repair might run 1–2 hours. A full solenoid rebuild or multi-component failure can be more. You'll always approve the estimate before any work begins. Piano tuning is separate, and handled by our partner — rates confirmed when we schedule you.
                 </div>
             </details>
 
@@ -1347,7 +1364,7 @@
     <div class="section-inner">
         <p class="section-label">Where We Work</p>
         <h2 class="section-title">Serving Metro Atlanta &amp; North Georgia</h2>
-        <p class="section-subtitle">Tuning covers all of metro Atlanta — Christian is based in East Point — and both services travel throughout North Georgia. If you don't see your town, just call; we likely cover it.</p>
+        <p class="section-subtitle">Tuning and player-piano repair both cover metro Atlanta and North Georgia. If you don't see your town, just call; we likely cover it.</p>
         <div class="area-grid">
             <a class="area-item" href="/piano-tuning-atlanta.html">Atlanta</a>
             <div class="area-item">East Point</div>

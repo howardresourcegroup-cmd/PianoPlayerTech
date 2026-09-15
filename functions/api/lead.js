@@ -36,8 +36,40 @@ function classifyType(source, serviceType) {
   return 'Unknown';
 }
 
+// Hosts allowed to write leads. Anything else is abuse or a scraper replaying
+// the endpoint, not a customer.
+const ALLOWED_HOSTS = new Set(['pianoplayertech.com', 'www.pianoplayertech.com']);
+
+// The beacon is a few hundred bytes. Anything past these ceilings is abuse,
+// and letting it through would mean unbounded writes into Airtable.
+const MAX_BODY_BYTES = 16 * 1024;
+const MAX_FIELDS = 40;
+const MAX_VALUE_CHARS = 2000;
+
+// sendBeacon and fetch both send Origin on POST; Referer is the fallback.
+// If NEITHER header is present we allow the request through on purpose: a
+// browser quirk must never silently kill lead capture. The size and shape
+// limits below still apply in that case.
+function originAllowed(request) {
+  const candidates = [request.headers.get('Origin'), request.headers.get('Referer')];
+  let sawOne = false;
+  for (const c of candidates) {
+    if (!c) continue;
+    sawOne = true;
+    try {
+      const host = new URL(c).hostname;
+      if (ALLOWED_HOSTS.has(host) || host.endsWith('.pages.dev')) return true;
+    } catch { /* malformed header: does not count as a match */ }
+  }
+  return !sawOne;
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
+
+  if (!originAllowed(request)) {
+    return new Response('forbidden', { status: 403 });
+  }
 
   if (!env.AIRTABLE_TOKEN || !env.AIRTABLE_BASE_ID) {
     return new Response(null, { status: 204 }); // not configured yet
@@ -45,12 +77,21 @@ export async function onRequestPost(context) {
 
   let body;
   try {
-    body = await request.json();
+    const raw = await request.text();
+    if (raw.length > MAX_BODY_BYTES) {
+      return new Response('payload too large', { status: 413 });
+    }
+    body = JSON.parse(raw);
   } catch {
     return new Response('bad request', { status: 400 });
   }
 
-  const fields = (body && body.fields) || {};
+  // Clamp field count and value length before anything reaches Airtable.
+  const submitted = (body && body.fields) || {};
+  const fields = {};
+  for (const key of Object.keys(submitted).slice(0, MAX_FIELDS)) {
+    fields[key] = String(submitted[key]).slice(0, MAX_VALUE_CHARS);
+  }
 
   // Case-insensitive lookup across whatever the form happened to name things.
   const pick = (...keys) => {
@@ -69,7 +110,7 @@ export async function onRequestPost(context) {
     .map((k) => `${k}: ${fields[k]}`)
     .join('\n');
 
-  const source = body.source || body.page || '';
+  const source = String(body.source || body.page || '').slice(0, 500);
   const record = {
     fields: {
       Name: pick('name', 'full_name'),
@@ -103,10 +144,75 @@ export async function onRequestPost(context) {
   });
 
   if (!res.ok) {
-    // Surface the reason for debugging; the browser beacon ignores the response.
+    // Log server-side only. Echoing Airtable's error back to the caller would
+    // leak base/table/field structure to anyone who can POST here.
     const detail = await res.text().catch(() => '');
-    return new Response(`airtable error ${res.status}: ${detail}`, { status: 502 });
+    console.error('airtable write failed', res.status, detail);
+    return new Response(null, { status: 502 });
   }
 
+  // Confirmation email. Deliberately after the Airtable write and wrapped so a
+  // Resend outage can never cost us a captured lead — the record is already safe.
+  await sendConfirmation(env, record.fields);
+
   return new Response(null, { status: 204 });
+}
+
+// Tell the customer we got it and that a human will call. No scheduling links,
+// no payment — booking happens on the phone.
+async function sendConfirmation(env, fields) {
+  if (!env.RESEND_API_KEY || !fields.Email) return;
+
+  const from = env.LEAD_FROM_EMAIL || 'PianoPlayerTech <info@pianoplayertech.com>';
+  const name = (fields.Name || '').split(' ')[0] || 'there';
+  const service = fields.Type && fields.Type !== 'Unknown' ? fields.Type.toLowerCase() : 'your piano';
+
+  const text = [
+    `Hi ${name},`,
+    '',
+    `Thanks for getting in touch about ${service}. We've got your details and someone will call you within 30 minutes to an hour to schedule.`,
+    '',
+    "There's nothing else you need to do right now — no payment, no forms. If you'd rather reach us first, call (470) 758-9572.",
+    '',
+    '— PianoPlayerTech',
+    'Player piano repair, pneumatic restoration & tuning',
+    'Metro Atlanta & North Georgia · (470) 758-9572'
+  ].join('\n');
+
+  const html = `<div style="font-family:-apple-system,Segoe UI,Inter,sans-serif;font-size:15px;line-height:1.65;color:#241d16;max-width:520px">
+  <p>Hi ${esc(name)},</p>
+  <p>Thanks for getting in touch about ${esc(service)}. We&rsquo;ve got your details and <strong>someone will call you within 30 minutes to an hour to schedule</strong>.</p>
+  <p>There&rsquo;s nothing else you need to do right now &mdash; no payment, no forms. If you&rsquo;d rather reach us first, call <a href="tel:4707589572" style="color:#96742a">(470)&nbsp;758-9572</a>.</p>
+  <p style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #ded3c0;font-size:13px;color:#5c5045">
+    <strong>PianoPlayerTech</strong><br>
+    Player piano repair, pneumatic restoration &amp; tuning<br>
+    Metro Atlanta &amp; North Georgia &middot; (470) 758-9572
+  </p>
+</div>`;
+
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to: [fields.Email],
+        subject: 'We got your message — PianoPlayerTech',
+        text,
+        html
+      })
+    });
+    if (!r.ok) {
+      console.error('resend failed', r.status, await r.text().catch(() => ''));
+    }
+  } catch (err) {
+    console.error('resend threw', err && err.message);
+  }
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }

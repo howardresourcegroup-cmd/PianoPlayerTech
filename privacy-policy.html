@@ -12,11 +12,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy | PianoPlayerTech</title>
-    <meta name="description" content="How PianoPlayerTech collects, uses, and protects the information you share when you request piano tuning or player-piano repair in metro Atlanta and North Georgia.">
+    <meta name="description" content="How PianoPlayerTech collects, uses and protects your information when you book piano service in metro Atlanta and North Georgia.">
     <meta name="robots" content="index,follow">
     <link rel="canonical" href="https://pianoplayertech.com/privacy-policy">
     <meta property="og:title" content="Privacy Policy | PianoPlayerTech">
-    <meta property="og:description" content="How PianoPlayerTech collects, uses, and protects your information.">
+    <meta property="og:description" content="How PianoPlayerTech collects, uses and protects your information when you book piano service in metro Atlanta and North Georgia.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://pianoplayertech.com/privacy-policy">
     <meta property="og:image" content="https://pianoplayertech.com/Images/piano-strings-og.jpg">
@@ -29,37 +29,61 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-        :root { --black:#0d0d0d;--charcoal:#1a1a1a;--dark:#2a2a2a;--gold:#c9a84c;--gold-light:#e4c97a;--ivory:#f5f0e8;--white:#fff;--gray:#888;--border:#e8e2d6; }
+        :root {
+            --black:      #100c09;
+            --charcoal:   #2b221a;
+            --dark:       #241d16;
+            --gold:       #c9a84c;
+            --gold-light: #e4c97a;
+            --ivory:      #17120e;
+            --white:      #211a14;
+            --gray:       #a8998a;
+            --border:     #3a2f24;
+            --text:       #f0e6d8;
+            --muted:      #c2b3a2;
+        }
         html { scroll-behavior:smooth; }
-        body { font-family:'Inter',sans-serif; background:var(--ivory); color:var(--dark); line-height:1.75; }
+        body { font-family:'Inter',sans-serif; background:var(--ivory); color: var(--text); line-height:1.75; }
         nav { position:fixed; top:0; left:0; right:0; z-index:100; background:rgba(13,13,13,0.97); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:space-between; padding:1rem 2.5rem; border-bottom:1px solid rgba(201,168,76,0.2); }
         .nav-logo { font-weight:700; color:var(--gold); font-size:0.82rem; letter-spacing:0.2em; text-transform:uppercase; text-decoration:none; white-space:nowrap; }
         .nav-cta { background:var(--gold); color:var(--black) !important; padding:0.45rem 1.1rem; border-radius:4px; font-weight:600; font-size:0.84rem; text-decoration:none; }
         .nav-cta:hover { background:var(--gold-light); }
         .legal-hero { padding:8rem 1.5rem 3rem; background:var(--charcoal); text-align:center; }
         .legal-hero .eyebrow { font-size:0.72rem; font-weight:600; letter-spacing:0.28em; text-transform:uppercase; color:var(--gold); margin-bottom:0.85rem; }
-        .legal-hero h1 { font-family:'DM Serif Display',serif; font-size:clamp(2rem,5vw,2.9rem); color:var(--white); line-height:1.15; }
-        .legal-hero .updated { color:rgba(255,255,255,0.55); font-size:0.85rem; margin-top:0.9rem; }
+        .legal-hero h1 { font-family:'DM Serif Display',serif; font-size:clamp(2rem,5vw,2.9rem); color: var(--text); line-height:1.15; }
+        .legal-hero .updated { color:rgba(240,230,216,0.55); font-size:0.85rem; margin-top:0.9rem; }
         .legal-wrap { max-width:780px; margin:0 auto; padding:3.5rem 1.5rem 4.5rem; }
-        .legal-wrap h2 { font-family:'DM Serif Display',serif; font-size:1.5rem; color:var(--charcoal); margin:2.5rem 0 0.9rem; }
-        .legal-wrap h3 { font-size:1.02rem; font-weight:600; color:var(--charcoal); margin:1.75rem 0 0.5rem; }
-        .legal-wrap p { margin-bottom:1.1rem; color:#3a3a3a; }
+        .legal-wrap h2 { font-family:'DM Serif Display',serif; font-size:1.5rem; color: var(--text); margin:2.5rem 0 0.9rem; }
+        .legal-wrap h3 { font-size:1.02rem; font-weight:600; color: var(--text); margin:1.75rem 0 0.5rem; }
+        .legal-wrap p { margin-bottom:1.1rem; color: var(--muted); }
         .legal-wrap ul { margin:0 0 1.1rem 1.3rem; }
-        .legal-wrap li { margin-bottom:0.55rem; color:#3a3a3a; }
-        .legal-wrap a { color:#a8842f; font-weight:500; }
-        .legal-wrap strong { color:var(--charcoal); }
-        .intro { font-size:1.05rem; color:#444; border-left:3px solid var(--gold); padding-left:1.25rem; margin-bottom:1rem; }
-        .toc { background:#fff; border:1px solid var(--border); border-radius:10px; padding:1.5rem 1.75rem; margin:2rem 0; }
+        .legal-wrap li { margin-bottom:0.55rem; color: var(--muted); }
+        .legal-wrap a { color: var(--gold); font-weight:500; }
+        .legal-wrap strong { color: var(--text); }
+        .intro { font-size:1.05rem; color: var(--muted); border-left:3px solid var(--gold); padding-left:1.25rem; margin-bottom:1rem; }
+        .toc { background: var(--white); border:1px solid var(--border); border-radius:10px; padding:1.5rem 1.75rem; margin:2rem 0; }
         .toc strong { display:block; font-size:0.78rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--gray); margin-bottom:0.75rem; }
         .toc ol { margin-left:1.1rem; }
         .toc li { margin-bottom:0.35rem; font-size:0.94rem; }
-        .contact-box { background:#fff; border:1px solid var(--border); border-radius:10px; padding:1.75rem 2rem; margin-top:2.5rem; }
-        .contact-box a { color:#a8842f; text-decoration:none; font-weight:600; }
-        footer { background:var(--black); color:rgba(255,255,255,0.4); text-align:center; padding:2rem; font-size:0.8rem; line-height:1.95; }
-        footer a { color:rgba(255,255,255,0.5); text-decoration:none; }
+        .contact-box { background: var(--white); border:1px solid var(--border); border-radius:10px; padding:1.75rem 2rem; margin-top:2.5rem; }
+        .contact-box a { color: var(--gold); text-decoration:none; font-weight:600; }
+        footer { background:var(--black); color:rgba(240,230,216,0.4); text-align:center; padding:2rem; font-size:0.8rem; line-height:1.95; }
+        footer a { color:rgba(240,230,216,0.5); text-decoration:none; }
         footer a:hover { color:var(--gold); }
         @media (max-width:768px){ nav{ padding:0.9rem 1.25rem; } .legal-hero{ padding:7rem 1.25rem 2.5rem; } }
-    </style>
+    
+        /* ---- Dark Natural theme corrections ---- */
+        body { background: var(--ivory); color: var(--text); }
+        input, textarea, select {
+            background: var(--dark); color: var(--text); border-color: var(--border);
+        }
+        input::placeholder, textarea::placeholder { color: #8d8073; }
+        input:focus, textarea:focus, select:focus { border-color: var(--gold); outline: none; }
+        select option { background: var(--dark); color: var(--text); }
+        details { border: 1px solid var(--border); }
+        hr { border-color: var(--border); }
+        ::selection { background: var(--gold); color: #17120e; }
+</style>
 </head>
 <body>
 

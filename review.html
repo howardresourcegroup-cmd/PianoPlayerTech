@@ -22,23 +22,35 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root { --black:#0d0d0d;--charcoal:#1a1a1a;--gold:#c9a84c;--gold-light:#e4c97a;--ivory:#f5f0e8;--white:#fff;--gray:#888;--border:#e8e2d6; }
+        :root {
+            --black:      #100c09;
+            --charcoal:   #2b221a;
+            --dark:       #241d16;
+            --gold:       #c9a84c;
+            --gold-light: #e4c97a;
+            --ivory:      #17120e;
+            --white:      #211a14;
+            --gray:       #a8998a;
+            --border:     #3a2f24;
+            --text:       #f0e6d8;
+            --muted:      #c2b3a2;
+        }
         html { scroll-behavior: smooth; }
-        body { font-family:'Inter',sans-serif; background:var(--ivory); color:var(--charcoal); line-height:1.7; min-height:100vh; display:flex; flex-direction:column; }
+        body { font-family:'Inter',sans-serif; background:var(--ivory); color: var(--text); line-height:1.7; min-height:100vh; display:flex; flex-direction:column; }
 
         nav { background:rgba(13,13,13,0.97); display:flex; align-items:center; justify-content:space-between; padding:1rem 2.5rem; border-bottom:1px solid rgba(201,168,76,0.2); }
         .nav-logo { font-weight:700; color:var(--gold); font-size:0.82rem; letter-spacing:0.2em; text-transform:uppercase; text-decoration:none; }
         .nav-logo:hover { color:var(--gold-light); }
-        nav .call { color:rgba(255,255,255,0.75); text-decoration:none; font-size:0.84rem; }
-        nav .call:hover { color:var(--white); }
+        nav .call { color:rgba(240,230,216,0.75); text-decoration:none; font-size:0.84rem; }
+        nav .call:hover { color: var(--text); }
 
         main { flex:1; display:flex; align-items:center; justify-content:center; padding:3.5rem 1.5rem; }
         .card { background:var(--white); border:1px solid var(--border); border-radius:14px; max-width:560px; width:100%; padding:3rem 2.5rem; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.08); }
         .stars { color:var(--gold); font-size:1.6rem; letter-spacing:0.25em; margin-bottom:1.25rem; }
         .eyebrow { font-size:0.72rem; font-weight:600; letter-spacing:0.28em; text-transform:uppercase; color:var(--gold); margin-bottom:0.85rem; }
-        h1 { font-family:'DM Serif Display',serif; font-size:clamp(1.9rem,4.5vw,2.7rem); line-height:1.15; color:var(--charcoal); margin-bottom:1rem; }
+        h1 { font-family:'DM Serif Display',serif; font-size:clamp(1.9rem,4.5vw,2.7rem); line-height:1.15; color: var(--text); margin-bottom:1rem; }
         h1 span { color:var(--gold); }
-        .lead { color:#555; font-size:1rem; max-width:420px; margin:0 auto 2rem; }
+        .lead { color: var(--muted); font-size:1rem; max-width:420px; margin:0 auto 2rem; }
         .review-btn { display:inline-block; background:var(--gold); color:var(--black); padding:1.05rem 2.5rem; border-radius:6px; font-weight:700; font-size:1.05rem; text-decoration:none; letter-spacing:0.02em; transition:background 0.2s, transform 0.15s; }
         .review-btn:hover { background:var(--gold-light); transform:translateY(-2px); }
         .sub { font-size:0.85rem; color:var(--gray); margin-top:1rem; }
@@ -51,17 +63,29 @@
         .qr-download { display:inline-block; margin-top:0.6rem; font-size:0.82rem; color:var(--gold); text-decoration:none; font-weight:600; }
         .qr-download:hover { text-decoration:underline; }
 
-        footer { background:var(--black); color:rgba(255,255,255,0.4); text-align:center; padding:1.75rem 2rem; font-size:0.8rem; line-height:1.9; }
+        footer { background:var(--black); color:rgba(240,230,216,0.4); text-align:center; padding:1.75rem 2rem; font-size:0.8rem; line-height:1.9; }
         footer span { color:var(--gold); }
-        footer a { color:rgba(255,255,255,0.5); text-decoration:none; }
+        footer a { color:rgba(240,230,216,0.5); text-decoration:none; }
         footer a:hover { color:var(--gold); }
 
         @media print {
             nav, footer, .review-btn, .sub, .lead .alt { display:none !important; }
-            body { background:#fff; }
+            body { background: var(--white); }
             .card { box-shadow:none; border:none; }
         }
-    </style>
+    
+        /* ---- Dark Natural theme corrections ---- */
+        body { background: var(--ivory); color: var(--text); }
+        input, textarea, select {
+            background: var(--dark); color: var(--text); border-color: var(--border);
+        }
+        input::placeholder, textarea::placeholder { color: #8d8073; }
+        input:focus, textarea:focus, select:focus { border-color: var(--gold); outline: none; }
+        select option { background: var(--dark); color: var(--text); }
+        details { border: 1px solid var(--border); }
+        hr { border-color: var(--border); }
+        ::selection { background: var(--gold); color: #17120e; }
+</style>
 </head>
 <body>
 
@@ -97,7 +121,7 @@
     </p>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@master/qrcode.min.js"></script>
+<script src="/js/qrcode.min.js"></script>
 <script>
 (function () {
     // ⬇️  PASTE THE GOOGLE BUSINESS PROFILE REVIEW LINK HERE  ⬇️

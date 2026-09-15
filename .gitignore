@@ -4,6 +4,12 @@
 Images/**/*.html
 Images/**/*_files/
 
+# Local tooling & secrets — never commit
+.mcp.json
+.env
+.dev.vars
+.wrangler/
+
 # Internal business docs — never publish
 PianoPlayerTech-Contractor-Agreement-Christian.md
 PianoPlayerTech-Contractor-Agreement-Christian.docx

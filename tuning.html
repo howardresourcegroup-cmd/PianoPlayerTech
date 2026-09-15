@@ -11,8 +11,8 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piano Tuner Near Me — Atlanta &amp; North Georgia | PianoPlayerTech</title>
-    <meta name="description" content="Piano tuner near me — professional in-home tuning &amp; voicing throughout metro Atlanta and North Georgia. $175 per tuning, bulk rates for schools, churches &amp; studios. Certified piano technician. Call (470) 758-9572.">
+    <title>Piano Tuner Near Me — Atlanta &amp; North Georgia</title>
+    <meta name="description" content="In-home piano tuning and voicing across metro Atlanta and North Georgia, performed by our partner World Class Piano Tuners. Book through us.">
     <link rel="canonical" href="https://pianoplayertech.com/tuning">
     <meta name="google-site-verification" content="gNXsQ9-DU0j5De3BrLql1R69q4I69p_9tZ0FqUKY1fo">
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
@@ -34,16 +34,16 @@
       },
       "description": "Professional in-home piano tuning and voicing throughout metro Atlanta and North Georgia.",
       "offers": [
-        {"@type":"Offer","name":"Standard Piano Tuning","price":"175","priceCurrency":"USD"},
-        {"@type":"Offer","name":"Bulk Piano Tuning (4+ pianos)","price":"125","priceCurrency":"USD"}
+        {"@type":"Offer","name":"Standard Piano Tuning","availability":"https://schema.org/InStock"},
+        {"@type":"Offer","name":"Bulk Piano Tuning (4+ pianos)","availability":"https://schema.org/InStock"}
       ]
     }
     </script>
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://pianoplayertech.com/tuning">
-    <meta property="og:title" content="Piano Tuner Near Me — Atlanta &amp; North Georgia | PianoPlayerTech">
-    <meta property="og:description" content="In-home piano tuning throughout metro Atlanta and North Georgia. $175 per tuning, bulk rates for churches, schools & studios. Call (470) 758-9572.">
+    <meta property="og:title" content="Piano Tuner Near Me — Atlanta &amp; North Georgia">
+    <meta property="og:description" content="In-home piano tuning and voicing across metro Atlanta and North Georgia, performed by our partner World Class Piano Tuners. Book through us.">
     <meta property="og:image" content="https://pianoplayertech.com/Images/piano-strings-og.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="900">
@@ -56,12 +56,20 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --black: #0d0d0d; --charcoal: #1a1a1a; --dark: #2a2a2a;
-            --gold: #c9a84c; --gold-light: #e4c97a;
-            --ivory: #f5f0e8; --white: #ffffff; --gray: #888; --border: #e8e2d6;
+            --black:      #100c09;
+            --charcoal:   #2b221a;
+            --dark:       #241d16;
+            --gold:       #c9a84c;
+            --gold-light: #e4c97a;
+            --ivory:      #17120e;
+            --white:      #211a14;
+            --gray:       #a8998a;
+            --border:     #3a2f24;
+            --text:       #f0e6d8;
+            --muted:      #c2b3a2;
         }
         html { scroll-behavior: smooth; }
-        body { font-family: 'Inter', sans-serif; background: var(--ivory); color: var(--dark); line-height: 1.7; }
+        body { font-family: 'Inter', sans-serif; background: var(--ivory); color: var(--text); line-height: 1.7; }
 
         nav {
             position: fixed; top: 0; left: 0; right: 0; z-index: 100;
@@ -75,8 +83,8 @@
             text-decoration: none; white-space: nowrap;
         }
         .nav-links { display: flex; align-items: center; gap: 1.75rem; }
-        .nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.84rem; transition: color 0.2s; letter-spacing: 0.02em; }
-        .nav-links a:hover, .nav-links a.active { color: var(--white); }
+        .nav-links a { color: rgba(240,230,216,0.7); text-decoration: none; font-size: 0.84rem; transition: color 0.2s; letter-spacing: 0.02em; }
+        .nav-links a:hover, .nav-links a.active { color: var(--text); }
         .nav-cta { background: var(--gold); color: var(--black) !important; padding: 0.45rem 1.1rem; border-radius: 4px; font-weight: 600 !important; }
         .nav-cta:hover { background: var(--gold-light) !important; }
 
@@ -93,22 +101,22 @@
         }
         .hero-content { position: relative; z-index: 1; max-width: 680px; }
         .hero-eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.25rem; }
-        .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2.4rem, 5vw, 4rem); color: var(--white); line-height: 1.1; margin-bottom: 1.25rem; }
+        .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2.4rem, 5vw, 4rem); color: var(--text); line-height: 1.1; margin-bottom: 1.25rem; }
         .hero h1 span { color: var(--gold); }
-        .hero-desc { font-size: 1.05rem; color: rgba(255,255,255,0.6); max-width: 520px; margin: 0 auto 2.25rem; font-weight: 300; line-height: 1.85; }
+        .hero-desc { font-size: 1.05rem; color: rgba(240,230,216,0.6); max-width: 520px; margin: 0 auto 2.25rem; font-weight: 300; line-height: 1.85; }
         .hero-badges { display: flex; justify-content: center; gap: 1.75rem; flex-wrap: wrap; margin-bottom: 2.25rem; }
-        .hero-badge { font-size: 0.77rem; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 0.4rem; letter-spacing: 0.03em; }
+        .hero-badge { font-size: 0.77rem; color: rgba(240,230,216,0.5); display: flex; align-items: center; gap: 0.4rem; letter-spacing: 0.03em; }
         .hero-badge::before { content: '✓'; color: var(--gold); font-weight: 700; font-size: 0.85rem; }
         .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
         .btn-primary { background: var(--gold); color: var(--black); padding: 0.9rem 2rem; border-radius: 4px; font-weight: 600; font-size: 0.93rem; text-decoration: none; letter-spacing: 0.03em; transition: background 0.2s, transform 0.15s; display: inline-block; }
         .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
-        .btn-secondary { background: transparent; color: var(--white); padding: 0.9rem 2rem; border-radius: 4px; font-weight: 500; font-size: 0.93rem; text-decoration: none; letter-spacing: 0.03em; border: 1px solid rgba(255,255,255,0.22); transition: border-color 0.2s, color 0.2s, transform 0.15s; display: inline-block; }
+        .btn-secondary { background: transparent; color: var(--text); padding: 0.9rem 2rem; border-radius: 4px; font-weight: 500; font-size: 0.93rem; text-decoration: none; letter-spacing: 0.03em; border: 1px solid rgba(240,230,216,0.22); transition: border-color 0.2s, color 0.2s, transform 0.15s; display: inline-block; }
         .btn-secondary:hover { border-color: var(--gold); color: var(--gold); transform: translateY(-1px); }
 
         section { padding: 5rem 2rem; }
         .section-inner { max-width: 1020px; margin: 0 auto; }
         .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.65rem; }
-        .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(1.85rem, 3.5vw, 2.7rem); color: var(--charcoal); margin-bottom: 1rem; line-height: 1.2; }
+        .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(1.85rem, 3.5vw, 2.7rem); color: var(--text); margin-bottom: 1rem; line-height: 1.2; }
         .section-subtitle { font-size: 1rem; color: var(--gray); max-width: 560px; font-weight: 300; line-height: 1.75; }
 
         /* WHAT'S INCLUDED */
@@ -116,43 +124,42 @@
         .included-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-top: 2.75rem; }
         .included-card { background: var(--ivory); border-radius: 8px; padding: 1.75rem; border-left: 3px solid var(--gold); }
         .included-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
-        .included-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--charcoal); margin-bottom: 0.35rem; }
+        .included-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--text); margin-bottom: 0.35rem; }
         .included-card p { font-size: 0.87rem; color: var(--gray); line-height: 1.65; }
 
         /* PRICING */
-        #pricing { background: var(--ivory); }
         .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 3rem; }
         .pricing-card { border-radius: 10px; padding: 2.5rem; border: 1px solid var(--border); position: relative; }
         .pricing-card.standard { background: var(--white); }
         .pricing-card.bulk { background: var(--charcoal); border-color: rgba(201,168,76,0.3); }
         .pricing-badge { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; background: var(--gold); color: var(--black); padding: 0.3rem 0.75rem; border-radius: 3px; margin-bottom: 1.25rem; }
         .pricing-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; margin-bottom: 0.35rem; }
-        .pricing-card.standard h3 { color: var(--charcoal); }
-        .pricing-card.bulk h3 { color: var(--white); }
+        .pricing-card.standard h3 { color: var(--text); }
+        .pricing-card.bulk h3 { color: var(--text); }
         .pricing-card .tagline { font-size: 0.88rem; margin-bottom: 2rem; }
         .pricing-card.standard .tagline { color: var(--gray); }
-        .pricing-card.bulk .tagline { color: rgba(255,255,255,0.5); }
+        .pricing-card.bulk .tagline { color: rgba(240,230,216,0.5); }
         .price-row { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem; }
         .price-amount { font-family: 'DM Serif Display', serif; font-size: 2.6rem; font-weight: 700; color: var(--gold); line-height: 1; }
         .price-label { font-size: 0.82rem; font-weight: 500; }
         .pricing-card.standard .price-label { color: var(--gray); }
-        .pricing-card.bulk .price-label { color: rgba(255,255,255,0.55); }
+        .pricing-card.bulk .price-label { color: rgba(240,230,216,0.55); }
         .price-divider { height: 1px; margin: 1.75rem 0; }
         .pricing-card.standard .price-divider { background: var(--border); }
-        .pricing-card.bulk .price-divider { background: rgba(255,255,255,0.1); }
+        .pricing-card.bulk .price-divider { background: rgba(240,230,216,0.1); }
         .price-line { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0; font-size: 0.9rem; }
-        .pricing-card.standard .price-line { color: #555; }
-        .pricing-card.bulk .price-line { color: rgba(255,255,255,0.7); }
+        .pricing-card.standard .price-line { color: var(--muted); }
+        .pricing-card.bulk .price-line { color: rgba(240,230,216,0.7); }
         .price-line strong { font-weight: 600; }
-        .pricing-card.standard .price-line strong { color: var(--charcoal); }
-        .pricing-card.bulk .price-line strong { color: var(--white); }
+        .pricing-card.standard .price-line strong { color: var(--text); }
+        .pricing-card.bulk .price-line strong { color: var(--text); }
         .pricing-note { margin-top: 1.5rem; font-size: 0.82rem; font-style: italic; }
         .pricing-card.standard .pricing-note { color: var(--gray); }
-        .pricing-card.bulk .pricing-note { color: rgba(255,255,255,0.4); }
+        .pricing-card.bulk .pricing-note { color: rgba(240,230,216,0.4); }
 
         .pricing-btn {
             display: block; text-align: center; margin-top: 1.5rem;
-            background: var(--charcoal); color: var(--white);
+            background: var(--charcoal); color: var(--text);
             padding: 0.8rem 1.5rem; border-radius: 6px;
             font-weight: 600; font-size: 0.9rem; text-decoration: none;
             letter-spacing: 0.04em; transition: background 0.2s, transform 0.15s;
@@ -163,8 +170,8 @@
         }
         .pricing-btn--gold:hover { background: var(--gold-light); transform: translateY(-1px); }
         /* TECHNICIAN */
-        #technician { background: var(--white); }
-        .tech-feature { display: grid; grid-template-columns: 380px 1fr; gap: 4rem; align-items: center; }
+        #partner { background: var(--white); }
+        .tech-feature { display: grid; grid-template-columns: 1fr; gap: 4rem; align-items: center; max-width: 880px; }
         .tech-photo-frame {
             border-radius: 10px; overflow: hidden; aspect-ratio: 3/4;
             background: var(--charcoal); position: relative;
@@ -176,9 +183,9 @@
             background: linear-gradient(to top, rgba(13,13,13,0.9), transparent);
             padding: 2rem 1.5rem 1.5rem;
         }
-        .frame-name { font-family: 'DM Serif Display', serif; font-size: 1.45rem; color: var(--white); font-weight: 600; }
+        .frame-name { font-family: 'DM Serif Display', serif; font-size: 1.45rem; color: var(--text); font-weight: 600; }
         .frame-title { font-size: 0.72rem; color: var(--gold); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 0.15rem; }
-        .tech-info p { font-size: 0.97rem; color: #555; line-height: 1.85; margin-bottom: 1.25rem; }
+        .tech-info p { font-size: 0.97rem; color: var(--muted); line-height: 1.85; margin-bottom: 1.25rem; }
         .tech-info h2 { margin-bottom: 0.5rem; }
         .cert-badge {
             display: inline-flex; align-items: center; gap: 0.5rem;
@@ -192,7 +199,7 @@
         .serve-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.1rem; margin-top: 2.5rem; }
         .serve-card { background: var(--white); border-radius: 8px; padding: 1.75rem; border-left: 3px solid var(--gold); }
         .serve-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
-        .serve-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: var(--charcoal); margin-bottom: 0.35rem; }
+        .serve-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: var(--text); margin-bottom: 0.35rem; }
         .serve-card p { font-size: 0.87rem; color: var(--gray); line-height: 1.6; }
 
         /* FAQ */
@@ -200,22 +207,22 @@
         .faq-list { display: flex; flex-direction: column; gap: 0.65rem; max-width: 820px; margin-top: 3rem; }
         details { background: var(--ivory); border-radius: 8px; border: 1px solid var(--border); }
         details[open] { border-color: rgba(201,168,76,0.45); }
-        summary { padding: 1.2rem 1.5rem; font-weight: 600; font-size: 0.95rem; color: var(--charcoal); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem; list-style: none; -webkit-user-select: none; user-select: none; }
+        summary { padding: 1.2rem 1.5rem; font-weight: 600; font-size: 0.95rem; color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem; list-style: none; -webkit-user-select: none; user-select: none; }
         summary::-webkit-details-marker { display: none; }
         summary::after { content: '+'; color: var(--gold); font-size: 1.35rem; font-weight: 300; flex-shrink: 0; line-height: 1; transition: transform 0.2s; }
         details[open] summary::after { transform: rotate(45deg); }
-        .faq-body { padding: 1.25rem 1.5rem 1.5rem; font-size: 0.91rem; color: #555; line-height: 1.8; border-top: 1px solid var(--border); }
+        .faq-body { padding: 1.25rem 1.5rem 1.5rem; font-size: 0.91rem; color: var(--muted); line-height: 1.8; border-top: 1px solid var(--border); }
 
         /* AREA */
         #area { background: var(--ivory); }
         .area-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 0.65rem; margin-top: 2.5rem; }
-        .area-item { background: var(--white); border-radius: 6px; padding: 0.7rem 1rem; font-size: 0.88rem; color: var(--charcoal); font-weight: 500; text-align: center; border: 1px solid var(--border); }
+        .area-item { background: var(--white); border-radius: 6px; padding: 0.7rem 1rem; font-size: 0.88rem; color: var(--text); font-weight: 500; text-align: center; border: 1px solid var(--border); }
         .area-note { margin-top: 1.5rem; font-size: 0.9rem; color: var(--gray); }
 
         /* CONTACT */
         #contact { background: var(--white); }
         .calendar-callout { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; background: var(--ivory); border: 1px solid rgba(201,168,76,0.4); border-radius: 10px; padding: 1.5rem 2rem; margin-bottom: 2.75rem; }
-        .calendar-callout h3 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--charcoal); margin-bottom: 0.25rem; }
+        .calendar-callout h3 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--text); margin-bottom: 0.25rem; }
         .calendar-callout p { font-size: 0.9rem; color: var(--gray); margin: 0; max-width: 460px; }
         .calendar-callout .btn-primary { flex-shrink: 0; }
         @media (max-width: 600px) { .calendar-callout { flex-direction: column; align-items: flex-start; } }
@@ -223,21 +230,21 @@
         .contact-item { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.65rem; }
         .contact-icon { width: 42px; height: 42px; background: var(--ivory); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; border: 1px solid var(--border); }
         .contact-item h4 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gray); margin-bottom: 0.2rem; }
-        .contact-item a, .contact-item p { font-size: 0.95rem; color: var(--charcoal); text-decoration: none; font-weight: 500; }
+        .contact-item a, .contact-item p { font-size: 0.95rem; color: var(--text); text-decoration: none; font-weight: 500; }
         .contact-item a:hover { color: var(--gold); }
-        .call-btn { display: inline-flex; align-items: center; gap: 0.6rem; background: var(--charcoal); color: var(--white); padding: 0.95rem 1.75rem; border-radius: 6px; font-weight: 600; font-size: 1rem; text-decoration: none; transition: background 0.2s, transform 0.15s; margin-top: 0.25rem; }
+        .call-btn { display: inline-flex; align-items: center; gap: 0.6rem; background: var(--charcoal); color: var(--text); padding: 0.95rem 1.75rem; border-radius: 6px; font-weight: 600; font-size: 1rem; text-decoration: none; transition: background 0.2s, transform 0.15s; margin-top: 0.25rem; }
         .call-btn:hover { background: var(--gold); color: var(--black); transform: translateY(-1px); }
-        .contact-form-wrap h3 { font-family: 'DM Serif Display', serif; font-size: 1.45rem; color: var(--charcoal); margin-bottom: 1.5rem; }
+        .contact-form-wrap h3 { font-family: 'DM Serif Display', serif; font-size: 1.45rem; color: var(--text); margin-bottom: 1.5rem; }
         form label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray); margin-bottom: 0.35rem; }
-        form input, form textarea, form select { width: 100%; padding: 0.72rem 1rem; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.92rem; font-family: 'Inter', sans-serif; background: var(--white); color: var(--charcoal); margin-bottom: 1rem; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; }
+        form input, form textarea, form select { width: 100%; padding: 0.72rem 1rem; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.92rem; font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); margin-bottom: 1rem; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; }
         form input:focus, form textarea:focus, form select:focus { outline: none; border-color: var(--gold); }
         form textarea { height: 110px; resize: vertical; }
-        form button { background: var(--charcoal); color: var(--white); border: none; padding: 0.85rem 2rem; border-radius: 6px; font-size: 0.92rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; letter-spacing: 0.04em; transition: background 0.2s, transform 0.15s; width: 100%; }
+        form button { background: var(--charcoal); color: var(--text); border: none; padding: 0.85rem 2rem; border-radius: 6px; font-size: 0.92rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; letter-spacing: 0.04em; transition: background 0.2s, transform 0.15s; width: 100%; }
         form button:hover { background: var(--gold); color: var(--black); transform: translateY(-1px); }
 
-        footer { background: var(--black); color: rgba(255,255,255,0.38); text-align: center; padding: 2.25rem 2rem; font-size: 0.82rem; line-height: 2.1; }
+        footer { background: var(--black); color: rgba(240,230,216,0.38); text-align: center; padding: 2.25rem 2rem; font-size: 0.82rem; line-height: 2.1; }
         footer span { color: var(--gold); }
-        footer a { color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
+        footer a { color: rgba(240,230,216,0.45); text-decoration: none; transition: color 0.2s; }
         footer a:hover { color: var(--gold); }
         .mobile-call-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: var(--gold); color: var(--black); text-align: center; padding: 1rem; font-weight: 700; font-size: 1rem; text-decoration: none; letter-spacing: 0.02em; }
 
@@ -279,14 +286,14 @@
         }
         .mobile-nav.open { display: flex; }
         .mobile-nav a {
-            color: rgba(255,255,255,0.7);
+            color: rgba(240,230,216,0.7);
             text-decoration: none;
             padding: 0.9rem 0;
             font-size: 0.88rem;
             font-weight: 500;
             letter-spacing: 0.07em;
             text-transform: uppercase;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(240,230,216,0.05);
             transition: color 0.2s;
         }
         .mobile-nav a:hover, .mobile-nav a.active { color: var(--gold); }
@@ -337,14 +344,14 @@
         }
         .mobile-nav.open { display: flex; }
         .mobile-nav a {
-            color: rgba(255,255,255,0.7);
+            color: rgba(240,230,216,0.7);
             text-decoration: none;
             padding: 0.9rem 0;
             font-size: 0.88rem;
             font-weight: 500;
             letter-spacing: 0.07em;
             text-transform: uppercase;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(240,230,216,0.06);
             transition: color 0.2s;
         }
         .mobile-nav a:last-child { border-bottom: none; }
@@ -375,6 +382,30 @@
         @media (max-width: 480px) { .hero h1 { font-size: 2.2rem; } }
             a.area-item { color: inherit; text-decoration: none; }
         a.area-item:hover { color: var(--gold); }
+    
+        /* ---- Dark Natural theme corrections ---- */
+        body { background: var(--ivory); color: var(--text); }
+        .section-subtitle { color: var(--muted); }
+        .included-card p, .serve-card p, .tech-info p, .faq-body { color: var(--muted); }
+        details { border: 1px solid var(--border); }
+        details[open] { border-color: rgba(201,168,76,0.45); }
+        .area-item { border: 1px solid var(--border); }
+        form input, form textarea, form select {
+            background: var(--dark); color: var(--text); border: 1.5px solid var(--border);
+        }
+        form input::placeholder, form textarea::placeholder { color: #8d8073; }
+        form input:focus, form textarea:focus, form select:focus {
+            border-color: var(--gold); outline: none;
+        }
+        form select option { background: var(--dark); color: var(--text); }
+        form button, .call-btn { background: var(--gold); color: #17120e; font-weight: 600; }
+        form button:hover, .call-btn:hover { background: var(--gold-light); color: #17120e; }
+        .btn-secondary { color: var(--text); border: 1px solid rgba(240,230,216,0.35); }
+        .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+        .contact-item a, .contact-item p { color: var(--text); }
+        .contact-icon { border: 1px solid var(--border); }
+        .cert-badge { border: 1px solid var(--border); }
+        ::selection { background: var(--gold); color: #17120e; }
     </style>
 </head>
 <body>
@@ -384,9 +415,8 @@
         <div class="nav-links">
         <a href="/">Home</a>
         <a href="/player-repair.html">Player Repair</a>
+        <a href="/antique-player-piano.html">Restoration</a>
         <a href="/tuning.html" class="active">Tuning</a>
-        <a href="/piano-cleaning.html">Cleaning</a>
-        <a href="/technicians.html">Technicians</a>
         <a href="#contact">Contact</a>
         <a href="tel:4707589572" class="nav-cta">Call Now</a>
     </div>
@@ -398,9 +428,8 @@
 <div class="mobile-nav" id="mobileNav">
     <a href="/">Home</a>
     <a href="/player-repair.html">Player Repair</a>
+    <a href="/antique-player-piano.html">Restoration</a>
     <a href="/tuning.html" class="active">Tuning</a>
-    <a href="/piano-cleaning.html">Cleaning</a>
-    <a href="/technicians.html">Technicians</a>
     <a href="#contact">Contact</a>
     <a href="tel:4707589572" class="mobile-cta">Call (470) 758-9572</a>
 </div>
@@ -408,12 +437,12 @@
 <!-- HERO -->
 <section class="hero" id="top">
     <div class="hero-content">
-        <p class="hero-eyebrow">PianoPlayerTech — Atlanta &amp; North Georgia Tuning Service</p>
+        <p class="hero-eyebrow">PianoPlayerTech &mdash; In Partnership With World Class Piano Tuners</p>
         <h1>Professional Piano<br><span>Tuning &amp; Voicing</span></h1>
-        <p class="hero-desc">In-home piano tuning throughout metro Atlanta and North Georgia — certified technician, all makes and sizes.</p>
+        <p class="hero-desc">In-home piano tuning across metro Atlanta and North Georgia &mdash; performed by World Class Piano Tuners, booked and coordinated by us.</p>
         <div class="hero-badges">
-            <span class="hero-badge">$175 per tuning</span>
-            <span class="hero-badge">$125 bulk rate (4+ pianos)</span>
+            <span class="hero-badge">Certified technicians</span>
+            <span class="hero-badge">Atlanta &amp; North Georgia</span>
             <span class="hero-badge">In-home service</span>
         </div>
         <div class="hero-buttons">
@@ -464,77 +493,36 @@
     <div class="section-inner">
         <p class="section-label">Beyond Tuning</p>
         <h2 class="section-title" style="color:var(--white);">Piano Voicing</h2>
-        <p class="section-subtitle" style="color:rgba(255,255,255,0.6);">Tuning brings your piano back to pitch. Voicing is what shapes its tone — the difference between a piano that sounds harsh and brittle and one that sounds warm and even across every note.</p>
-        <p style="color:rgba(255,255,255,0.72);font-size:0.96rem;line-height:1.85;max-width:700px;margin-top:1.5rem;">Over years of playing, the felt on the hammers hardens and compacts, and the sound can turn bright and clangy — or, in other pianos, dull and lifeless. Voicing carefully adjusts those hammer felts to even out the tone and bring the instrument back to how it's meant to sound.</p>
-        <p style="color:rgba(255,255,255,0.72);font-size:0.96rem;line-height:1.85;max-width:700px;margin-top:1.25rem;">A piano can be perfectly in tune and still need voicing — they're separate things. If your piano has ever felt &ldquo;off&rdquo; even right after a tuning, tone is usually why. At your tuning visit, Christian will tell you honestly whether voicing would make a real difference for your piano, or whether it's fine as it is.</p>
-        <p style="color:rgba(255,255,255,0.55);font-size:0.9rem;margin-top:1.5rem;">Voicing is billed separately — <strong style="color:var(--gold);">$100/hr</strong> standard, <strong style="color:var(--gold);">$75/hr</strong> on bulk visits. Ask about it when you book.</p>
+        <p class="section-subtitle" style="color:rgba(240,230,216,0.6);">Tuning brings your piano back to pitch. Voicing is what shapes its tone — the difference between a piano that sounds harsh and brittle and one that sounds warm and even across every note.</p>
+        <p style="color:rgba(240,230,216,0.72);font-size:0.96rem;line-height:1.85;max-width:700px;margin-top:1.5rem;">Over years of playing, the felt on the hammers hardens and compacts, and the sound can turn bright and clangy — or, in other pianos, dull and lifeless. Voicing carefully adjusts those hammer felts to even out the tone and bring the instrument back to how it's meant to sound.</p>
+        <p style="color:rgba(240,230,216,0.72);font-size:0.96rem;line-height:1.85;max-width:700px;margin-top:1.25rem;">A piano can be perfectly in tune and still need voicing — they're separate things. If your piano has ever felt &ldquo;off&rdquo; even right after a tuning, tone is usually why. At your tuning visit, your technician will tell you honestly whether voicing would make a real difference for your piano, or whether it's fine as it is.</p>
+        <p style="color:rgba(240,230,216,0.55);font-size:0.9rem;margin-top:1.5rem;">Voicing is billed separately from tuning. Ask about it when you book and we'll quote it with your tuning.</p>
         <a href="#contact" class="btn-primary" style="margin-top:1.75rem;">Book a Tuning &amp; Voicing Visit</a>
     </div>
 </section>
 
-<!-- PRICING -->
-<section id="pricing">
+<!-- TUNING PARTNER -->
+<section id="partner">
     <div class="section-inner">
-        <p class="section-label">Pricing</p>
-        <h2 class="section-title">Straightforward Rates</h2>
-        <p class="section-subtitle">Bulk rate applies automatically when you schedule 4 or more pianos — churches, schools, and studios.</p>
-        <div class="pricing-grid">
-            <div class="pricing-card standard">
-                <div class="pricing-badge">Standard</div>
-                <h3>1–3 Pianos</h3>
-                <p class="tagline">For homes and individual instruments</p>
-                <div class="price-row">
-                    <span class="price-amount">$175</span>
-                    <span class="price-label">per tuning</span>
-                </div>
-                <div class="price-divider"></div>
-                <div class="price-line"><span>Tuning</span><strong>$175</strong></div>
-                <div class="price-line"><span>Voicing</span><strong>$100/hr</strong></div>
-                <div class="price-line"><span>In-home service</span><strong>Included</strong></div>
-                <p class="pricing-note">Pricing is per piano. Travel within metro Atlanta and North Georgia included.</p>
-                <a href="#contact" class="pricing-btn">Book a Tuning &rarr;</a>
+        <p class="section-label">Our Tuning Partner</p>
+        <h2 class="section-title">Tuning by World Class Piano Tuners</h2>
+        <p class="section-subtitle">PianoPlayerTech tunings are performed by <strong style="color:var(--gold);font-weight:600;">World Class Piano Tuners</strong> of Alpharetta, Georgia &mdash; a dedicated tuning house. You book through us; they bring the tools.</p>
+        <div class="included-grid">
+            <div class="included-card">
+                <h3>A Team Built Around Tuning</h3>
+                <p>World Class Piano Tuners do one thing all day, every day. That focus is exactly why we partner with them rather than squeezing tunings between player-system jobs &mdash; your piano gets a technician whose whole craft is pitch, temperament, and tone.</p>
             </div>
-            <div class="pricing-card bulk">
-                <div class="pricing-badge">Best Value</div>
-                <h3>4+ Pianos</h3>
-                <p class="tagline">Schools, churches &amp; studios</p>
-                <div class="price-row">
-                    <span class="price-amount">$125</span>
-                    <span class="price-label">per tuning</span>
-                </div>
-                <div class="price-divider"></div>
-                <div class="price-line"><span>Tuning</span><strong>$125/piano</strong></div>
-                <div class="price-line"><span>Voicing</span><strong>$75/hr</strong></div>
-                <div class="price-line"><span>Minimum for bulk rate</span><strong>4 pianos</strong></div>
-                <p class="pricing-note">Can be split across multiple visits while keeping bulk rate.</p>
-                <a href="#contact" class="pricing-btn pricing-btn--gold">Book a Tuning &rarr;</a>
+            <div class="included-card">
+                <h3>Alpharetta, Covering Our Whole Area</h3>
+                <p>They run metro Atlanta and North Georgia as standard route &mdash; routine home tunings, church and school contracts, and harder-to-reach instruments up in the mountains are all on the map.</p>
             </div>
-        </div>
-    </div>
-</section>
-
-<!-- TECHNICIAN FEATURE -->
-<section id="technician">
-    <div class="section-inner">
-        <div class="tech-feature">
-            <div class="tech-photo-frame">
-                <img src="Images/IMG_20251020_000345_916_Original.jpeg"
-                     alt="Christian Collins — PianoPlayerTech Certified Piano Technician"
-                     loading="lazy">
-                <div class="frame-label">
-                    <div class="frame-name">Christian Collins</div>
-                    <div class="frame-title">Certified Piano Technician</div>
-                </div>
+            <div class="included-card">
+                <h3>You Still Deal With Us</h3>
+                <p>Booking, scheduling, and follow-up all run through PianoPlayerTech. Send the form below and we coordinate the visit &mdash; there's no second company for you to chase.</p>
             </div>
-            <div class="tech-info">
-                <p class="section-label">Our Technician</p>
-                <h2 class="section-title">Performed by a Certified Technician</h2>
-                <div class="cert-badge">
-                    <span>✓</span> PianoPlayerTech Certified Technician — Atlanta &amp; North Georgia
-                </div>
-                <p>All PianoPlayerTech tuning appointments are performed by Christian Collins, our certified piano technician. Based in East Point, Christian serves all of metro Atlanta and North Georgia — every tuning, voicing, and pitch raise, from the city to the mountains.</p>
-                <p>He works with all types of pianos — studio uprights, baby grands, concert grands, and the acoustic side of player pianos. Whether your piano hasn't been touched in a decade or gets played every day, Christian brings the same methodical approach to getting it back in tune.</p>
-                <p>Bulk scheduling for institutions is coordinated directly with Christian to work around your calendar. All visits include an honest assessment of the piano's overall condition at no extra charge.</p>
+            <div class="included-card">
+                <h3>Current Rates on Request</h3>
+                <p>Tuning rates are set with our partner and confirmed when we schedule you, so you get an accurate number rather than a stale one off a web page. Ask when you book and we'll tell you before anything is committed.</p>
             </div>
         </div>
     </div>
@@ -554,7 +542,7 @@
             <div class="serve-card">
                 <div class="serve-icon">—</div>
                 <h3>Churches</h3>
-                <p>Bulk $125 rate for sanctuaries, fellowship halls, and classrooms. We coordinate around your service schedule.</p>
+                <p>Bulk rates for sanctuaries, fellowship halls, and classrooms. We coordinate around your service schedule.</p>
             </div>
             <div class="serve-card">
                 <div class="serve-icon">—</div>
@@ -596,11 +584,11 @@
             </details>
             <details>
                 <summary>What is voicing and do I need it?</summary>
-                <div class="faq-body">Voicing adjusts the tone quality of individual notes by modifying the density of the hammer felts. If your piano sounds too bright and harsh, or dull and muted, voicing can bring it back into balance. It's separate from tuning — a piano can be perfectly in tune and still benefit from voicing. Christian will let you know at the tuning visit whether voicing would help your instrument.</div>
+                <div class="faq-body">Voicing adjusts the tone quality of individual notes by modifying the density of the hammer felts. If your piano sounds too bright and harsh, or dull and muted, voicing can bring it back into balance. It's separate from tuning — a piano can be perfectly in tune and still benefit from voicing. Your technician will let you know at the tuning visit whether voicing would help your instrument.</div>
             </details>
             <details>
                 <summary>How does the bulk rate work?</summary>
-                <div class="faq-body">The $125 per piano rate applies when you schedule 4 or more. They don't all have to be tuned in a single day — we can spread visits across your schedule while keeping the bulk rate. Just let us know how many pianos you have when you reach out.</div>
+                <div class="faq-body">A reduced per-piano rate applies when you schedule 4 or more. They don't all have to be tuned in a single day — we can spread visits across your schedule while keeping the bulk rate. Just let us know how many pianos you have when you reach out.</div>
             </details>
             <details>
                 <summary>Do you tune player pianos?</summary>
@@ -619,7 +607,7 @@
     <div class="section-inner">
         <p class="section-label">Where We Tune</p>
         <h2 class="section-title">Serving Metro Atlanta &amp; North Georgia</h2>
-        <p class="section-subtitle">Christian is based in East Point and covers all of metro Atlanta; we travel throughout North Georgia too. If you don't see your town listed, just call.</p>
+        <p class="section-subtitle">We cover all of metro Atlanta and North Georgia. If you don't see your town listed, just call.</p>
         <div class="area-grid">
             <a class="area-item" href="/piano-tuning-atlanta.html">Atlanta</a>
             <div class="area-item">East Point</div>
@@ -658,7 +646,7 @@
                 <p style="color:var(--gray);font-size:0.93rem;line-height:1.7;margin-bottom:1.5rem;">Tell us about your piano and we'll take you to the calendar to pick a time. We'll call to confirm your appointment, and payment (card or invoice) is collected after your tuning is complete.</p>
                 <div class="contact-item">
                     <div class="contact-icon">—</div>
-                    <div><h4>Rates</h4><p>$175 (1–3 pianos) &nbsp;|&nbsp; $125/piano bulk (4+)<br><a href="/piano-tuning-cost.html" style="color:var(--gold);font-size:0.85rem;">What affects the price? See the tuning cost guide →</a></p></div>
+                    <div><h4>Rates</h4><p>Confirmed when we schedule you — bulk rates for 4+ pianos.<br><a href="/piano-tuning-cost.html" style="color:var(--gold);font-size:0.85rem;">What affects the price? See the tuning cost guide →</a></p></div>
                 </div>
                 <div class="contact-item">
                     <div class="contact-icon">—</div>
@@ -689,10 +677,10 @@
                     <label for="t-pianos">Number of pianos</label>
                     <select id="t-pianos" name="pianos" required>
                         <option value="">Select...</option>
-                        <option value="1">1 piano — $175</option>
-                        <option value="2">2 pianos — $175 each</option>
-                        <option value="3">3 pianos — $175 each</option>
-                        <option value="4+">4 or more — $125 each (bulk rate)</option>
+                        <option value="1">1 piano</option>
+                        <option value="2">2 pianos</option>
+                        <option value="3">3 pianos</option>
+                        <option value="4+">4 or more (bulk rate)</option>
                     </select>
                     <label for="t-dates">Preferred dates / times</label>
                     <input type="text" id="t-dates" name="preferred_dates" placeholder="e.g. weekday mornings, any Saturday in July" required>

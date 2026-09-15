@@ -1,0 +1,36 @@
+name: Site Health Check
+
+# Cloudflare Pages serves its 404 page with a 200 status, so a missing asset,
+# a stale internal link, or a form pointing at a retired endpoint fails
+# silently in production. quiz.html posted leads to a dead Formspree endpoint
+# for weeks before anyone noticed. This runs before that can happen again.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate links, assets, forms, SEO and structured data
+        run: node .github/scripts/check-site.js
+
+      - name: Validate sitemap XML
+        run: |
+          python3 -c "import xml.dom.minidom as m; m.parse('sitemap.xml'); print('sitemap.xml: valid XML')"
+
+      - name: Syntax-check JavaScript
+        run: |
+          for f in $(find . -name '*.js' -not -path './node_modules/*' -not -path './.github/*'); do
+            node --check "$f" || exit 1
+          done
+          echo "all JS parses"

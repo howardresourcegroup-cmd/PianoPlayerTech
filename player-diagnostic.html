@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18254090927"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'AW-18254090927');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Isn’t My Player Piano Working? Free Diagnostic</title>
+    <meta name="description" content="Player system dead or keys not moving? Answer a few questions and we'll tell you the likely cause — Disklavier, PianoDisc, QRS, Spirio, pneumatic.">
+    <link rel="canonical" href="https://pianoplayertech.com/player-diagnostic">
+    <meta name="google-site-verification" content="gNXsQ9-DU0j5De3BrLql1R69q4I69p_9tZ0FqUKY1fo">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+    <link rel="icon" type="image/png" href="logo2.png">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pianoplayertech.com/player-diagnostic">
+    <meta property="og:title" content="Why Isn’t My Player Piano Working? Free Diagnostic">
+    <meta property="og:description" content="Player system dead or keys not moving? Answer a few questions and we'll tell you the likely cause — Disklavier, PianoDisc, QRS, Spirio, pneumatic.">
+    <meta property="og:image" content="https://pianoplayertech.com/Images/kawaikgii.avif">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://pianoplayertech.com/Images/kawaikgii.avif">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --black:      #100c09;
+            --charcoal:   #2b221a;
+            --dark:       #241d16;
+            --gold:       #c9a84c;
+            --gold-light: #e4c97a;
+            --ivory:      #17120e;
+            --white:      #211a14;
+            --gray:       #a8998a;
+            --border:     #3a2f24;
+            --text:       #f0e6d8;
+            --muted:      #c2b3a2;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: var(--ivory); color: var(--text); line-height: 1.7; }
+
+        /* NAV */
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(13,13,13,0.97); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 60px; }
+        .nav-logo { color: var(--text); text-decoration: none; font-weight: 700; font-size: 0.88rem; letter-spacing: 0.14em; text-transform: uppercase; }
+        .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+        .nav-links a { color: rgba(240,230,216,0.7); text-decoration: none; font-size: 0.84rem; transition: color 0.2s; letter-spacing: 0.02em; }
+        .nav-links a:hover, .nav-links a.active { color: var(--text); }
+        .nav-cta { background: var(--gold); color: var(--black) !important; padding: 0.45rem 1rem; border-radius: 4px; font-weight: 600; transition: background 0.2s !important; }
+        .nav-cta:hover { background: var(--gold-light) !important; }
+        .nav-toggle { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+        .nav-toggle span { display: block; width: 22px; height: 2px; background: var(--white); border-radius: 2px; transition: all 0.3s; }
+        .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: rgba(13,13,13,0.98); flex-direction: column; padding: 1rem 0; z-index: 99; border-top: 1px solid rgba(240,230,216,0.08); }
+        .mobile-nav.open { display: flex; }
+        .mobile-nav a { color: rgba(240,230,216,0.8); text-decoration: none; padding: 0.75rem 2rem; font-size: 0.9rem; border-bottom: 1px solid rgba(240,230,216,0.06); transition: color 0.2s; }
+        .mobile-nav a:last-child { border-bottom: none; }
+        .mobile-nav a:hover, .mobile-nav a.active { color: var(--gold); }
+        .mobile-nav .mobile-cta { background: var(--gold); color: var(--black) !important; margin: 0.75rem 1.5rem 0; border-radius: 4px; text-align: center; border-bottom: none !important; }
+        .mobile-nav .mobile-cta:hover { background: var(--gold-light) !important; }
+        @media (max-width: 900px) { .nav-links { display: none; } .nav-toggle { display: flex; } }
+
+        /* QUIZ SHELL */
+        .quiz-shell { min-height: 100vh; padding: 60px 1.5rem 0; display: flex; flex-direction: column; }
+        .quiz-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 3rem 0 4rem; }
+        .quiz-card { max-width: 660px; width: 100%; }
+
+        /* INTRO */
+        .quiz-intro { text-align: center; }
+        .quiz-intro .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; }
+        .quiz-intro h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2rem, 5vw, 3rem); color: var(--text); line-height: 1.15; margin-bottom: 1rem; }
+        .quiz-intro p { font-size: 1rem; color: var(--gray); max-width: 460px; margin: 0 auto 2rem; font-weight: 300; }
+
+        /* PROGRESS */
+        .quiz-progress { margin-bottom: 2.25rem; }
+        .quiz-progress__bar { height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 0.6rem; }
+        .quiz-progress__fill { height: 100%; background: var(--gold); border-radius: 99px; transition: width .4s cubic-bezier(.4,0,.2,1); }
+        .quiz-progress__label { font-size: 0.7rem; color: var(--gray); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+
+        /* QUESTION */
+        .quiz-q { animation: fadeUp .3s ease; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        .quiz-q__text { font-family: 'DM Serif Display', serif; font-size: clamp(1.6rem, 3.6vw, 2.3rem); color: var(--text); line-height: 1.2; margin-bottom: 0.5rem; }
+        .quiz-q__sub { font-size: 0.92rem; color: var(--gray); margin-bottom: 1.75rem; font-weight: 300; }
+        .quiz-answers { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+        .quiz-answer { background: var(--white); border: 1.5px solid var(--border); border-radius: 8px; padding: 1rem 1.15rem; cursor: pointer; transition: border-color .15s, background .15s, transform .1s; text-align: left; font-family: inherit; color: var(--text); }
+        .quiz-answer:hover { border-color: var(--gold); transform: translateY(-1px); }
+        .quiz-answer.selected { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+        .quiz-answer__label { font-size: 0.95rem; font-weight: 600; color: var(--text); margin-bottom: 0.15rem; }
+        .quiz-answer__desc { font-size: 0.8rem; color: var(--gray); line-height: 1.55; font-weight: 300; }
+
+        .quiz-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 1.75rem; }
+        .quiz-back { background: none; border: none; font-size: 0.82rem; color: var(--gray); cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 0.35rem; padding: 0; }
+        .quiz-back:hover { color: var(--text); }
+        .quiz-skip { font-size: 0.8rem; color: var(--gray); text-decoration: none; }
+        .quiz-skip:hover { color: var(--gold); }
+
+        /* RESULTS */
+        .quiz-results { animation: fadeUp .4s ease; }
+        .quiz-results__intro { text-align: center; margin-bottom: 1.75rem; }
+        .quiz-results__intro .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
+        .quiz-results__intro h2 { font-family: 'DM Serif Display', serif; font-size: clamp(1.7rem, 4vw, 2.4rem); color: var(--text); line-height: 1.2; }
+
+        .result-card { background: var(--white); border: 1.5px solid var(--gold); border-radius: 10px; padding: 1.75rem; margin-bottom: 1.25rem; }
+        .result-card__badge { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
+        .result-card__name { font-family: 'DM Serif Display', serif; font-size: 1.45rem; color: var(--text); margin-bottom: 0.4rem; line-height: 1.2; }
+        .result-card__why { font-size: 0.92rem; color: var(--text); line-height: 1.7; margin-bottom: 1rem; }
+        .result-card__price { font-size: 0.85rem; color: var(--gray); margin-bottom: 1.25rem; }
+        .result-card__price strong { color: var(--gold); font-weight: 700; }
+        .result-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+        .btn-primary { background: var(--gold); color: var(--black); padding: 0.85rem 1.6rem; border-radius: 4px; font-weight: 600; font-size: 0.9rem; text-decoration: none; letter-spacing: 0.02em; transition: background 0.2s, transform 0.15s; display: inline-block; border: none; cursor: pointer; font-family: inherit; }
+        .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+        .btn-secondary { background: transparent; color: var(--text); padding: 0.85rem 1.6rem; border-radius: 4px; font-weight: 500; font-size: 0.9rem; text-decoration: none; border: 1.5px solid var(--border); transition: border-color 0.2s, color 0.2s; display: inline-block; }
+        .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+        .result-note { background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.25); border-radius: 6px; padding: 1rem 1.15rem; font-size: 0.85rem; color: var(--text); line-height: 1.7; margin-bottom: 1.25rem; }
+
+        /* LEAD FORM */
+        .lead-form { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 1.75rem; }
+        .lead-form h3 { font-family: 'DM Serif Display', serif; font-size: 1.25rem; color: var(--text); margin-bottom: 0.35rem; }
+        .lead-form > p { font-size: 0.85rem; color: var(--gray); margin-bottom: 1.1rem; line-height: 1.6; font-weight: 300; }
+        .lead-form form { display: flex; flex-direction: column; gap: 0.7rem; }
+        .lead-form label { font-size: 0.78rem; font-weight: 600; color: var(--text); letter-spacing: 0.03em; }
+        .lead-form input, .lead-form textarea { padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.88rem; background: var(--ivory); color: var(--text); transition: border-color 0.2s; }
+        .lead-form input:focus, .lead-form textarea:focus { outline: none; border-color: var(--gold); }
+        .lead-form textarea { min-height: 90px; resize: vertical; }
+        .lead-form button { background: var(--gold); color: var(--black); padding: 0.85rem; border: none; border-radius: 4px; font-weight: 600; font-size: 0.92rem; cursor: pointer; transition: background 0.2s; margin-top: 0.25rem; font-family: inherit; }
+        .lead-form button:hover { background: var(--gold-light); }
+        .lead-form button:disabled { opacity: 0.6; cursor: default; }
+        .lead-status { margin-top: 0.75rem; font-size: 0.85rem; color: var(--gray); line-height: 1.6; }
+
+        .restart { text-align: center; margin-top: 1.5rem; }
+        .restart button { background: none; border: none; color: var(--gray); font-size: 0.82rem; cursor: pointer; font-family: inherit; text-decoration: underline; }
+        .restart button:hover { color: var(--text); }
+
+        /* FOOTER */
+        footer { background: var(--charcoal); padding: 2rem 1.5rem; text-align: center; font-size: 0.8rem; color: rgba(240,230,216,0.3); line-height: 2; }
+        footer span { color: var(--gold); }
+        footer a { color: rgba(240,230,216,0.45); text-decoration: none; transition: color 0.2s; }
+        footer a:hover { color: var(--gold); }
+    
+        /* ---- Dark Natural theme corrections ---- */
+        body { background: var(--ivory); color: var(--text); }
+        input, textarea, select {
+            background: var(--dark); color: var(--text); border-color: var(--border);
+        }
+        input::placeholder, textarea::placeholder { color: #8d8073; }
+        input:focus, textarea:focus, select:focus { border-color: var(--gold); outline: none; }
+        select option { background: var(--dark); color: var(--text); }
+        details { border: 1px solid var(--border); }
+        hr { border-color: var(--border); }
+        ::selection { background: var(--gold); color: #17120e; }
+</style>
+</head>
+<body>
+
+<nav>
+    <a href="/" class="nav-logo">PianoPlayerTech</a>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/#services">Services</a>
+        <a href="/player-repair.html">Player Repair</a>
+        <a href="/antique-player-piano.html">Restoration</a>
+        <a href="/tuning.html">Tuning</a>
+        <a href="/quiz.html" class="active">Find My Service</a>
+        <a href="tel:4707589572" class="nav-cta">Call Now</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+    </button>
+</nav>
+
+<div class="mobile-nav" id="mobileNav">
+    <a href="/">Home</a>
+    <a href="/#services">Services</a>
+    <a href="/player-repair.html">Player Repair</a>
+    <a href="/antique-player-piano.html">Restoration</a>
+        <a href="/tuning.html">Tuning</a>
+    <a href="/quiz.html" class="active">Find My Service</a>
+    <a href="tel:4707589572" class="mobile-cta">Call (470) 758-9572</a>
+</div>
+
+<div class="quiz-shell">
+    <main class="quiz-main">
+        <div class="quiz-card" id="quizCard"><!-- populated by JS --></div>
+    </main>
+</div>
+
+<footer>
+    <p>
+        &copy; 2026 <span>PianoPlayerTech</span> &nbsp;|&nbsp; North Georgia Player Piano Repair &amp; Tuning<br>
+        <a href="tel:4707589572">(470) 758-9572</a> &nbsp;&middot;&nbsp;
+        <a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a> &nbsp;&middot;&nbsp;
+        <a href="/">pianoplayertech.com</a> &nbsp;&middot;&nbsp;
+        <a href="/piano-cleaning.html">Piano Cleaning</a> &nbsp;&middot;&nbsp; <a href="/piano-teachers.html">For Piano Teachers</a> &nbsp;&middot;&nbsp; <a href="/review">Leave a Review</a> &nbsp;&middot;&nbsp;
+        <a href="https://howardresourcegroup.com/websites.html" target="_blank" rel="noopener">Website by Howard Resource Group</a>
+    </p>
+</footer>
+
+<script>
+// Mobile nav
+(function(){
+  var btn = document.getElementById('navToggle');
+  var nav = document.getElementById('mobileNav');
+  if (btn && nav) {
+    btn.addEventListener('click', function() {
+      var open = nav.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open);
+    });
+    document.addEventListener('click', function(e) {
+      if (!btn.contains(e.target) && !nav.contains(e.target)) {
+        nav.classList.remove('open');
+        btn.setAttribute('aria-expanded', false);
+      }
+    });
+  }
+})();
+
+var answers = {};
+
+var questions = [
+  {
+    id: 'system',
+    text: "Which player system does the piano have?",
+    sub: "If you don't know, pick \u201Cnot sure\u201D \u2014 the next questions will narrow it down anyway.",
+    options: [
+      { value: 'disklavier', label: 'Yamaha Disklavier', desc: 'Mark II through current ENSPIRE' },
+      { value: 'pianodisc',  label: 'PianoDisc', desc: 'PDS-128, 228CFX, Opus7, iQ or Prodigy' },
+      { value: 'qrs',        label: 'QRS Pianomation', desc: 'CD2000 or current Pianomation' },
+      { value: 'spirio',     label: 'Steinway Spirio', desc: 'Spirio or Spirio | r' },
+      { value: 'pneumatic',  label: 'An antique player with paper rolls', desc: 'Roll-operated \u2014 Ampico, Duo-Art, Aeolian, Gulbransen' },
+      { value: 'unsure',     label: "I'm not sure", desc: "Completely fine \u2014 we'll work it out" },
+    ]
+  },
+  {
+    id: 'symptom',
+    when: function(a){ return a.system !== 'pneumatic'; },
+    text: "What happens when you switch it on?",
+    sub: "Pick the closest match.",
+    options: [
+      { value: 'dead',      label: 'Nothing at all', desc: 'No lights, no display, no sound of anything waking up' },
+      { value: 'clicking',  label: 'It clicks, buzzes, or hums but never starts', desc: 'A relay ticking, or a brief flicker then nothing' },
+      { value: 'nokeys',    label: 'It powers on, but the keys never move', desc: 'Display and controls work, the piano just sits there' },
+      { value: 'badnotes',  label: 'Keys move, but some notes are wrong', desc: 'Dead notes, stuck notes, or wildly uneven volume' },
+      { value: 'media',     label: "It won't load music, connect, or stay online", desc: 'Disk/CD/USB errors, app or WiFi trouble' },
+      { value: 'intermittent', label: 'It works, then quits partway through', desc: 'Shuts down mid-song, or after warming up' },
+    ]
+  },
+  {
+    id: 'pneu',
+    when: function(a){ return a.system === 'pneumatic'; },
+    text: "What is it doing \u2014 or not doing?",
+    sub: "These instruments run on suction, so the symptoms are different.",
+    options: [
+      { value: 'nosuction', label: 'Pedals pump but nothing plays', desc: 'You are moving air and it is escaping somewhere' },
+      { value: 'somenotes', label: 'Some notes play, others never do', desc: 'Individual pouches or valves rather than the whole system' },
+      { value: 'tracking',  label: "The roll won't feed or wanders sideways", desc: 'Tracking drift or a slipping take-up spool' },
+      { value: 'motor',     label: 'The electric suction motor is dead or screaming', desc: 'On instruments fitted with a vacuum box' },
+      { value: 'weak',      label: 'It plays, but weakly or unevenly', desc: 'Usually a system losing suction through aged cloth and tubing' },
+    ]
+  },
+  {
+    id: 'acoustic',
+    text: "Ignoring the player system \u2014 does the piano play normally by hand?",
+    sub: "Sit down and play a few notes yourself.",
+    options: [
+      { value: 'fine',   label: 'Yes, it plays fine', desc: 'Every key sounds when I press it' },
+      { value: 'sticky', label: 'Some keys stick or feel wrong', desc: 'Sluggish, silent, or not returning' },
+      { value: 'outoftune', label: 'It plays, but sounds out of tune', desc: 'Mechanically fine, just sour' },
+      { value: 'notried', label: "Haven't tried", desc: "That's fine" },
+    ]
+  },
+  {
+    id: 'who',
+    text: "Last one \u2014 who are we talking to?",
+    sub: "This changes what we recommend.",
+    options: [
+      { value: 'owner', label: "I own the piano", desc: 'You want it working again' },
+      { value: 'tech',  label: "I'm a piano technician or rebuilder", desc: 'You may want bench work rather than a service call' },
+      { value: 'dealer', label: "I'm a dealer or shop", desc: 'Trade terms and volume work' },
+    ]
+  },
+];
+
+var systemPages = {
+  disklavier: { name: 'Disklavier repair', url: '/disklavier-repair.html' },
+  pianodisc:  { name: 'PianoDisc repair',  url: '/pianodisc-repair.html' },
+  qrs:        { name: 'QRS Pianomation repair', url: '/qrs-repair.html' },
+  spirio:     { name: 'Steinway Spirio service', url: '/spirio-repair.html' },
+  pneumatic:  { name: 'antique &amp; pneumatic players', url: '/antique-player-piano.html' },
+};
+
+var current = 0;
+
+function activeQuestions() {
+  return questions.filter(function(q){ return !q.when || q.when(answers); });
+}
+
+function showQuestion(idx) {
+  var list = activeQuestions();
+  if (idx >= list.length) { showResults(); return; }
+  if (idx < 0) idx = 0;
+  current = idx;
+  var q = list[idx];
+  var pct = Math.round((idx / list.length) * 100);
+
+  var html = '<div class="quiz-q">'
+    + '<div class="quiz-progress"><div class="quiz-progress__bar"><div class="quiz-progress__fill" style="width:' + pct + '%"></div></div>'
+    + '<span class="quiz-progress__label">Question ' + (idx + 1) + ' of ' + list.length + '</span></div>'
+    + '<h2 class="quiz-q__text">' + q.text + '</h2>'
+    + '<p class="quiz-q__sub">' + q.sub + '</p>'
+    + '<div class="quiz-answers" id="answerGrid">'
+    + q.options.map(function(opt){
+        var sel = answers[q.id] === opt.value ? ' selected' : '';
+        return '<button class="quiz-answer' + sel + '" data-q="' + q.id + '" data-v="' + opt.value + '">'
+          + '<div class="quiz-answer__label">' + opt.label + '</div>'
+          + (opt.desc ? '<div class="quiz-answer__desc">' + opt.desc + '</div>' : '')
+          + '</button>';
+      }).join('')
+    + '</div>'
+    + '<div class="quiz-nav">'
+    + (idx > 0 ? '<button class="quiz-back" id="backBtn">‹ Back</button>' : '<span></span>')
+    + '<a href="/#contact" class="quiz-skip">Skip — just contact us →</a>'
+    + '</div>'
+    + '</div>';
+
+  document.getElementById('quizCard').innerHTML = html;
+
+  document.getElementById('answerGrid').addEventListener('click', function(e) {
+    var btn = e.target.closest('.quiz-answer');
+    if (!btn) return;
+    answers[btn.dataset.q] = btn.dataset.v;
+    this.querySelectorAll('.quiz-answer').forEach(function(b){ b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    setTimeout(function() { showQuestion(current + 1); }, 240);
+  });
+
+  var backBtn = document.getElementById('backBtn');
+  if (backBtn) backBtn.addEventListener('click', function(){ showQuestion(current - 1); });
+}
+
+function recommendation() {
+  var sys = systemPages[answers.system];
+  var sysLink = sys ? { label: 'See ' + sys.name + ' details', url: sys.url }
+                    : { label: 'See player repair details', url: '/player-repair.html' };
+  var bookUrl = (sys && answers.system !== 'pneumatic' ? sys.url : '/player-repair.html') + '#contact';
+
+  // Trade first — a technician wants bench work, not a service call.
+  if (answers.who === 'tech' || answers.who === 'dealer') {
+    return {
+      badge: 'Trade service',
+      name: 'Send us the board',
+      why: "You don't need us in the room \u2014 you need the electronics sorted. Pull the power supply or driver board, ship it to us, and we bench-test it, tell you what failed, and quote before touching it. You keep the customer and the service call.",
+      price: 'Quoted per unit after testing &middot; if we can&rsquo;t repair it, you pay return shipping and nothing else',
+      primary: { label: 'Trade service details \u2192', url: '/for-technicians.html#contact' },
+      extra: sysLink,
+    };
+  }
+
+  if (answers.system === 'pneumatic') {
+    var pneuWhy = {
+      nosuction: "You're moving air and it's escaping before it reaches the notes \u2014 a major leak in the exhausters, reservoir, or main supply. It's the symptom people most often assume is fatal, and it usually isn't.",
+      somenotes: "Individual pouches or valves have failed rather than the whole system. Tedious to trace, straightforward to fix.",
+      tracking:  "Tracking mechanisms drift and take-up spools slip. Usually adjustment rather than replacement.",
+      motor:     "Suction motors seize and bearings dry out. Repairable or replaceable without touching the pneumatics.",
+      weak:      "Classic aged-system behaviour \u2014 original tubing and bellows cloth harden and leak, so the system can't hold the suction it needs."
+    }[answers.pneu] || "Antique players almost always fail in the air system rather than the piano.";
+    return {
+      badge: 'Your best next step',
+      name: 'Pneumatic restoration assessment',
+      why: pneuWhy + " Nine times out of ten the piano itself is fine and the pneumatic system has aged out \u2014 which is repairable.",
+      price: '<strong>$100</strong> flat-rate in-home diagnosis &middot; repair labor $125/hr after you approve the estimate',
+      primary: { label: 'Book my assessment \u2192', url: '/antique-player-piano.html#contact' },
+      extra: { label: 'See restoration details', url: '/antique-player-piano.html' },
+    };
+  }
+
+  var why = {
+    dead:     "No lights and no sound of anything waking up points squarely at the power supply. It's the single most common failure on any player system old enough to vote, and it's a repair rather than a replacement.",
+    clicking: "A clicking relay is the classic aging power supply \u2014 failed capacitors that can no longer hold the rail up under load. Very commonly misread as a dead control box, and very commonly repairable.",
+    nokeys:   "Power and control are fine, so the fault is downstream \u2014 usually the driver boards or the connection to the solenoid rail rather than the solenoids themselves.",
+    badnotes: "Dead or stuck notes and uneven volume almost always trace to solenoid driver channels or calibration drift, not to the piano's action.",
+    media:    "Media and connectivity faults are the cheapest kind of problem to have. Drives can be replaced or emulated, and app, WiFi and firmware issues are often a single-visit fix.",
+    intermittent: "Failing partway through, or after it warms up, is a thermal symptom \u2014 typically a power supply on its way out or a component drifting out of tolerance once hot."
+  }[answers.symptom] || "Player systems have their own failure patterns, and the only honest way to price the fix is to see it.";
+
+  if (answers.acoustic === 'sticky') {
+    why += " You also mentioned keys sticking by hand \u2014 worth knowing that's the piano's action, separate from the player system, and often much cheaper to put right.";
+  } else if (answers.acoustic === 'outoftune') {
+    why += " You also mentioned it sounds out of tune \u2014 that's handled by our tuning partner, and we can line it up alongside the repair.";
+  }
+
+  return {
+    badge: 'Your best next step',
+    name: 'In-home player system diagnosis',
+    why: why,
+    price: '<strong>$100</strong> flat-rate in-home diagnosis &middot; repairs billed at $125/hr after you approve the estimate &middot; can&rsquo;t diagnose it, you don&rsquo;t pay',
+    primary: { label: 'Book my diagnosis \u2192', url: bookUrl },
+    extra: sysLink,
+  };
+}
+
+function showResults() {
+  var rec = recommendation();
+  var summary = answerSummary();
+  var outside = answers.location === 'outside';
+
+  var html = '<div class="quiz-results">'
+    + '<div class="quiz-progress"><div class="quiz-progress__bar"><div class="quiz-progress__fill" style="width:100%"></div></div></div>'
+    + '<div class="quiz-results__intro"><p class="eyebrow">Here’s our honest recommendation</p>'
+    + '<h2>Based on what you told us</h2></div>';
+
+  html += '<div class="result-card">'
+    + '<span class="result-card__badge">' + rec.badge + '</span>'
+    + '<h3 class="result-card__name">' + rec.name + '</h3>'
+    + '<p class="result-card__why">' + rec.why + '</p>'
+    + '<p class="result-card__price">' + rec.price + '</p>'
+    + '<div class="result-actions">'
+    + '<a href="' + rec.primary.url + '" class="btn-primary" id="recPrimary">' + rec.primary.label + '</a>'
+    + (rec.extra ? '<a href="' + rec.extra.url + '" class="btn-secondary">' + rec.extra.label + '</a>' : '')
+    + '</div></div>';
+
+  if (outside) {
+    html += '<div class="result-note">A heads up — we’re based in North Georgia and serve metro Atlanta. If you’re outside the area, send us a note anyway and we’ll let you know honestly whether we can help or point you to someone who can.</div>';
+  }
+
+  html += '<div class="lead-form" id="lead">'
+    + '<h3>Tell us about your piano</h3>'
+    + '<p>Leave your details and a quick note. We’ll call within 30 minutes to an hour to talk it through — no pressure, no obligation.</p>'
+    + '<form id="quizLead">'
+    + '<input type="hidden" name="_subject" value="Player diagnostic lead — PianoPlayerTech">'
+    + '<input type="hidden" name="quiz_summary" value="' + summary.replace(/"/g,'&quot;') + '">'
+    + '<input type="hidden" name="recommended" value="' + rec.name.replace(/<[^>]+>/g,'').replace(/"/g,'&quot;') + '">'
+    + '<label for="q-name">Name</label>'
+    + '<input type="text" id="q-name" name="name" placeholder="Your name" required>'
+    + '<label for="q-phone">Phone</label>'
+    + '<input type="tel" id="q-phone" name="phone" placeholder="(706) 000-0000" required>'
+    + '<label for="q-email">Email</label>'
+    + '<input type="email" id="q-email" name="email" placeholder="your@email.com" required>'
+    + '<label for="q-msg">Anything else we should know?</label>'
+    + '<textarea id="q-msg" name="message" placeholder="Make &amp; model, what it’s doing, error lights or sounds — the more detail, the better."></textarea>'
+    + '<button type="submit" id="q-submit">Send — we’ll call you back</button>'
+    + '</form>'
+    + '<p class="lead-status" id="q-status" style="display:none;"></p>'
+    + '</div>';
+
+  html += '<div class="restart"><button onclick="answers={};showQuestion(0)">← Start over</button></div>';
+
+  html += '</div>';
+  document.getElementById('quizCard').innerHTML = html;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (typeof gtag === 'function') gtag('event', 'quiz_complete', { recommended: rec.name.replace(/<[^>]+>/g,''), need: answers.need || '' });
+
+  wireLeadForm();
+}
+
+function wireLeadForm() {
+  var form = document.getElementById('quizLead');
+  var status = document.getElementById('q-status');
+  var submit = document.getElementById('q-submit');
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    submit.disabled = true;
+    submit.textContent = 'Sending…';
+    var data = new FormData(form);
+    fetch('https://formspree.io/f/xeebglab', {
+      method: 'POST', body: data, headers: { 'Accept': 'application/json' }
+    }).then(function(res) {
+      if (res.ok) {
+        form.style.display = 'none';
+        status.style.display = 'block';
+        status.textContent = 'Got it — thank you. We’ll call you within 30 minutes to an hour. If you’d rather not wait, call us anytime at (470) 758-9572.';
+        if (typeof gtag === 'function') gtag('event', 'generate_lead', { source: 'quiz', need: answers.need || '' });
+      } else {
+        submit.disabled = false;
+        submit.textContent = 'Send — we’ll call you back';
+        status.style.display = 'block';
+        status.textContent = 'Something went wrong — please call us at (470) 758-9572.';
+      }
+    }).catch(function() {
+      submit.disabled = false;
+      submit.textContent = 'Send — we’ll call you back';
+      status.style.display = 'block';
+      status.textContent = 'Could not connect — please call us at (470) 758-9572.';
+    });
+  });
+}
+
+// Intro screen
+function showIntro() {
+  document.getElementById('quizCard').innerHTML =
+    '<div class="quiz-intro">'
+    + '<p class="eyebrow">60-Second Piano Quiz</p>'
+    + '<h1>Not sure what your piano needs?</h1>'
+    + '<p>Answer a few quick questions and we’ll point you to the right service — and the honest next step. No pressure, no obligation.</p>'
+    + '<button class="btn-primary" id="startQuiz">Start the quiz →</button>'
+    + '</div>';
+  document.getElementById('startQuiz').addEventListener('click', function(){ showQuestion(0); });
+}
+
+showIntro();
+</script>
+
+</body>
+</html>
