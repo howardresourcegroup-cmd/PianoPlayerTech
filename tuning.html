@@ -636,14 +636,14 @@
         <div class="calendar-callout">
             <div>
                 <h3>How booking works</h3>
-                <p>1. Tell us about your piano below &nbsp;·&nbsp; 2. Pick a time on our calendar &nbsp;·&nbsp; 3. We call to confirm. Payment by card or invoice after your tuning.</p>
+                <p>1. Tell us about your piano below &nbsp;·&nbsp; 2. We call you back to set a time &nbsp;·&nbsp; 3. Payment by card or invoice after your tuning.</p>
             </div>
         </div>
         <div class="contact-grid">
             <div class="contact-info">
                 <p class="section-label">Book a Tuning</p>
                 <h2 class="section-title">Book Your Tuning</h2>
-                <p style="color:var(--gray);font-size:0.93rem;line-height:1.7;margin-bottom:1.5rem;">Tell us about your piano and we'll take you to the calendar to pick a time. We'll call to confirm your appointment, and payment (card or invoice) is collected after your tuning is complete.</p>
+                <p style="color:var(--gray);font-size:0.93rem;line-height:1.7;margin-bottom:1.5rem;">Tell us about your piano and we'll call you back to set a time — usually within 30 minutes to an hour. Payment (card or invoice) is collected after your tuning is complete.</p>
                 <div class="contact-item">
                     <div class="contact-icon">—</div>
                     <div><h4>Rates</h4><p>Confirmed when we schedule you — bulk rates for 4+ pianos.<br><a href="/piano-tuning-cost.html" style="color:var(--gold);font-size:0.85rem;">What affects the price? See the tuning cost guide →</a></p></div>
@@ -662,8 +662,8 @@
             <div class="contact-form-wrap">
                 <h3>Book a Tuning</h3>
                 <div id="booking-success" style="display:none;padding:1.5rem;background:#f0faf0;border-radius:6px;text-align:center;">
-                    <p style="font-weight:600;color:#2d6a2d;margin-bottom:0.5rem;">Got your details — opening the calendar…</p>
-                    <p style="font-size:0.85rem;color:#555;">Pick a time and we'll call to confirm. If the calendar doesn't open, <a href="https://calendar.app.google/cpSXEyKxxxmE69HU8" target="_blank" rel="noopener" style="color:var(--gold);">tap here to pick a time</a>. Payment is collected after your tuning.</p>
+                    <p style="font-weight:600;color:#2d6a2d;margin-bottom:0.5rem;">Got it — we'll be in touch.</p>
+                    <p style="font-size:0.85rem;color:#555;">A confirmation email is on its way, and someone will call you within 30 minutes to an hour to schedule. Payment is collected after your tuning. In a hurry? Call <a href="tel:4707589572" style="color:#2d6a2d;font-weight:600;">(470)&nbsp;758-9572</a>.</p>
                 </div>
                 <form id="tuning-booking-form">
                     <input type="hidden" name="_subject" value="New Tuning Booking — PianoPlayerTech">
@@ -686,7 +686,7 @@
                     <input type="text" id="t-dates" name="preferred_dates" placeholder="e.g. weekday mornings, any Saturday in July" required>
                     <label for="t-notes">Anything else we should know? <span style="font-weight:400;color:var(--gray)">(optional)</span></label>
                     <textarea id="t-notes" name="notes" placeholder="Piano make/model, address, last tuned, etc."></textarea>
-                    <button type="submit" id="booking-submit-btn">Continue to Booking →</button>
+                    <button type="submit" id="booking-submit-btn">Request My Tuning</button>
                 </form>
             </div>
         </div>
@@ -750,7 +750,8 @@
 })();
 </script>
 <script>
-// Tuning booking request — submit details to Formspree (no payment; client pays after the tuning)
+// Tuning request — submit details to Formspree. No calendar and no payment: we call
+// the customer back to schedule, and they pay after the tuning.
 (function() {
     var form = document.getElementById('tuning-booking-form');
     if (!form) return;
@@ -777,10 +778,9 @@
         .then(function() {
             form.style.display = 'none';
             document.getElementById('booking-success').style.display = 'block';
-            setTimeout(function() { window.location.href = 'https://calendar.app.google/cpSXEyKxxxmE69HU8'; }, 1500);
         })
         .catch(function() {
-            btn.textContent = 'Continue to Booking \u2192';
+            btn.textContent = 'Request My Tuning';
             btn.disabled = false;
             alert('Something went wrong — please call us at (470) 758-9572.');
         });
