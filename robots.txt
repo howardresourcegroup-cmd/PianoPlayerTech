@@ -10,6 +10,10 @@ Disallow: /cdn-cgi/
 # Endpoints, not content
 Disallow: /api/
 
+# Private lead dashboard. Password-gated and sends noindex headers of its
+# own; this is belt and braces so it never turns up in a search result.
+Disallow: /leads
+
 # Post-submission pages — no search value, and indexing them skews conversion data
 Disallow: /thank-you
 Disallow: /checkout-return
