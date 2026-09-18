@@ -8,6 +8,8 @@
 // Cloudflare Pages -> pianoplayertech -> Settings:
 //   Bindings:   DB (D1) -> pianoplayertech-leads
 //   Secrets:    ADMIN_PASSWORD
+//   Secrets:    STRIPE_SECRET_KEY  turns on invoicing (a restricted key with
+//                                  Customers, Invoices and Invoice Items write)
 //   Variables:  WORLDCLASS_EMAIL   optional; turns on emailing referrals
 //               RESEND_API_KEY, LEAD_FROM_EMAIL, LEAD_NOTIFY_EMAIL (shared
 //               with functions/api/lead.js)
@@ -18,7 +20,7 @@
 
 const SESSION_HOURS = 12;
 const COOKIE = 'ppt_admin';
-const VIEWS = { repair: 'Repair & Pneumatic', tuning: 'Tuning', referrals: 'Referrals', all: 'All' };
+const VIEWS = { repair: 'Repair & Pneumatic', tuning: 'Tuning', referrals: 'Referrals', all: 'All', invoices: 'Invoices' };
 const STATUSES = ['new', 'called', 'referred', 'booked', 'closed'];
 const PIPELINES = ['repair', 'tuning'];
 
@@ -37,8 +39,19 @@ const EDITABLE = {
 const COLUMNS = [
   'id', 'created_at', 'updated_at', 'pipeline', 'status', 'name', 'phone', 'email',
   'address', 'city', 'system', 'service', 'message', 'notes', 'source',
-  'referred_at', 'referral_status', 'referral_paid_at', 'fields'
+  'referred_at', 'referral_status', 'referral_paid_at', 'referral_invoice_id', 'fields'
 ];
+
+const INVOICE_COLUMNS = [
+  'id', 'created_at', 'kind', 'lead_id', 'bill_to', 'email', 'description', 'amount_cents',
+  'status', 'number', 'due_date', 'paid_at', 'hosted_url', 'stripe_id', 'lines'
+];
+
+// Pinned so a Stripe API upgrade can never change what these calls mean.
+const STRIPE_VERSION = '2024-06-20';
+const MAX_LINES = 25;
+const MAX_LINE_CENTS = 5000000; // $50,000
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ------------------------------------------------------------------ auth
 
@@ -158,8 +171,35 @@ export async function onRequestGet(context) {
   let rows;
   let counts = { repair: 0, tuning: 0 };
   let ref = { sent: 0, booked: 0, lost: 0, paid: 0 };
+  const extra = { stripeReady: !!env.STRIPE_SECRET_KEY, invoices: [], lastWcEmail: '' };
   try {
-    const where = view === 'all' ? ''
+    // Catch up on anything paid since last time.
+    if (extra.stripeReady && (view === 'invoices' || view === 'referrals')) await syncInvoices(env);
+
+    if (view === 'invoices') {
+      extra.invoices = (await env.DB.prepare(
+        `SELECT ${INVOICE_COLUMNS.join(', ')} FROM invoices WHERE status != 'creating' ORDER BY id DESC LIMIT 2000`
+      ).all()).results || [];
+      if (url.searchParams.get('export') === 'csv') {
+        const day = new Date().toISOString().slice(0, 10);
+        return new Response(toCsv(extra.invoices, INVOICE_COLUMNS), {
+          headers: {
+            ...privateHeaders(nonce, 'text/csv; charset=utf-8'),
+            'Content-Disposition': `attachment; filename="ppt-invoices-${day}.csv"`
+          }
+        });
+      }
+    } else if (view === 'referrals') {
+      extra.invoices = (await env.DB.prepare(
+        `SELECT id, number, status, hosted_url FROM invoices WHERE kind = 'referral' AND status != 'creating'`
+      ).all()).results || [];
+    }
+    const last = await env.DB.prepare(
+      `SELECT email FROM invoices WHERE kind = 'referral' AND status != 'creating' ORDER BY id DESC LIMIT 1`
+    ).first();
+    extra.lastWcEmail = (last && last.email) || '';
+
+    const where = view === 'all' || view === 'invoices' ? ''
       : view === 'referrals' ? 'WHERE referred_at IS NOT NULL'
       : 'WHERE pipeline = ?';
     const order = view === 'referrals'
@@ -171,7 +211,7 @@ export async function onRequestGet(context) {
 
     if (url.searchParams.get('export') === 'csv') {
       const day = new Date().toISOString().slice(0, 10);
-      return new Response(toCsv(rows), {
+      return new Response(toCsv(rows, COLUMNS), {
         headers: {
           ...privateHeaders(nonce, 'text/csv; charset=utf-8'),
           'Content-Disposition': `attachment; filename="ppt-${view}-${day}.csv"`
@@ -203,8 +243,8 @@ export async function onRequestGet(context) {
       { status: 500, headers });
   }
 
-  return new Response(dashboard(view, rows, counts, ref, !!(env.WORLDCLASS_EMAIL && env.RESEND_API_KEY), nonce),
-    { headers });
+  extra.wcReady = !!(env.WORLDCLASS_EMAIL && env.RESEND_API_KEY);
+  return new Response(dashboard(view, rows, counts, ref, extra, nonce), { headers });
 }
 
 export async function onRequestPost(context) {
@@ -247,6 +287,18 @@ export async function onRequestPost(context) {
 
   let body;
   try { body = await request.json(); } catch { return json({ error: 'bad request' }, 400); }
+
+  if (body.action === 'invoice' || body.action === 'void') {
+    if (!env.STRIPE_SECRET_KEY) return json({ error: 'Stripe is not connected. Add a STRIPE_SECRET_KEY secret in Cloudflare, then redeploy.' }, 503);
+    try {
+      return body.action === 'invoice'
+        ? await createInvoice(env, body, new Date().toISOString())
+        : await voidInvoice(env, parseInt(body.id, 10));
+    } catch (err) {
+      console.error('invoice action failed', body.action, err && err.message);
+      return json({ error: err && err.stripe ? `Stripe said: ${err.message}` : 'Could not complete that — try again.' }, 502);
+    }
+  }
 
   const id = parseInt(body.id, 10);
   if (!Number.isInteger(id)) return json({ error: 'bad id' }, 400);
@@ -434,18 +486,207 @@ async function sendEmail(env, payload) {
   }
 }
 
+// ---------------------------------------------------------------- stripe
+
+async function stripe(env, method, path, params, idempotencyKey) {
+  const form = new URLSearchParams();
+  for (const [k, v] of Object.entries(params || {})) {
+    if (v !== undefined && v !== null && v !== '') form.append(k, String(v));
+  }
+  const headers = { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Stripe-Version': STRIPE_VERSION };
+  const hasBody = method !== 'GET' && method !== 'DELETE';
+  if (hasBody) headers['Content-Type'] = 'application/x-www-form-urlencoded';
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+  const qs = !hasBody && [...form].length ? `?${form}` : '';
+  const r = await fetch(`https://api.stripe.com/v1/${path}${qs}`, { method, headers, body: hasBody ? form.toString() : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const e = new Error((j.error && j.error.message) || `Stripe error ${r.status}`);
+    e.stripe = true;
+    throw e;
+  }
+  return j;
+}
+
+function releaseReferrals(env, invoiceId) {
+  return env.DB.prepare('UPDATE leads SET referral_invoice_id = NULL WHERE referral_invoice_id = ?').bind(invoiceId).run();
+}
+
+// Builds, finalizes and emails a Stripe invoice. Referral invoices are
+// priced here from the referrals themselves — the browser only says which
+// ones — and each referral is claimed first so it can never be billed twice.
+async function createInvoice(env, body, now) {
+  const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  const billTo = clip(body.billTo, 200);
+  const email = clip(body.email, 200).toLowerCase();
+  const memo = clip(body.memo, 500);
+  const days = Math.min(Math.max(parseInt(body.days, 10) || 14, 1), 90);
+  const leadId = Number.isInteger(parseInt(body.leadId, 10)) ? parseInt(body.leadId, 10) : null;
+  if (!billTo) return json({ error: 'Who is this invoice for?' }, 400);
+  if (!EMAIL_RE.test(email)) return json({ error: 'Enter a valid email — Stripe sends the invoice there.' }, 400);
+
+  let kind = 'custom';
+  let lines;
+  let referralIds = [];
+  if (Array.isArray(body.referralIds) && body.referralIds.length) {
+    kind = 'referral';
+    referralIds = [...new Set(body.referralIds.map((n) => parseInt(n, 10)).filter(Number.isInteger))].slice(0, 200);
+    const ph = referralIds.map(() => '?').join(',');
+    const refs = (await env.DB.prepare(
+      `SELECT id, name FROM leads WHERE id IN (${ph}) AND referral_status = 'booked'
+          AND referral_paid_at IS NULL AND referral_invoice_id IS NULL ORDER BY id`
+    ).bind(...referralIds).all()).results || [];
+    if (refs.length !== referralIds.length) {
+      return json({ error: 'Some of those referrals were already billed or paid. Reload and try again.' }, 409);
+    }
+    lines = refs.map((r) => ({ description: `Tuning referral PPT-${r.id}${r.name ? ` — ${r.name}` : ''}`, cents: REFERRAL_FEE * 100 }));
+  } else {
+    lines = (Array.isArray(body.lines) ? body.lines : []).slice(0, MAX_LINES)
+      .map((l) => ({ description: clip(l && l.description, 300), cents: Math.round(Number(l && l.amount) * 100) }))
+      .filter((l) => l.description || l.cents);
+    if (!lines.length) return json({ error: 'Add at least one line.' }, 400);
+    if (lines.some((l) => !l.description || !Number.isInteger(l.cents) || l.cents < 50 || l.cents > MAX_LINE_CENTS)) {
+      return json({ error: 'Each line needs a description and an amount between $0.50 and $50,000.' }, 400);
+    }
+  }
+  const total = lines.reduce((a, l) => a + l.cents, 0);
+
+  const local = await env.DB.prepare(
+    `INSERT INTO invoices (created_at, kind, lead_id, bill_to, email, description, amount_cents, status, lines)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'creating', ?) RETURNING id`
+  ).bind(now, kind, leadId, billTo, email, memo, total, JSON.stringify(lines)).first();
+  const invId = local.id;
+
+  const abandon = async () => {
+    await releaseReferrals(env, invId);
+    await env.DB.prepare('DELETE FROM invoices WHERE id = ?').bind(invId).run();
+  };
+
+  if (kind === 'referral') {
+    const ph = referralIds.map(() => '?').join(',');
+    const claim = await env.DB.prepare(
+      `UPDATE leads SET referral_invoice_id = ? WHERE id IN (${ph}) AND referral_invoice_id IS NULL`
+    ).bind(invId, ...referralIds).run();
+    if (!claim.meta || claim.meta.changes !== referralIds.length) {
+      await abandon();
+      return json({ error: 'Some of those referrals were just billed. Reload and try again.' }, 409);
+    }
+  }
+
+  const key = `ppt-inv-${invId}`;
+  let draft = null;
+  let finalized = null;
+  try {
+    const found = await stripe(env, 'GET', 'customers', { email, limit: 1 });
+    const customer = (found.data && found.data[0]) ||
+      await stripe(env, 'POST', 'customers', { name: billTo, email }, `${key}-customer`);
+
+    draft = await stripe(env, 'POST', 'invoices', {
+      customer: customer.id,
+      collection_method: 'send_invoice',
+      days_until_due: days,
+      auto_advance: 'false',
+      pending_invoice_items_behavior: 'exclude',
+      description: memo,
+      footer: 'PianoPlayerTech · (470) 758-9572 · info@pianoplayertech.com',
+      'metadata[ppt_invoice]': invId,
+      'metadata[kind]': kind
+    }, key);
+
+    for (let i = 0; i < lines.length; i++) {
+      await stripe(env, 'POST', 'invoiceitems', {
+        customer: customer.id, invoice: draft.id, currency: 'usd',
+        amount: lines[i].cents, description: lines[i].description
+      }, `${key}-item-${i}`);
+    }
+
+    finalized = await stripe(env, 'POST', `invoices/${draft.id}/finalize`, { auto_advance: 'false' }, `${key}-finalize`);
+  } catch (err) {
+    // Never leave a half-built invoice behind: delete the Stripe draft and
+    // give the referrals back so they can be billed again.
+    if (draft && !finalized) { try { await stripe(env, 'DELETE', `invoices/${draft.id}`); } catch { /* best effort */ } }
+    await abandon();
+    throw err;
+  }
+
+  // From here the invoice is real. If Stripe can't email it, keep it and
+  // say so — the pay link still works.
+  let sent = finalized;
+  let warning = '';
+  try {
+    sent = await stripe(env, 'POST', `invoices/${finalized.id}/send`, null, `${key}-send`);
+  } catch (err) {
+    warning = `The invoice was created but Stripe couldn't email it (${err.message}). Copy the pay link and send it yourself.`;
+  }
+
+  await env.DB.prepare(
+    `UPDATE invoices SET stripe_id = ?, number = ?, status = ?, hosted_url = ?, due_date = ? WHERE id = ?`
+  ).bind(
+    sent.id, sent.number || null, sent.status || 'open', sent.hosted_invoice_url || null,
+    sent.due_date ? new Date(sent.due_date * 1000).toISOString() : null, invId
+  ).run();
+
+  const invoice = await env.DB.prepare(`SELECT ${INVOICE_COLUMNS.join(', ')} FROM invoices WHERE id = ?`).bind(invId).first();
+  return json({ ok: true, invoice, warning });
+}
+
+async function voidInvoice(env, id) {
+  if (!Number.isInteger(id)) return json({ error: 'bad id' }, 400);
+  const inv = await env.DB.prepare('SELECT id, stripe_id, status FROM invoices WHERE id = ?').bind(id).first();
+  if (!inv || inv.status !== 'open' || !inv.stripe_id) return json({ error: 'Only unpaid invoices can be voided.' }, 400);
+  const s = await stripe(env, 'POST', `invoices/${inv.stripe_id}/void`, null, `ppt-void-${inv.id}`);
+  await applyStripeStatus(env, inv.id, s);
+  const invoice = await env.DB.prepare(`SELECT ${INVOICE_COLUMNS.join(', ')} FROM invoices WHERE id = ?`).bind(id).first();
+  return json({ ok: true, invoice });
+}
+
+// Mirrors Stripe's view of an invoice into D1. A paid referral invoice marks
+// its referrals paid; a voided one frees them to be billed again.
+async function applyStripeStatus(env, id, s) {
+  const paidAt = s.status === 'paid'
+    ? new Date(((s.status_transitions && s.status_transitions.paid_at) || Date.now() / 1000) * 1000).toISOString()
+    : null;
+  await env.DB.prepare(
+    'UPDATE invoices SET status = ?, paid_at = COALESCE(paid_at, ?), hosted_url = COALESCE(?, hosted_url) WHERE id = ?'
+  ).bind(s.status, paidAt, s.hosted_invoice_url || null, id).run();
+  if (s.status === 'paid') {
+    await env.DB.prepare(
+      `UPDATE leads SET referral_paid_at = COALESCE(referral_paid_at, ?), referral_status = 'booked'
+        WHERE referral_invoice_id = ?`
+    ).bind(paidAt, id).run();
+  } else if (s.status === 'void') {
+    await releaseReferrals(env, id);
+  }
+}
+
+// No webhook to configure: open invoices are checked against Stripe when
+// the Invoices or Referrals tab loads. A small business has a handful open
+// at a time, and they're checked in parallel.
+async function syncInvoices(env) {
+  let open = [];
+  try {
+    open = (await env.DB.prepare(
+      `SELECT id, stripe_id FROM invoices WHERE status = 'open' AND stripe_id IS NOT NULL ORDER BY id DESC LIMIT 25`
+    ).all()).results || [];
+  } catch { return; }
+  await Promise.allSettled(open.map(async (row) => {
+    const s = await stripe(env, 'GET', `invoices/${encodeURIComponent(row.stripe_id)}`);
+    if (s.status && s.status !== 'open') await applyStripeStatus(env, row.id, s);
+  }));
+}
+
 // -------------------------------------------------------------------- csv
 
 // Opens cleanly in Excel and Google Sheets. Cells that a spreadsheet would
 // run as a formula get a leading apostrophe — the data came from a public
 // form. Phone numbers like "+1 770…" are left alone.
-function toCsv(rows) {
+function toCsv(rows, columns) {
   const cell = (v) => {
     let s = v == null ? '' : String(v);
     if (/^[=@\t\r]/.test(s) || /^[+-](?![\d\s().-]*$)/.test(s)) s = `'${s}`;
     return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const lines = [COLUMNS.join(','), ...rows.map((r) => COLUMNS.map((c) => cell(r[c])).join(','))];
+  const lines = [columns.join(','), ...rows.map((r) => columns.map((c) => cell(r[c])).join(','))];
   return '﻿' + lines.join('\r\n');
 }
 
@@ -555,6 +796,21 @@ color:var(--text);font:inherit;font-weight:500;cursor:pointer;text-decoration:no
 .go:disabled{opacity:.5;cursor:not-allowed}
 .go.full{width:100%}
 .warn{color:var(--bad);font-size:.85rem}
+.banner{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;background:var(--surface);
+border:1px solid var(--gold);border-radius:8px;padding:.6rem .8rem;margin-bottom:.8rem}
+.tools .go{padding:.45rem .9rem}
+a.go{display:inline-block;text-decoration:none}
+.refer input[type=email],.refer input[type=number]{width:100%;background:var(--ground);color:var(--text);
+border:1px solid var(--border);border-radius:6px;padding:.5rem .65rem;font:inherit}
+.line{display:flex;gap:.4rem;align-items:center;margin-bottom:.4rem}
+.line input[type=text]{flex:1}
+.refer .line .amt{flex:0 0 105px;width:105px}
+.total{font-weight:600;font-size:1rem;margin:.9rem 0 .5rem}
+.acts{display:flex;gap:.8rem;align-items:center;padding:0 .6rem;white-space:nowrap}
+.acts a{color:var(--gold)}
+.ro.st-paid{color:var(--ok)}
+.ro.st-open{color:var(--gold)}
+.ro.st-overdue{color:var(--bad);font-weight:600}
 input[type=password]{width:100%;padding:.7rem .8rem;border-radius:7px;border:1px solid var(--border);
 background:var(--ground);color:var(--text);font:inherit;margin:.7rem 0}
 input[type=password]:focus{outline:none;border-color:var(--gold)}
@@ -584,7 +840,7 @@ function loginPage(bad) {
     </div>`);
 }
 
-function dashboard(view, rows, counts, ref, wcReady, nonce) {
+function dashboard(view, rows, counts, ref, extra, nonce) {
   const tab = (key) => {
     const n = counts[key] || 0;
     return `<a class="tab${key === view ? ' on' : ''}" href="/leads?p=${key}">${VIEWS[key]}${
@@ -594,7 +850,7 @@ function dashboard(view, rows, counts, ref, wcReady, nonce) {
   // Everything the grid needs, handed to the script as data. `<` is escaped
   // so no value a customer typed can close this script tag.
   const data = JSON.stringify({
-    view, rows, statuses: STATUSES, refStatuses: REFERRAL_STATUSES, fee: REFERRAL_FEE, wcReady, ref
+    view, rows, statuses: STATUSES, refStatuses: REFERRAL_STATUSES, fee: REFERRAL_FEE, ref, ...extra
   }).replace(/</g, '\\u003c');
 
   return page(VIEWS[view], `
@@ -605,7 +861,8 @@ function dashboard(view, rows, counts, ref, wcReady, nonce) {
     </div>
     <nav class="tabs">${Object.keys(VIEWS).map(tab).join('')}</nav>
     <div class="stats" id="stats" ${view === 'repair' ? 'hidden' : ''}></div>
-    <div class="tools">
+    <div class="banner" id="banner" hidden></div>
+    <div class="tools" id="tools">
       <input type="search" id="q" placeholder="Search name, phone, address, piano, notes…" aria-label="Search">
       <select id="sf" aria-label="Filter"></select>
       <span class="muted" id="shown"></span>
@@ -637,6 +894,7 @@ const GRID_JS = `
       {k:'referred_at', label:'Sent', type:'date', w:120},
       {k:'referral_status', label:'Outcome', type:'select', opts:D.refStatuses, labels:REF_LABEL, w:140},
       {k:'referral_paid_at', label:'$' + D.fee + ' paid', type:'paid', w:80},
+      {k:'referral_invoice_id', label:'Invoice', type:'inv', w:150},
       {k:'address', label:'Address', type:'text', w:220},
       {k:'system', label:'Piano', type:'text', w:170},
       {k:'notes', label:'Notes', type:'text', w:280}
@@ -684,6 +942,13 @@ const GRID_JS = `
   }
   function fmtLong(ts){ var d = new Date(ts); return isNaN(d) ? '' : d.toLocaleString(); }
   function tel(p){ return String(p || '').replace(/[^0-9+]/g, ''); }
+  function money(c){ return '$' + (Number(c || 0) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+  var INV_LABEL = {open:'Unpaid', paid:'Paid', void:'Void', uncollectible:'Uncollectible', draft:'Draft'};
+  function invById(id){
+    for (var i = 0; i < D.invoices.length; i++) if (D.invoices[i].id === id) return D.invoices[i];
+    return null;
+  }
+  function showDlg(){ if (!dlg.open) dlg.showModal(); }
   function fields(r){ try { return JSON.parse(r.fields || '{}') || {}; } catch(e){ return {}; } }
 
   function post(payload){
@@ -812,6 +1077,11 @@ const GRID_JS = `
         }, function(e){ cb.checked = !cb.checked; flash(td, false); alert(e.message); });
       });
       td.appendChild(cb);
+    } else if (c.type === 'inv') {
+      var inv = v ? invById(v) : null;
+      var billed = inv ? (inv.number || 'Invoice') + ' · ' + (INV_LABEL[inv.status] || inv.status)
+        : (r.referral_status === 'booked' && !r.referral_paid_at ? 'Not billed yet' : '');
+      td.appendChild(el('div', {className:'ro', text:billed, title:billed}));
     } else if (c.type === 'ref') {
       td.appendChild(el('div', {className:'ro', text:'PPT-' + r.id}));
     } else if (c.type === 'date') {
@@ -843,6 +1113,7 @@ const GRID_JS = `
     list.forEach(function(r){ frag.appendChild(rowEl(r)); });
     body.appendChild(frag);
     empty.hidden = list.length > 0;
+    renderBanner();
     shown.textContent = list.length === rows.length
       ? rows.length + (rows.length === 1 ? ' row' : ' rows') : list.length + ' of ' + rows.length;
   }
@@ -898,7 +1169,214 @@ const GRID_JS = `
     if (r.notes) dlgbody.appendChild(el('div', {className:'msg', text:r.notes}));
 
     dlgbody.appendChild(referBox(r, f));
-    dlg.showModal();
+    dlgbody.appendChild(el('div', {className:'refer'}, [
+      el('h3', {text:'Invoice'}),
+      el('button', {className:'ghost', type:'button', text:'Create an invoice for ' + (r.name || 'this customer'),
+        on:{click:function(){ invoiceDialog({billTo:r.name, email:r.email, leadId:r.id}); }}})
+    ]));
+    showDlg();
+  }
+
+  // ---- invoicing (Stripe)
+  function dlgHeader(title, sub){
+    dlgbody.appendChild(el('div', {className:'hd'}, [
+      el('div', null, [el('h2', {text:title}), sub ? el('div', {className:'muted', text:sub}) : null]),
+      el('button', {className:'x', type:'button', text:'×', 'aria-label':'Close', on:{click:function(){ dlg.close(); }}})
+    ]));
+  }
+
+  // The monthly World Class bill on the Referrals tab.
+  function renderBanner(){
+    var b = document.getElementById('banner');
+    if (view !== 'referrals') return;
+    var due = rows.filter(function(r){ return r.referral_status === 'booked' && !r.referral_paid_at && !r.referral_invoice_id; });
+    b.textContent = '';
+    b.hidden = !due.length;
+    if (!due.length) return;
+    b.appendChild(el('span', {text: due.length + (due.length === 1 ? ' booked referral' : ' booked referrals') +
+      ' not billed yet · ' + money(due.length * D.fee * 100)}));
+    b.appendChild(el('button', {className:'go', type:'button', text:'Invoice World Class', on:{click:function(){
+      invoiceDialog({title:'Invoice World Class', billTo:'World Class Piano Tuners', email:D.lastWcEmail, referrals:due,
+        memo:'Tuning referral fees — ' + new Date().toLocaleDateString([], {month:'long', year:'numeric'})});
+    }}}));
+  }
+
+  function invoiceDialog(pre){
+    dlgbody.textContent = '';
+    dlgHeader(pre.title || 'New invoice', 'Stripe emails it with a link to pay by card or bank.');
+    if (!D.stripeReady) {
+      dlgbody.appendChild(el('p', {className:'warn',
+        text:"Stripe isn't connected yet. Add a STRIPE_SECRET_KEY secret in Cloudflare Pages settings, then redeploy."}));
+      showDlg(); return;
+    }
+    var box = el('div', {className:'refer'});
+    var billTo = el('input', {type:'text', value: pre.billTo || '', placeholder:'Name or company'});
+    var email = el('input', {type:'email', value: pre.email || '', placeholder:'billing@example.com'});
+    var days = el('input', {type:'number', value:'14', min:'1', max:'90'});
+    var memo = el('textarea', {value: pre.memo || '', placeholder:'Shown on the invoice (optional)'});
+    var totalEl = el('div', {className:'total'});
+    var msg = el('p', {className:'warn'});
+    var btn = el('button', {className:'go full', type:'button', text:'Create & send invoice'});
+    var lineBox = el('div');
+    var getLines, addLine;
+
+    if (pre.referrals) {
+      // Only which referrals — the server prices them.
+      var checks = pre.referrals.map(function(r){
+        var cb = el('input', {type:'checkbox', checked:true});
+        cb.addEventListener('change', update);
+        lineBox.appendChild(el('label', {className:'chk'}, [cb,
+          document.createTextNode('PPT-' + r.id + (r.name ? ' — ' + r.name : '') + ' · ' + money(D.fee * 100))]));
+        return {cb:cb, r:r};
+      });
+      getLines = function(){
+        return checks.filter(function(c){ return c.cb.checked; }).map(function(c){ return {id:c.r.id, cents:D.fee * 100}; });
+      };
+    } else {
+      var items = [];
+      addLine = function(desc){
+        var d = el('input', {type:'text', value: desc || '', placeholder:'Description'});
+        var a = el('input', {type:'number', step:'0.01', min:'0', placeholder:'0.00', className:'amt', 'aria-label':'Amount'});
+        var row = el('div', {className:'line'}, [d, a]);
+        var item = {d:d, a:a};
+        row.appendChild(el('button', {className:'x', type:'button', text:'×', title:'Remove line', on:{click:function(){
+          if (items.length === 1) { d.value = ''; a.value = ''; update(); return; }
+          items.splice(items.indexOf(item), 1); row.remove(); update();
+        }}}));
+        [d, a].forEach(function(i){ i.addEventListener('input', update); });
+        items.push(item); lineBox.appendChild(row);
+        return item;
+      };
+      addLine('');
+      getLines = function(){
+        return items.map(function(it){
+          return {description: it.d.value.trim(), amount: it.a.value, cents: Math.round(parseFloat(it.a.value || '0') * 100) || 0};
+        }).filter(function(l){ return l.description || l.cents; });
+      };
+    }
+    function update(){
+      var t = getLines().reduce(function(sum, l){ return sum + l.cents; }, 0);
+      totalEl.textContent = 'Total ' + money(t);
+      btn.disabled = t <= 0;
+    }
+
+    box.appendChild(el('label', {text:'Bill to'})); box.appendChild(billTo);
+    box.appendChild(el('label', {text:'Email'})); box.appendChild(email);
+    box.appendChild(el('label', {text: pre.referrals ? 'Referrals on this invoice' : 'Line items'})); box.appendChild(lineBox);
+    if (!pre.referrals) box.appendChild(el('button', {className:'linkbtn', type:'button', text:'+ Add line',
+      on:{click:function(){ addLine('').d.focus(); }}}));
+    box.appendChild(el('label', {text:'Due in (days)'})); box.appendChild(days);
+    box.appendChild(el('label', {text:'Memo'})); box.appendChild(memo);
+    box.appendChild(totalEl); box.appendChild(btn); box.appendChild(msg);
+    dlgbody.appendChild(box);
+    update();
+
+    btn.addEventListener('click', function(){
+      var lines = getLines();
+      var t = lines.reduce(function(sum, l){ return sum + l.cents; }, 0);
+      if (!confirm('Email a ' + money(t) + ' invoice to ' + email.value.trim() + '?')) return;
+      btn.disabled = true; btn.textContent = 'Creating…'; msg.textContent = '';
+      var payload = {action:'invoice', billTo:billTo.value, email:email.value, days:days.value, memo:memo.value, leadId:pre.leadId || null};
+      if (pre.referrals) payload.referralIds = lines.map(function(l){ return l.id; });
+      else payload.lines = lines.map(function(l){ return {description:l.description, amount:l.amount}; });
+      post(payload).then(function(j){
+        var inv = j.invoice;
+        D.invoices.unshift(inv);
+        if (pre.referrals) {
+          D.lastWcEmail = inv.email;
+          rows.forEach(function(r){ if (payload.referralIds.indexOf(r.id) >= 0) r.referral_invoice_id = inv.id; });
+        }
+        if (view === 'invoices') renderInvoices(); else render();
+        dlgbody.textContent = '';
+        dlgHeader('Invoice ' + (inv.number || '') + ' sent', money(inv.amount_cents) + ' to ' + inv.email);
+        if (j.warning) dlgbody.appendChild(el('p', {className:'warn', text:j.warning}));
+        if (inv.hosted_url) dlgbody.appendChild(el('p', null, [
+          el('a', {href:inv.hosted_url, target:'_blank', rel:'noopener', className:'go', text:'View invoice'})]));
+      }, function(e){ btn.disabled = false; btn.textContent = 'Create & send invoice'; msg.textContent = e.message; });
+    });
+    showDlg();
+  }
+
+  // ---- Invoices tab
+  function renderInvoices(){
+    var f = sf.value, s = q.value.trim().toLowerCase(), now = new Date();
+    var list = D.invoices.filter(function(i){
+      if (f && i.status !== f) return false;
+      if (!s) return true;
+      return [i.bill_to, i.email, i.description, i.number, i.lines]
+        .some(function(v){ return String(v || '').toLowerCase().indexOf(s) >= 0; });
+    });
+    head.textContent = '';
+    ['Date', 'Invoice #', 'Bill to', 'Email', 'For', 'Amount', 'Status', 'Due', ''].forEach(function(h, i){
+      head.appendChild(el('th', {text:h, className: i === 0 ? 'sticky' : ''}));
+    });
+    body.textContent = '';
+    list.forEach(function(inv){
+      var lines = []; try { lines = JSON.parse(inv.lines || '[]'); } catch(e){}
+      var what = inv.description || lines.map(function(l){ return l.description; }).join('; ');
+      var overdue = inv.status === 'open' && inv.due_date && new Date(inv.due_date) < now;
+      function ro(t, cls){
+        var td = el('td', {className: cls || ''});
+        td.appendChild(el('div', {className:'ro', text:t, title:t}));
+        return td;
+      }
+      var tr = el('tr', {className: inv.status === 'void' ? 'done' : ''});
+      tr.appendChild(ro(fmt(inv.created_at), 'sticky'));
+      tr.appendChild(ro(inv.number || '—'));
+      tr.appendChild(ro(inv.bill_to || ''));
+      tr.appendChild(ro(inv.email || ''));
+      tr.appendChild(ro(what));
+      tr.appendChild(ro(money(inv.amount_cents)));
+      var st = ro(overdue ? 'Overdue' : (INV_LABEL[inv.status] || inv.status));
+      st.firstChild.className += ' st-' + (overdue ? 'overdue' : inv.status);
+      tr.appendChild(st);
+      tr.appendChild(ro(inv.status === 'paid' ? 'Paid ' + fmt(inv.paid_at) : fmt(inv.due_date)));
+      var acts = el('div', {className:'acts'});
+      if (inv.hosted_url) {
+        acts.appendChild(el('a', {href:inv.hosted_url, target:'_blank', rel:'noopener', text:'View'}));
+        acts.appendChild(el('button', {className:'linkbtn', type:'button', text:'Copy link', on:{click:function(e){
+          var b = e.target;
+          navigator.clipboard.writeText(inv.hosted_url).then(function(){ b.textContent = 'Copied ✓'; },
+            function(){ prompt('Copy this link:', inv.hosted_url); });
+        }}}));
+      }
+      if (inv.status === 'open') acts.appendChild(el('button', {className:'linkbtn', type:'button', text:'Void', on:{click:function(){
+        if (!confirm('Void invoice ' + (inv.number || '') + ' for ' + money(inv.amount_cents) + '? It can no longer be paid.')) return;
+        post({action:'void', id:inv.id}).then(function(j){ Object.assign(inv, j.invoice); renderInvoices(); },
+          function(e){ alert(e.message); });
+      }}}));
+      tr.appendChild(el('td', null, [acts]));
+      body.appendChild(tr);
+    });
+    empty.hidden = list.length > 0;
+    empty.textContent = D.stripeReady ? 'No invoices yet.'
+      : "Stripe isn't connected yet. Add a STRIPE_SECRET_KEY secret in Cloudflare Pages settings, then redeploy.";
+    shown.textContent = list.length + (list.length === 1 ? ' invoice' : ' invoices');
+
+    var unpaid = 0, late = 0, paid = 0;
+    D.invoices.forEach(function(i){
+      if (i.status === 'open') { unpaid += i.amount_cents; if (i.due_date && new Date(i.due_date) < now) late += i.amount_cents; }
+      if (i.status === 'paid') paid += i.amount_cents;
+    });
+    var box = document.getElementById('stats');
+    box.textContent = '';
+    [[money(unpaid), 'Unpaid', 'owed'], [money(late), 'Overdue'], [money(paid), 'Collected']].forEach(function(it){
+      box.appendChild(el('div', {className:'stat' + (it[2] ? ' ' + it[2] : '')}, [el('b', {text:it[0]}), el('span', {text:it[1]})]));
+    });
+  }
+
+  function initInvoices(){
+    sf.textContent = '';
+    [['', 'All invoices'], ['open', 'Unpaid'], ['paid', 'Paid'], ['void', 'Void']].forEach(function(f){
+      sf.appendChild(el('option', {value:f[0], text:f[1]}));
+    });
+    var tools = document.getElementById('tools');
+    tools.insertBefore(el('button', {className:'go', type:'button', text:'New invoice',
+      on:{click:function(){ invoiceDialog({}); }}}), tools.firstChild);
+    q.placeholder = 'Search name, email, invoice #…';
+    q.addEventListener('input', renderInvoices);
+    sf.addEventListener('change', renderInvoices);
+    renderInvoices();
   }
 
   function referBox(r, f){
@@ -970,9 +1448,13 @@ const GRID_JS = `
   }
 
   dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); });
-  q.addEventListener('input', render);
-  sf.addEventListener('change', render);
-  renderStats();
-  render();
+  if (view === 'invoices') {
+    initInvoices();
+  } else {
+    q.addEventListener('input', render);
+    sf.addEventListener('change', render);
+    renderStats();
+    render();
+  }
 })();
 `;

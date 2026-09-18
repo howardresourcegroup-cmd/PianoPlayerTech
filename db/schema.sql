@@ -12,6 +12,7 @@
 --   ALTER TABLE leads ADD COLUMN referred_at TEXT;
 --   ALTER TABLE leads ADD COLUMN referral_status TEXT;
 --   ALTER TABLE leads ADD COLUMN referral_paid_at TEXT;
+--   ALTER TABLE leads ADD COLUMN referral_invoice_id INTEGER;
 
 CREATE TABLE IF NOT EXISTS leads (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +52,8 @@ CREATE TABLE IF NOT EXISTS leads (
   -- actually book, so "sent" and "booked" are tracked separately.
   referred_at       TEXT,  -- when we handed it to World Class
   referral_status   TEXT,  -- 'sent' | 'booked' | 'no_booking'
-  referral_paid_at  TEXT   -- when World Class paid us for it
+  referral_paid_at  TEXT,  -- when World Class paid us for it
+  referral_invoice_id INTEGER  -- invoices.id that billed it; stops double billing
 );
 
 -- The dashboard's main query: one pipeline, newest first.
@@ -63,3 +65,27 @@ CREATE INDEX IF NOT EXISTS idx_leads_referred ON leads(referred_at);
 -- "What haven't I called back yet?" — the query that protects the
 -- 30-to-60-minute callback promise.
 CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status, created_at DESC);
+
+-- Stripe invoices sent from the dashboard: the monthly World Class referral
+-- bill ('referral') and one-off invoices to anyone ('custom'). Stripe is the
+-- source of truth for payment; this mirrors it so the dashboard can list and
+-- total invoices without calling Stripe for every row.
+CREATE TABLE IF NOT EXISTS invoices (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at   TEXT NOT NULL,
+  kind         TEXT NOT NULL,        -- 'referral' | 'custom'
+  lead_id      INTEGER,              -- set when invoiced from a lead
+  bill_to      TEXT,
+  email        TEXT,
+  description  TEXT,                 -- memo shown on the invoice
+  amount_cents INTEGER NOT NULL,
+  status       TEXT NOT NULL,        -- creating | open | paid | void | uncollectible
+  stripe_id    TEXT,
+  number       TEXT,                 -- Stripe's invoice number
+  hosted_url   TEXT,                 -- the customer's pay page
+  due_date     TEXT,
+  paid_at      TEXT,
+  lines        TEXT                  -- JSON [{description, cents}]
+);
+
+CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
