@@ -8,7 +8,7 @@
 // Cloudflare Pages -> pianoplayertech -> Settings:
 //   Bindings:   DB (D1) -> pianoplayertech-leads
 //   Secrets:    ADMIN_PASSWORD
-//   Variables:  WORLDCLASS_EMAIL   where tuning referrals are sent
+//   Variables:  WORLDCLASS_EMAIL   optional; turns on emailing referrals
 //               RESEND_API_KEY, LEAD_FROM_EMAIL, LEAD_NOTIFY_EMAIL (shared
 //               with functions/api/lead.js)
 //
@@ -293,9 +293,10 @@ export async function onRequestPost(context) {
 
 // --------------------------------------------------------------- referral
 
-// Hands a tuning lead to World Class Piano Tuners, or — with `manual` —
-// just records that it was already handed over some other way (a phone call,
-// a text), so older referrals can be tracked for payment too.
+// Records a tuning lead as referred to World Class Piano Tuners. The usual
+// path is `manual`: the owner hands it over by phone or text and this logs
+// it for payout tracking. Without `manual` it also emails World Class, which
+// needs WORLDCLASS_EMAIL.
 async function refer(env, id, body, now) {
   const lead = await env.DB.prepare(`SELECT ${COLUMNS.join(', ')} FROM leads WHERE id = ?`).bind(id).first();
   if (!lead) return json({ error: 'Lead not found.' }, 404);
@@ -318,9 +319,8 @@ async function refer(env, id, body, now) {
   }
 
   const stamp = now.slice(0, 10);
-  const line = body.manual
-    ? `[${stamp}] Marked as referred to World Class (${refNo})`
-    : `[${stamp}] Sent to World Class (${refNo})${note ? `: ${note}` : ''}`;
+  const how = body.manual ? 'Referred to World Class' : 'Emailed to World Class';
+  const line = `[${stamp}] ${how} (${refNo})${note ? `: ${note}` : ''}`;
 
   await env.DB.prepare(
     `UPDATE leads SET address = ?, system = ?, status = 'referred',
@@ -333,7 +333,7 @@ async function refer(env, id, body, now) {
 
   // The customer is about to get a call from a company they've never heard
   // of. One line from us first makes that call get answered.
-  if (!body.manual && body.tellCustomer && lead.email) {
+  if (body.tellCustomer && lead.email) {
     await sendEmail(env, customerHandoffEmail(env, lead));
   }
 
@@ -545,6 +545,10 @@ dd{margin:0;color:var(--soft);word-break:break-word}
 .refer input[type=text],.refer textarea{width:100%;background:var(--ground);color:var(--text);border:1px solid var(--border);
 border-radius:6px;padding:.5rem .65rem;font:inherit}
 .refer textarea{min-height:4rem;resize:vertical}
+.pair{display:flex;gap:.5rem;margin:.8rem 0 .2rem}
+.ghost{flex:1;text-align:center;padding:.55rem;border:1px solid var(--border);border-radius:7px;background:var(--raised);
+color:var(--text);font:inherit;font-weight:500;cursor:pointer;text-decoration:none}
+.ghost:hover{border-color:var(--gold)}
 .refer .chk{display:flex;gap:.5rem;align-items:center;color:var(--soft);font-size:.88rem;margin:.7rem 0}
 .sent{background:#233020;border:1px solid #3c5236;border-radius:8px;padding:.6rem .8rem;color:#cfe3c7;font-size:.9rem}
 .go{padding:.6rem 1rem;border:0;border-radius:7px;background:var(--gold);color:#17120e;font:inherit;font-weight:600;cursor:pointer}
@@ -913,36 +917,55 @@ const GRID_JS = `
     var piano = el('input', {type:'text', value: r.system || (f.pianos ? f.pianos + ' piano(s)' : ''), placeholder:'e.g. Yamaha U1 upright'});
     var times = el('input', {type:'text', value: f.preferred_dates || '', placeholder:'e.g. weekday mornings'});
     var note = el('textarea', {placeholder:'Anything World Class should know — gate code, pitch raise likely, etc.'});
-    var tell = el('input', {type:'checkbox', checked: !!r.email, disabled: !r.email});
-    var btn = el('button', {className:'go full', type:'button', text:'Send to World Class'});
-    var manual = el('button', {className:'linkbtn', type:'button', text:'Already sent it another way? Mark as referred without emailing'});
+    var tell = el('input', {type:'checkbox', disabled: !r.email});
+    var mark = el('button', {className:'go full', type:'button', text:'Mark as referred'});
+    var texter = el('a', {className:'ghost', text:'Text details'});
+    var copier = el('button', {className:'ghost', type:'button', text:'Copy details'});
+    var emailer = D.wcReady ? el('button', {className:'linkbtn', type:'button', text:'Or email it to World Class instead'}) : null;
     var msg = el('p', {className:'warn'});
 
-    if (!D.wcReady) { btn.disabled = true; msg.textContent = 'Sending is off until a WORLDCLASS_EMAIL variable is added in Cloudflare.'; }
+    // Referrals go to a person by phone, so the details are laid out to
+    // paste into a text. The contact is picked in Messages.
+    function details(){
+      return ['Tuning referral PPT-' + r.id, r.name, r.phone, r.email, addr.value.trim(),
+        piano.value.trim() && 'Piano: ' + piano.value.trim(),
+        times.value.trim() && 'Best times: ' + times.value.trim(),
+        note.value.trim() && 'Note: ' + note.value.trim(),
+        r.message && 'They said: ' + r.message
+      ].filter(Boolean).join('\\n');
+    }
+    function refreshText(){ texter.href = 'sms:?&body=' + encodeURIComponent(details()); }
+    [addr, piano, times, note].forEach(function(i){ i.addEventListener('input', refreshText); });
+    refreshText();
+    copier.addEventListener('click', function(){
+      navigator.clipboard.writeText(details()).then(function(){
+        copier.textContent = 'Copied ✓'; setTimeout(function(){ copier.textContent = 'Copy details'; }, 1500);
+      }, function(){ alert('Could not copy on this device — use Text details instead.'); });
+    });
 
     function go(isManual){
       if (!isManual && !addr.value.trim() && !confirm('No address yet — send anyway? World Class will have to ask for it.')) return;
-      btn.disabled = true; btn.textContent = isManual ? 'Saving…' : 'Sending…'; msg.textContent = '';
+      var b = isManual ? mark : emailer, label = b.textContent;
+      b.disabled = true; b.textContent = isManual ? 'Saving…' : 'Sending…'; msg.textContent = '';
       var before = Object.assign({}, r);
       post({action:'refer', id:r.id, manual:isManual, address:addr.value, system:piano.value,
             times:times.value, note:note.value, tellCustomer:tell.checked})
       .then(function(j){
         Object.assign(r, j.row);
         bumpRef(before, r); render(); openLead(r);
-      }, function(e){
-        btn.disabled = !D.wcReady; btn.textContent = 'Send to World Class'; msg.textContent = e.message;
-      });
+      }, function(e){ b.disabled = false; b.textContent = label; msg.textContent = e.message; });
     }
-    btn.addEventListener('click', function(){ go(false); });
-    manual.addEventListener('click', function(){ go(true); });
+    mark.addEventListener('click', function(){ go(true); });
+    if (emailer) emailer.addEventListener('click', function(){ go(false); });
 
     [['Address', addr], ['Piano', piano], ['Preferred times', times], ['Note for World Class', note]]
       .forEach(function(p){ box.appendChild(el('label', {text:p[0]})); box.appendChild(p[1]); });
+    box.appendChild(el('div', {className:'pair'}, [texter, copier]));
     box.appendChild(el('label', {className:'chk'}, [tell,
       document.createTextNode(r.email ? 'Email ' + r.email + ' that World Class will call them' : 'No customer email on file')]));
-    box.appendChild(btn);
+    box.appendChild(mark);
     box.appendChild(msg);
-    box.appendChild(el('p', null, [manual]));
+    if (emailer) box.appendChild(el('p', null, [emailer]));
     return box;
   }
 
