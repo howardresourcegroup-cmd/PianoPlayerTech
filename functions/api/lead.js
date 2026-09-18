@@ -120,6 +120,7 @@ export async function onRequestPost(context) {
     service,
     system: pick('system', 'piano', 'make', 'model'),
     city: pick('city', 'location', 'area'),
+    address: pick('address', 'street', 'service_address'),
     message: pick('message', 'notes', 'issue', 'details', 'quiz_summary', 'description'),
     source,
     fields: JSON.stringify(fields)
@@ -131,11 +132,11 @@ export async function onRequestPost(context) {
     try {
       await env.DB.prepare(
         `INSERT INTO leads
-           (created_at, pipeline, status, name, email, phone, service, system, city, message, source, fields)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+           (created_at, pipeline, status, name, email, phone, service, system, city, address, message, source, fields)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         lead.created_at, lead.pipeline, lead.status, lead.name, lead.email,
-        lead.phone, lead.service, lead.system, lead.city, lead.message,
+        lead.phone, lead.service, lead.system, lead.city, lead.address, lead.message,
         lead.source, lead.fields
       ).run();
       stored = true;

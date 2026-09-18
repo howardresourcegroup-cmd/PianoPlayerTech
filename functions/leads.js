@@ -1,12 +1,16 @@
-// Private lead dashboard at /leads. Replaces Airtable.
+// Private lead CRM at /leads. Replaced Airtable.
 //
 // One file on purpose: Pages routes every file under functions/ as an
 // endpoint, so a shared auth helper would become its own public route.
-// Login, rendering and updates all live here behind one door.
+// Login, the grid, CSV export, updates and World Class referrals all live
+// here behind one door.
 //
 // Cloudflare Pages -> pianoplayertech -> Settings:
 //   Bindings:   DB (D1) -> pianoplayertech-leads
 //   Secrets:    ADMIN_PASSWORD
+//   Variables:  WORLDCLASS_EMAIL   where tuning referrals are sent
+//               RESEND_API_KEY, LEAD_FROM_EMAIL, LEAD_NOTIFY_EMAIL (shared
+//               with functions/api/lead.js)
 //
 // Fails closed: with no ADMIN_PASSWORD set, nobody gets in. That is
 // deliberate — this page holds customer names, numbers and addresses, so a
@@ -14,8 +18,27 @@
 
 const SESSION_HOURS = 12;
 const COOKIE = 'ppt_admin';
-const PIPELINES = { repair: 'Repair & Pneumatic', tuning: 'Tuning' };
-const STATUSES = ['new', 'called', 'booked', 'closed'];
+const VIEWS = { repair: 'Repair & Pneumatic', tuning: 'Tuning', referrals: 'Referrals', all: 'All' };
+const STATUSES = ['new', 'called', 'referred', 'booked', 'closed'];
+const PIPELINES = ['repair', 'tuning'];
+
+// World Class pays per referral they actually book — not per referral sent.
+const REFERRAL_FEE = 25;
+const REFERRAL_STATUSES = ['sent', 'booked', 'no_booking'];
+
+// Grid cells a person may edit, with the longest value each one accepts.
+// Anything not listed here (message, source, fields) is what the customer
+// submitted and stays exactly as they sent it.
+const EDITABLE = {
+  name: 200, phone: 50, email: 200, address: 300, city: 100,
+  system: 200, service: 200, notes: 4000, status: 0, pipeline: 0, referral_status: 0
+};
+
+const COLUMNS = [
+  'id', 'created_at', 'updated_at', 'pipeline', 'status', 'name', 'phone', 'email',
+  'address', 'city', 'system', 'service', 'message', 'notes', 'source',
+  'referred_at', 'referral_status', 'referral_paid_at', 'fields'
+];
 
 // ------------------------------------------------------------------ auth
 
@@ -65,72 +88,123 @@ async function authed(request, env) {
   return tokenValid(env.ADMIN_PASSWORD, cookieValue(request, COOKIE));
 }
 
-// Never cached, never indexed, never framed.
-const PRIVATE_HEADERS = {
-  'Content-Type': 'text/html; charset=utf-8',
-  'Cache-Control': 'no-store, private',
-  'X-Robots-Tag': 'noindex, nofollow, noarchive',
-  'Referrer-Policy': 'no-referrer'
-};
+// The SameSite=Strict cookie already stops cross-site posts; this is the
+// belt to go with those braces.
+function sameOrigin(request) {
+  const origin = request.headers.get('Origin');
+  if (!origin) return true;
+  try { return new URL(origin).host === new URL(request.url).host; } catch { return false; }
+}
+
+// Never cached, never indexed, never framed. The page renders text customers
+// typed, so scripts are locked to the one inline block carrying this nonce.
+function privateHeaders(nonce, type = 'text/html; charset=utf-8') {
+  return {
+    'Content-Type': type,
+    'Cache-Control': 'no-store, private',
+    'X-Robots-Tag': 'noindex, nofollow, noarchive',
+    'Referrer-Policy': 'no-referrer',
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Security-Policy':
+      `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; ` +
+      `connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'`
+  };
+}
+
+function newNonce() {
+  return crypto.randomUUID().replace(/-/g, '');
+}
+
+function json(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+  });
+}
 
 // ----------------------------------------------------------------- routes
 
 export async function onRequestGet(context) {
   const { request, env } = context;
+  const nonce = newNonce();
+  const headers = privateHeaders(nonce);
 
   if (!env.ADMIN_PASSWORD) {
     return new Response(page('Not set up yet', `
-      <div class="card"><h1>Dashboard not configured</h1>
+      <div class="card narrow"><h1>Dashboard not configured</h1>
       <p class="muted">Add an <code>ADMIN_PASSWORD</code> secret in Cloudflare Pages
       &rarr; Settings &rarr; Variables and secrets, then redeploy. Until then nobody
-      can open this page, including you.</p></div>`), { status: 503, headers: PRIVATE_HEADERS });
+      can open this page, including you.</p></div>`), { status: 503, headers });
   }
 
   if (!(await authed(request, env))) {
     const bad = new URL(request.url).searchParams.get('e') === '1';
-    return new Response(loginPage(bad), { status: bad ? 401 : 200, headers: PRIVATE_HEADERS });
+    return new Response(loginPage(bad), { status: bad ? 401 : 200, headers });
   }
-
-  const url = new URL(request.url);
-  const pipeline = url.searchParams.get('p') === 'tuning' ? 'tuning' : 'repair';
 
   if (!env.DB) {
     return new Response(page('Leads', `
-      <div class="card"><h1>No database connected</h1>
+      <div class="card narrow"><h1>No database connected</h1>
       <p class="muted">Bind a D1 database named <code>DB</code> in Cloudflare Pages
       &rarr; Settings &rarr; Bindings, then redeploy. New leads are still being
       emailed to you in the meantime &mdash; nothing is being lost.</p></div>`),
-      { headers: PRIVATE_HEADERS });
+      { headers });
   }
 
-  let rows = [];
-  let counts = { repair: 0, tuning: 0, newRepair: 0, newTuning: 0 };
+  const url = new URL(request.url);
+  const view = Object.prototype.hasOwnProperty.call(VIEWS, url.searchParams.get('p'))
+    ? url.searchParams.get('p') : 'repair';
+
+  let rows;
+  let counts = { repair: 0, tuning: 0 };
+  let ref = { sent: 0, booked: 0, lost: 0, paid: 0 };
   try {
-    const list = await env.DB.prepare(
-      `SELECT * FROM leads WHERE pipeline = ? ORDER BY
-         CASE status WHEN 'new' THEN 0 ELSE 1 END, created_at DESC
-       LIMIT 300`
-    ).bind(pipeline).all();
-    rows = list.results || [];
+    const where = view === 'all' ? ''
+      : view === 'referrals' ? 'WHERE referred_at IS NOT NULL'
+      : 'WHERE pipeline = ?';
+    const order = view === 'referrals'
+      ? 'ORDER BY referred_at DESC'
+      : `ORDER BY CASE status WHEN 'new' THEN 0 ELSE 1 END, created_at DESC`;
+    let stmt = env.DB.prepare(`SELECT ${COLUMNS.join(', ')} FROM leads ${where} ${order} LIMIT 5000`);
+    if (view === 'repair' || view === 'tuning') stmt = stmt.bind(view);
+    rows = (await stmt.all()).results || [];
+
+    if (url.searchParams.get('export') === 'csv') {
+      const day = new Date().toISOString().slice(0, 10);
+      return new Response(toCsv(rows), {
+        headers: {
+          ...privateHeaders(nonce, 'text/csv; charset=utf-8'),
+          'Content-Disposition': `attachment; filename="ppt-${view}-${day}.csv"`
+        }
+      });
+    }
 
     const c = await env.DB.prepare(
-      `SELECT pipeline, SUM(status = 'new') AS n, COUNT(*) AS total
-         FROM leads GROUP BY pipeline`
+      `SELECT pipeline, SUM(status = 'new') AS n FROM leads GROUP BY pipeline`
     ).all();
     for (const r of (c.results || [])) {
-      if (r.pipeline === 'tuning') { counts.tuning = r.total; counts.newTuning = r.n; }
-      if (r.pipeline === 'repair') { counts.repair = r.total; counts.newRepair = r.n; }
+      if (r.pipeline in counts) counts[r.pipeline] = r.n || 0;
     }
+
+    const s = await env.DB.prepare(
+      `SELECT COUNT(referred_at) AS sent,
+              SUM(referral_status = 'booked') AS booked,
+              SUM(referral_status = 'no_booking') AS lost,
+              SUM(referral_status = 'booked' AND referral_paid_at IS NOT NULL) AS paid
+         FROM leads WHERE referred_at IS NOT NULL`
+    ).first();
+    if (s) ref = { sent: s.sent || 0, booked: s.booked || 0, lost: s.lost || 0, paid: s.paid || 0 };
   } catch (err) {
     return new Response(page('Leads', `
-      <div class="card"><h1>Could not read the database</h1>
+      <div class="card narrow"><h1>Could not read the database</h1>
       <p class="muted">${escape_(err && err.message)}</p>
-      <p class="muted">If this says "no such table", the schema hasn't been applied yet:
-      <code>npx wrangler d1 execute pianoplayertech-leads --remote --file=db/schema.sql</code></p></div>`),
-      { status: 500, headers: PRIVATE_HEADERS });
+      <p class="muted">"no such table" or "no such column" means <code>db/schema.sql</code>
+      hasn't been applied to this database yet.</p></div>`),
+      { status: 500, headers });
   }
 
-  return new Response(dashboard(pipeline, rows, counts), { headers: PRIVATE_HEADERS });
+  return new Response(dashboard(view, rows, counts, ref, !!(env.WORLDCLASS_EMAIL && env.RESEND_API_KEY), nonce),
+    { headers });
 }
 
 export async function onRequestPost(context) {
@@ -167,35 +241,212 @@ export async function onRequestPost(context) {
   }
 
   // Everything else is a dashboard action and needs a valid session.
-  if (!(await authed(request, env))) return new Response('unauthorized', { status: 401 });
-  if (!env.DB) return new Response('no database', { status: 503 });
+  if (!sameOrigin(request)) return json({ error: 'forbidden' }, 403);
+  if (!(await authed(request, env))) return json({ error: 'Signed out — reload and sign in again.' }, 401);
+  if (!env.DB) return json({ error: 'No database connected.' }, 503);
 
   let body;
-  try { body = await request.json(); } catch { return new Response('bad request', { status: 400 }); }
+  try { body = await request.json(); } catch { return json({ error: 'bad request' }, 400); }
 
   const id = parseInt(body.id, 10);
-  if (!Number.isInteger(id)) return new Response('bad id', { status: 400 });
+  if (!Number.isInteger(id)) return json({ error: 'bad id' }, 400);
 
   const now = new Date().toISOString();
   try {
-    if (body.action === 'status') {
-      if (!STATUSES.includes(body.status)) return new Response('bad status', { status: 400 });
-      await env.DB.prepare('UPDATE leads SET status = ?, updated_at = ? WHERE id = ?')
-        .bind(body.status, now, id).run();
-    } else if (body.action === 'note') {
-      await env.DB.prepare('UPDATE leads SET notes = ?, updated_at = ? WHERE id = ?')
-        .bind(String(body.notes || '').slice(0, 4000), now, id).run();
-    } else {
-      return new Response('unknown action', { status: 400 });
+    if (body.action === 'update') {
+      const field = body.field;
+      if (!Object.prototype.hasOwnProperty.call(EDITABLE, field)) return json({ error: 'That column is read-only.' }, 400);
+      let value = String(body.value == null ? '' : body.value).trim();
+      if (field === 'status' && !STATUSES.includes(value)) return json({ error: 'bad status' }, 400);
+      if (field === 'pipeline' && !PIPELINES.includes(value)) return json({ error: 'bad pipeline' }, 400);
+      if (field === 'referral_status' && !REFERRAL_STATUSES.includes(value)) return json({ error: 'bad referral status' }, 400);
+      if (EDITABLE[field]) value = value.slice(0, EDITABLE[field]);
+
+      // A referral nobody booked cannot have been paid for.
+      const extra = field === 'referral_status' && value !== 'booked' ? ', referral_paid_at = NULL' : '';
+      // `field` is safe to interpolate: it matched a key of EDITABLE above.
+      await env.DB.prepare(`UPDATE leads SET ${field} = ?, updated_at = ?${extra} WHERE id = ?`)
+        .bind(value, now, id).run();
+      return json({ ok: true, value });
     }
+
+    if (body.action === 'paid') {
+      // Paid implies booked — World Class only pays on booked jobs.
+      const r = body.paid
+        ? await env.DB.prepare(
+            `UPDATE leads SET referral_paid_at = ?, referral_status = 'booked', updated_at = ?
+              WHERE id = ? AND referred_at IS NOT NULL`).bind(now, now, id).run()
+        : await env.DB.prepare(
+            'UPDATE leads SET referral_paid_at = NULL, updated_at = ? WHERE id = ?').bind(now, id).run();
+      if (body.paid && !(r.meta && r.meta.changes)) return json({ error: 'Send or mark this as a referral first.' }, 400);
+      return json({ ok: true, value: body.paid ? now : null });
+    }
+
+    if (body.action === 'refer') return await refer(env, id, body, now);
+
+    return json({ error: 'unknown action' }, 400);
   } catch (err) {
-    console.error('dashboard update failed', err && err.message);
-    return new Response('update failed', { status: 500 });
+    console.error('dashboard action failed', body.action, err && err.message);
+    return json({ error: 'Could not save — try again.' }, 500);
+  }
+}
+
+// --------------------------------------------------------------- referral
+
+// Hands a tuning lead to World Class Piano Tuners, or — with `manual` —
+// just records that it was already handed over some other way (a phone call,
+// a text), so older referrals can be tracked for payment too.
+async function refer(env, id, body, now) {
+  const lead = await env.DB.prepare(`SELECT ${COLUMNS.join(', ')} FROM leads WHERE id = ?`).bind(id).first();
+  if (!lead) return json({ error: 'Lead not found.' }, 404);
+
+  const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  const address = clip(body.address, 300) || lead.address || '';
+  const system = clip(body.system, 200) || lead.system || '';
+  const times = clip(body.times, 300);
+  const note = clip(body.note, 2000);
+  const refNo = `PPT-${lead.id}`;
+
+  if (!body.manual) {
+    if (!env.WORLDCLASS_EMAIL || !env.RESEND_API_KEY) {
+      return json({ error: 'Add a WORLDCLASS_EMAIL variable in Cloudflare Pages settings, then redeploy.' }, 503);
+    }
+    if (!lead.phone && !lead.email) return json({ error: 'This lead has no phone or email for World Class to use.' }, 400);
+
+    const sent = await sendEmail(env, worldClassEmail(env, lead, { address, system, times, note, refNo }));
+    if (!sent) return json({ error: 'The email to World Class did not go out. Nothing was marked as sent — try again.' }, 502);
   }
 
-  return new Response(JSON.stringify({ ok: true }), {
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-  });
+  const stamp = now.slice(0, 10);
+  const line = body.manual
+    ? `[${stamp}] Marked as referred to World Class (${refNo})`
+    : `[${stamp}] Sent to World Class (${refNo})${note ? `: ${note}` : ''}`;
+
+  await env.DB.prepare(
+    `UPDATE leads SET address = ?, system = ?, status = 'referred',
+            referred_at = COALESCE(referred_at, ?),
+            referral_status = COALESCE(referral_status, 'sent'),
+            notes = TRIM(COALESCE(notes, '') || char(10) || ?),
+            updated_at = ?
+      WHERE id = ?`
+  ).bind(address, system, now, line, now, id).run();
+
+  // The customer is about to get a call from a company they've never heard
+  // of. One line from us first makes that call get answered.
+  if (!body.manual && body.tellCustomer && lead.email) {
+    await sendEmail(env, customerHandoffEmail(env, lead));
+  }
+
+  const row = await env.DB.prepare(`SELECT ${COLUMNS.join(', ')} FROM leads WHERE id = ?`).bind(id).first();
+  return json({ ok: true, row });
+}
+
+function worldClassEmail(env, lead, r) {
+  const fields = parseFields(lead.fields);
+  const rows = [
+    ['Customer', lead.name || '—'],
+    ['Phone', lead.phone || '—'],
+    ['Email', lead.email || '—'],
+    ['Address', r.address || lead.city || 'Not given — ask when you call'],
+    ['Piano', r.system || '—'],
+    ['Number of pianos', fields.pianos || '—'],
+    ['Preferred times', r.times || fields.preferred_dates || '—'],
+    ['What they told us', lead.message || '—'],
+    ['Note from PianoPlayerTech', r.note || '—'],
+    ['Referral #', r.refNo]
+  ];
+
+  const who = [lead.name || 'New customer', lead.city].filter(Boolean).join(', ');
+  const html = `<div style="font-family:-apple-system,Segoe UI,Inter,sans-serif;font-size:15px;line-height:1.6;color:#241d16;max-width:560px">
+  <p style="margin:0 0 .3rem;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#96742a;font-weight:600">Tuning referral &middot; ${esc(r.refNo)}</p>
+  <h2 style="margin:0 0 .6rem;font-size:20px">${esc(lead.name || 'New customer')}</h2>
+  <p style="margin:0 0 1.1rem">They're expecting a call to schedule their tuning. Please reach out as soon as you can.</p>
+  <table style="border-collapse:collapse;font-size:14px;width:100%">${rows.map(([k, v]) =>
+    `<tr><td style="padding:5px 14px 5px 0;color:#7a6c5d;vertical-align:top;white-space:nowrap">${esc(k)}</td>
+         <td style="padding:5px 0">${esc(v).replace(/\n/g, '<br>')}</td></tr>`).join('')}</table>
+  <p style="margin:1.4rem 0 0;padding-top:.9rem;border-top:1px solid #ded3c0;font-size:13px;color:#7a6c5d">
+    Referred by PianoPlayerTech &middot; (470) 758-9572 &middot; info@pianoplayertech.com<br>
+    Please quote <strong>${esc(r.refNo)}</strong> when settling referrals. Reply to this email with any questions.
+  </p>
+</div>`;
+
+  const text = [
+    `TUNING REFERRAL ${r.refNo}`,
+    '',
+    "They're expecting a call to schedule their tuning. Please reach out as soon as you can.",
+    '',
+    ...rows.map(([k, v]) => `${k}: ${v}`),
+    '',
+    'Referred by PianoPlayerTech · (470) 758-9572 · info@pianoplayertech.com',
+    `Please quote ${r.refNo} when settling referrals.`
+  ].join('\n');
+
+  const us = env.LEAD_NOTIFY_EMAIL || 'info@pianoplayertech.com';
+  return {
+    from: env.LEAD_FROM_EMAIL || 'PianoPlayerTech <info@pianoplayertech.com>',
+    to: [env.WORLDCLASS_EMAIL],
+    // Our copy is the paper trail for what we're owed.
+    cc: [us],
+    reply_to: us,
+    subject: `Tuning referral ${r.refNo} — ${who}`,
+    text, html
+  };
+}
+
+function customerHandoffEmail(env, lead) {
+  const name = (lead.name || '').split(' ')[0] || 'there';
+  const text = [
+    `Hi ${name},`,
+    '',
+    'Thanks for talking with us. Your tuning will be done by our partner, World Class Piano Tuners — they\'ll call you shortly to set a time, so please pick up if you see a number you don\'t recognize.',
+    '',
+    'Questions in the meantime? Call us at (470) 758-9572.',
+    '',
+    '— PianoPlayerTech'
+  ].join('\n');
+  const html = `<div style="font-family:-apple-system,Segoe UI,Inter,sans-serif;font-size:15px;line-height:1.65;color:#241d16;max-width:520px">
+  <p>Hi ${esc(name)},</p>
+  <p>Thanks for talking with us. Your tuning will be done by our partner, <strong>World Class Piano Tuners</strong> &mdash; they&rsquo;ll call you shortly to set a time, so please pick up if you see a number you don&rsquo;t recognize.</p>
+  <p>Questions in the meantime? Call us at <a href="tel:4707589572" style="color:#96742a">(470)&nbsp;758-9572</a>.</p>
+  <p style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #ded3c0;font-size:13px;color:#5c5045"><strong>PianoPlayerTech</strong><br>Metro Atlanta &amp; North Georgia</p>
+</div>`;
+  return {
+    from: env.LEAD_FROM_EMAIL || 'PianoPlayerTech <info@pianoplayertech.com>',
+    to: [lead.email],
+    reply_to: env.LEAD_NOTIFY_EMAIL || 'info@pianoplayertech.com',
+    subject: 'World Class Piano Tuners will call you to schedule',
+    text, html
+  };
+}
+
+async function sendEmail(env, payload) {
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) console.error('resend referral failed', r.status, await r.text().catch(() => ''));
+    return r.ok;
+  } catch (err) {
+    console.error('resend referral threw', err && err.message);
+    return false;
+  }
+}
+
+// -------------------------------------------------------------------- csv
+
+// Opens cleanly in Excel and Google Sheets. Cells that a spreadsheet would
+// run as a formula get a leading apostrophe — the data came from a public
+// form. Phone numbers like "+1 770…" are left alone.
+function toCsv(rows) {
+  const cell = (v) => {
+    let s = v == null ? '' : String(v);
+    if (/^[=@\t\r]/.test(s) || /^[+-](?![\d\s().-]*$)/.test(s)) s = `'${s}`;
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [COLUMNS.join(','), ...rows.map((r) => COLUMNS.map((c) => cell(r[c])).join(','))];
+  return '﻿' + lines.join('\r\n');
 }
 
 // ------------------------------------------------------------------ views
@@ -204,72 +455,119 @@ function escape_(s) {
   return String(s == null ? '' : s)
     .replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+const esc = escape_;
+
+function parseFields(raw) {
+  try { return JSON.parse(raw || '{}') || {}; } catch { return {}; }
+}
 
 const CSS = `
 :root{--ground:#17120e;--surface:#211a14;--raised:#2b221a;--text:#f0e6d8;
---soft:#cabbaa;--muted:#9d8f7f;--gold:#d4b25a;--border:#3a2f24;--new:#d4b25a;--ok:#8fb583}
+--soft:#cabbaa;--muted:#9d8f7f;--gold:#d4b25a;--border:#3a2f24;--ok:#8fb583;--bad:#e8927c}
 *{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:780px;margin:0 auto;padding:1.5rem 1.1rem 4rem}
-h1{font-size:1.35rem;margin:0}
-.muted{color:var(--muted);font-size:.9rem}
+[hidden]{display:none!important}
+body{margin:0;background:var(--ground);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{padding:1.2rem 16px 4rem;max-width:1600px;margin:0 auto}
+h1{font-size:1.3rem;margin:0}
+h2{font-size:1.1rem;margin:0}
+.muted{color:var(--muted);font-size:.88rem}
 code{background:var(--raised);padding:.1em .4em;border-radius:4px;font-size:.85em}
-.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.1rem;flex-wrap:wrap}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem}
+.narrow{max-width:420px;margin:12vh auto 0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
 .top form{margin:0}
 .linkbtn{background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;text-decoration:underline;cursor:pointer;padding:0}
 .linkbtn:hover{color:var(--gold)}
-.tabs{display:flex;gap:.5rem;margin-bottom:1.4rem}
-.tab{flex:1;text-align:center;padding:.65rem .5rem;border-radius:8px;border:1px solid var(--border);
-background:var(--surface);color:var(--soft);text-decoration:none;font-size:.92rem;font-weight:500}
+.tabs{display:flex;gap:.4rem;margin-bottom:.9rem;flex-wrap:wrap}
+.tab{padding:.5rem .9rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);
+color:var(--soft);text-decoration:none;font-size:.9rem;font-weight:500}
 .tab.on{background:var(--raised);color:var(--text);border-color:var(--gold)}
-.pill{display:inline-block;min-width:1.35rem;margin-left:.4rem;padding:0 .35rem;border-radius:9px;
-background:var(--new);color:#17120e;font-size:.75rem;font-weight:700;line-height:1.35rem}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin-bottom:.7rem}
-.card.is-new{border-left:3px solid var(--new)}
-.card.done{opacity:.55}
-.hd{display:flex;justify-content:space-between;align-items:baseline;gap:.7rem}
-.who{font-weight:600;font-size:1.05rem}
-.when{color:var(--muted);font-size:.8rem;white-space:nowrap}
-.meta{color:var(--gold);font-size:.88rem;margin:.15rem 0 .5rem}
-.msg{color:var(--soft);font-size:.92rem;white-space:pre-wrap;margin:.5rem 0}
-.contact{margin:.6rem 0 .2rem;font-size:.95rem}
-.contact a{color:var(--gold);text-decoration:none;font-weight:600}
-.contact a:hover{text-decoration:underline}
-.row{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin-top:.7rem}
-.sbtn{font:inherit;font-size:.82rem;padding:.3rem .7rem;border-radius:999px;cursor:pointer;
-border:1px solid var(--border);background:var(--raised);color:var(--soft)}
-.sbtn:hover{border-color:var(--gold);color:var(--text)}
-.sbtn.on{background:var(--ok);border-color:var(--ok);color:#17120e;font-weight:600}
-textarea{width:100%;margin-top:.6rem;background:var(--ground);color:var(--text);border:1px solid var(--border);
-border-radius:6px;padding:.55rem .7rem;font:inherit;font-size:.88rem;resize:vertical;min-height:2.6rem}
-textarea:focus{outline:none;border-color:var(--gold)}
-details{margin-top:.6rem}
-summary{cursor:pointer;color:var(--muted);font-size:.82rem}
-dl{display:grid;grid-template-columns:auto 1fr;gap:.25rem .9rem;margin:.6rem 0 0;font-size:.85rem}
+.pill{display:inline-block;min-width:1.3rem;margin-left:.35rem;padding:0 .35rem;border-radius:9px;
+background:var(--gold);color:#17120e;font-size:.72rem;font-weight:700;line-height:1.3rem;text-align:center}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.5rem;margin-bottom:.9rem}
+@media(max-width:600px){.stat{padding:.45rem .6rem}.stat b{font-size:1.1rem}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem}
+.stat b{display:block;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:.8rem}
+.stat.owed{border-color:var(--gold)}
+.stat.owed b{color:var(--gold)}
+.tools{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem}
+.tools input,.tools select{background:var(--surface);color:var(--text);border:1px solid var(--border);
+border-radius:7px;padding:.45rem .6rem;font:inherit}
+.tools input{flex:1;min-width:180px}
+.tools a{color:var(--gold);font-size:.88rem}
+.gridwrap{overflow:auto;max-height:calc(100vh - 230px);border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+th,td{border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:0;text-align:left;vertical-align:middle}
+th{position:sticky;top:0;z-index:2;background:var(--raised);color:var(--soft);font-weight:600;font-size:.8rem;
+padding:.5rem .6rem;white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--text)}
+th.sorted{color:var(--gold)}
+td{height:36px}
+td.sticky,th.sticky{position:sticky;left:0;z-index:1;background:var(--surface);box-shadow:1px 0 0 var(--border)}
+th.sticky{z-index:3;background:var(--raised)}
+td .ro{padding:0 .6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--soft)}
+td input,td select{width:100%;height:36px;background:transparent;border:0;color:var(--text);font:inherit;padding:0 .6rem}
+td select{cursor:pointer}
+td input:focus,td select:focus{outline:2px solid var(--gold);outline-offset:-2px;background:var(--ground)}
+td input[type=checkbox]{width:18px;height:18px;margin:0 auto;display:block;accent-color:var(--ok);cursor:pointer}
+td input[type=checkbox]:disabled{opacity:.3;cursor:not-allowed}
+.namecell{display:flex;align-items:center}
+.namecell input{flex:1;font-weight:600}
+.open{flex:none;margin-right:.35rem;background:var(--raised);border:1px solid var(--border);color:var(--gold);
+border-radius:5px;width:26px;height:24px;cursor:pointer;font:inherit;font-weight:700}
+.open:hover{border-color:var(--gold)}
+.phonecell{display:flex;align-items:center}
+.phonecell a{flex:none;color:var(--gold);text-decoration:none;padding:0 .5rem;font-size:.8rem}
+tr.is-new td.sticky{box-shadow:inset 3px 0 0 var(--gold),1px 0 0 var(--border)}
+tr.done td{opacity:.55}
+td.ok{animation:ok 1s}
+td.bad{background:#4a2218}
+@keyframes ok{from{background:#2c3a26}to{background:transparent}}
+.empty{text-align:center;color:var(--muted);padding:3rem 1rem}
+dialog{border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);
+padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.dlg{padding:1.1rem 1.2rem 1.3rem;overflow:auto}
+.dlg .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+.x{background:none;border:0;color:var(--muted);font-size:1.5rem;line-height:1;cursor:pointer;padding:0}
+.meta{color:var(--gold);font-size:.88rem;margin:.2rem 0 .6rem}
+.contact{display:flex;flex-wrap:wrap;gap:.4rem 1rem;margin:.5rem 0}
+.contact a{color:var(--gold);font-weight:600;text-decoration:none}
+.msg{white-space:pre-wrap;color:var(--soft);background:var(--ground);border-radius:7px;padding:.6rem .8rem;margin:.6rem 0}
+details summary{cursor:pointer;color:var(--muted);font-size:.85rem;margin-top:.5rem}
+dl{display:grid;grid-template-columns:auto 1fr;gap:.25rem .9rem;margin:.5rem 0 0;font-size:.85rem}
 dt{color:var(--muted);white-space:nowrap}
 dd{margin:0;color:var(--soft);word-break:break-word}
-.empty{text-align:center;color:var(--muted);padding:3rem 1rem}
+.refer{margin-top:1.1rem;padding-top:1rem;border-top:1px solid var(--border)}
+.refer h3{margin:0 0 .5rem;font-size:.95rem}
+.refer label{display:block;font-size:.8rem;color:var(--muted);margin:.55rem 0 .2rem}
+.refer input[type=text],.refer textarea{width:100%;background:var(--ground);color:var(--text);border:1px solid var(--border);
+border-radius:6px;padding:.5rem .65rem;font:inherit}
+.refer textarea{min-height:4rem;resize:vertical}
+.refer .chk{display:flex;gap:.5rem;align-items:center;color:var(--soft);font-size:.88rem;margin:.7rem 0}
+.sent{background:#233020;border:1px solid #3c5236;border-radius:8px;padding:.6rem .8rem;color:#cfe3c7;font-size:.9rem}
+.go{padding:.6rem 1rem;border:0;border-radius:7px;background:var(--gold);color:#17120e;font:inherit;font-weight:600;cursor:pointer}
+.go:disabled{opacity:.5;cursor:not-allowed}
+.go.full{width:100%}
+.warn{color:var(--bad);font-size:.85rem}
 input[type=password]{width:100%;padding:.7rem .8rem;border-radius:7px;border:1px solid var(--border);
 background:var(--ground);color:var(--text);font:inherit;margin:.7rem 0}
 input[type=password]:focus{outline:none;border-color:var(--gold)}
-.go{width:100%;padding:.7rem;border:0;border-radius:7px;background:var(--gold);color:#17120e;
-font:inherit;font-weight:600;cursor:pointer}
-.err{color:#e8927c;font-size:.87rem;margin:0}
-.saved{color:var(--ok);font-size:.78rem;margin-left:.5rem;opacity:0;transition:opacity .2s}
-.saved.show{opacity:1}
+.err{color:var(--bad);font-size:.87rem;margin:0}
 `;
 
-function page(title, inner, extraJs) {
+function page(title, inner, js, nonce) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>${escape_(title)} · PianoPlayerTech</title><style>${CSS}</style></head>
-<body><div class="wrap">${inner}</div>${extraJs ? `<script>${extraJs}</script>` : ''}</body></html>`;
+<body><div class="wrap">${inner}</div>${js ? `<script nonce="${nonce}">${js}</script>` : ''}</body></html>`;
 }
 
 function loginPage(bad) {
   return page('Leads', `
-    <div class="card" style="max-width:340px;margin:12vh auto 0">
+    <div class="card narrow" style="max-width:340px">
       <h1>Leads</h1>
       <p class="muted">PianoPlayerTech</p>
       <form method="post">
@@ -277,116 +575,381 @@ function loginPage(bad) {
         <input type="password" name="password" placeholder="Password" autofocus required
                autocomplete="current-password">
         ${bad ? '<p class="err">Wrong password.</p>' : ''}
-        <button class="go" type="submit">Open</button>
+        <button class="go full" type="submit">Open</button>
       </form>
     </div>`);
 }
 
-function dashboard(pipeline, rows, counts) {
+function dashboard(view, rows, counts, ref, wcReady, nonce) {
   const tab = (key) => {
-    const n = key === 'tuning' ? counts.newTuning : counts.newRepair;
-    return `<a class="tab${key === pipeline ? ' on' : ''}" href="/leads?p=${key}">${PIPELINES[key]}${
+    const n = counts[key] || 0;
+    return `<a class="tab${key === view ? ' on' : ''}" href="/leads?p=${key}">${VIEWS[key]}${
       n ? `<span class="pill">${n}</span>` : ''}</a>`;
   };
 
-  const cards = rows.length ? rows.map(card).join('') :
-    `<div class="empty"><p>No ${PIPELINES[pipeline].toLowerCase()} leads yet.</p>
-     <p class="muted">They land here the moment someone submits a form.</p></div>`;
+  // Everything the grid needs, handed to the script as data. `<` is escaped
+  // so no value a customer typed can close this script tag.
+  const data = JSON.stringify({
+    view, rows, statuses: STATUSES, refStatuses: REFERRAL_STATUSES, fee: REFERRAL_FEE, wcReady, ref
+  }).replace(/</g, '\\u003c');
 
-  return page('Leads', `
+  return page(VIEWS[view], `
     <div class="top">
-      <div><h1>Leads</h1><p class="muted">${counts.repair + counts.tuning} total</p></div>
+      <h1>Leads</h1>
       <form method="post"><input type="hidden" name="action" value="logout">
         <button class="linkbtn" type="submit">Sign out</button></form>
     </div>
-    <div class="tabs">${tab('repair')}${tab('tuning')}</div>
-    ${cards}`, DASH_JS);
+    <nav class="tabs">${Object.keys(VIEWS).map(tab).join('')}</nav>
+    <div class="stats" id="stats" ${view === 'repair' ? 'hidden' : ''}></div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Search name, phone, address, piano, notes…" aria-label="Search">
+      <select id="sf" aria-label="Filter"></select>
+      <span class="muted" id="shown"></span>
+      <a href="/leads?p=${view}&amp;export=csv">Export CSV</a>
+    </div>
+    <div class="gridwrap"><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
+      <div class="empty" id="empty" hidden>Nothing here yet.</div></div>
+    <dialog id="dlg"><div class="dlg" id="dlgbody"></div></dialog>
+    <script type="application/json" id="data">${data}</script>`, GRID_JS, nonce);
 }
 
-function card(r) {
-  const fields = (() => { try { return JSON.parse(r.fields || '{}'); } catch { return {}; } })();
-  const meta = [r.service, r.system, r.city].filter(Boolean).map(escape_).join(' · ');
-  const tel = String(r.phone || '').replace(/[^0-9+]/g, '');
-
-  const detail = Object.keys(fields).length
-    ? `<details><summary>Everything they submitted</summary><dl>${
-        Object.keys(fields).map((k) =>
-          `<dt>${escape_(k.replace(/[_-]+/g, ' '))}</dt><dd>${escape_(fields[k])}</dd>`).join('')
-      }</dl></details>`
-    : '';
-
-  const buttons = STATUSES.map((s) =>
-    `<button class="sbtn${r.status === s ? ' on' : ''}" data-id="${r.id}" data-status="${s}">${s}</button>`
-  ).join('');
-
-  return `<div class="card${r.status === 'new' ? ' is-new' : ''}${
-      r.status === 'closed' ? ' done' : ''}" id="lead-${r.id}">
-    <div class="hd">
-      <span class="who">${escape_(r.name || 'No name given')}</span>
-      <span class="when" data-ts="${escape_(r.created_at)}">${escape_(r.created_at)}</span>
-    </div>
-    ${meta ? `<div class="meta">${meta}</div>` : ''}
-    <div class="contact">
-      ${tel ? `<a href="tel:${escape_(tel)}">${escape_(r.phone)}</a>` : '<span class="muted">no phone</span>'}
-      ${r.email ? ` &nbsp;·&nbsp; <a href="mailto:${escape_(r.email)}">${escape_(r.email)}</a>` : ''}
-    </div>
-    ${r.message ? `<div class="msg">${escape_(r.message)}</div>` : ''}
-    ${detail}
-    <div class="row">${buttons}<span class="saved" id="saved-${r.id}">saved</span></div>
-    <textarea data-note="${r.id}" placeholder="Notes — quoted price, callback time, what they decided…"
-      rows="1">${escape_(r.notes || '')}</textarea>
-  </div>`;
-}
-
-const DASH_JS = `
+// Client side. Every customer-supplied value goes into the page through
+// textContent or .value — never innerHTML — so nothing a form submits can
+// run as markup.
+const GRID_JS = `
 (function(){
-  // Timestamps are stored UTC; show them in the phone's own timezone.
-  document.querySelectorAll('[data-ts]').forEach(function(el){
-    var d = new Date(el.dataset.ts); if (isNaN(d)) return;
-    var mins = Math.round((Date.now() - d) / 60000);
-    var s = mins < 1 ? 'just now'
-          : mins < 60 ? mins + ' min ago'
-          : mins < 1440 ? Math.round(mins/60) + ' hr ago'
-          : Math.round(mins/1440) + ' d ago';
-    el.textContent = s;
-    el.title = d.toLocaleString();
-  });
+  var D = JSON.parse(document.getElementById('data').textContent);
+  var rows = D.rows, view = D.view;
+  var REF_LABEL = {sent:'Sent — waiting', booked:'Booked', no_booking:"Didn't book"};
 
-  function post(payload, id){
-    return fetch('/leads', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    }).then(function(r){
-      if (!r.ok) throw new Error(r.status);
-      var f = document.getElementById('saved-' + id);
-      if (f){ f.classList.add('show'); setTimeout(function(){ f.classList.remove('show'); }, 1200); }
-    }).catch(function(){ alert('Could not save — check your connection and try again.'); });
+  var COLS = [
+    {k:'name', label:'Name', type:'name', w:200},
+    {k:'phone', label:'Phone', type:'phone', w:170},
+    {k:'status', label:'Status', type:'select', opts:D.statuses, w:110}
+  ];
+  if (view === 'referrals') {
+    COLS.push(
+      {k:'id', label:'Referral #', type:'ref', w:95},
+      {k:'referred_at', label:'Sent', type:'date', w:120},
+      {k:'referral_status', label:'Outcome', type:'select', opts:D.refStatuses, labels:REF_LABEL, w:140},
+      {k:'referral_paid_at', label:'$' + D.fee + ' paid', type:'paid', w:80},
+      {k:'address', label:'Address', type:'text', w:220},
+      {k:'system', label:'Piano', type:'text', w:170},
+      {k:'notes', label:'Notes', type:'text', w:280}
+    );
+  } else {
+    COLS.push(
+      {k:'created_at', label:'Received', type:'date', w:120},
+      {k:'system', label:'Piano / system', type:'text', w:170},
+      {k:'service', label:'Service', type:'text', w:150},
+      {k:'city', label:'City', type:'text', w:120},
+      {k:'address', label:'Address', type:'text', w:210},
+      {k:'email', label:'Email', type:'text', w:210},
+      {k:'message', label:'What they said', type:'long', w:260},
+      {k:'notes', label:'Notes', type:'text', w:260}
+    );
+    if (view !== 'repair') {
+      COLS.push(
+        {k:'referral_status', label:'Referral', type:'select', opts:D.refStatuses, labels:REF_LABEL, blank:true, w:140},
+        {k:'referral_paid_at', label:'$' + D.fee + ' paid', type:'paid', w:80}
+      );
+    }
+    COLS.push({k:'pipeline', label:'Pipeline', type:'select', opts:['repair','tuning'], w:100});
   }
 
-  document.querySelectorAll('.sbtn').forEach(function(b){
-    b.addEventListener('click', function(){
-      var id = b.dataset.id, status = b.dataset.status;
-      var card = document.getElementById('lead-' + id);
-      card.querySelectorAll('.sbtn').forEach(function(x){ x.classList.remove('on'); });
-      b.classList.add('on');
-      card.classList.toggle('is-new', status === 'new');
-      card.classList.toggle('done', status === 'closed');
-      post({action:'status', id:Number(id), status:status}, id);
-    });
-  });
+  var head = document.getElementById('head'), body = document.getElementById('body');
+  var q = document.getElementById('q'), sf = document.getElementById('sf');
+  var shown = document.getElementById('shown'), empty = document.getElementById('empty');
+  var dlg = document.getElementById('dlg'), dlgbody = document.getElementById('dlgbody');
+  var sortKey = null, sortDir = 1;
 
-  // Notes save on blur — no save button to forget.
-  document.querySelectorAll('[data-note]').forEach(function(t){
-    t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px';
-    var last = t.value;
-    t.addEventListener('input', function(){
-      t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px';
+  function el(tag, props, kids){
+    var n = document.createElement(tag);
+    if (props) for (var p in props) {
+      if (p === 'text') n.textContent = props[p];
+      else if (p === 'on') for (var ev in props.on) n.addEventListener(ev, props.on[ev]);
+      else if (p in n) n[p] = props[p]; else n.setAttribute(p, props[p]);
+    }
+    (kids || []).forEach(function(k){ if (k) n.appendChild(k); });
+    return n;
+  }
+  function fmt(ts){
+    if (!ts) return '';
+    var d = new Date(ts); if (isNaN(d)) return ts;
+    return d.toLocaleDateString([], {month:'short', day:'numeric', year: d.getFullYear() === new Date().getFullYear() ? undefined : '2-digit'});
+  }
+  function fmtLong(ts){ var d = new Date(ts); return isNaN(d) ? '' : d.toLocaleString(); }
+  function tel(p){ return String(p || '').replace(/[^0-9+]/g, ''); }
+  function fields(r){ try { return JSON.parse(r.fields || '{}') || {}; } catch(e){ return {}; } }
+
+  function post(payload){
+    return fetch('/leads', {method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+    .then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(j){
+        if (!res.ok) throw new Error(j.error || ('Error ' + res.status));
+        return j;
+      });
     });
-    t.addEventListener('blur', function(){
-      if (t.value === last) return;
-      last = t.value;
-      post({action:'note', id:Number(t.dataset.note), notes:t.value}, t.dataset.note);
+  }
+  function flash(td, ok){
+    td.classList.remove('ok','bad'); void td.offsetWidth;
+    td.classList.add(ok ? 'ok' : 'bad');
+  }
+
+  // ---- stats (tuning, referrals, all)
+  function renderStats(){
+    var box = document.getElementById('stats');
+    if (box.hidden) return;
+    var r = D.ref, owed = (r.booked - r.paid) * D.fee;
+    // "Didn't book" and a raw paid count live in the filter; five boxes keep
+    // the grid above the fold on a phone.
+    var items = [
+      [r.sent, 'Referred'], [r.sent - r.booked - r.lost, 'Waiting to hear'], [r.booked, 'Booked'],
+      ['$' + owed, 'Owed to you', 'owed'], ['$' + (r.paid * D.fee), 'Earned']
+    ];
+    box.textContent = '';
+    items.forEach(function(it){
+      box.appendChild(el('div', {className:'stat' + (it[2] ? ' ' + it[2] : '')},
+        [el('b', {text:String(it[0])}), el('span', {text:it[1]})]));
     });
-  });
+  }
+  // Recount after a change, from rows we can see plus the server's totals.
+  function bumpRef(before, after){
+    function add(r, s){
+      if (!r.referred_at) return;
+      D.ref.sent += s;
+      if (r.referral_status === 'booked') D.ref.booked += s;
+      if (r.referral_status === 'no_booking') D.ref.lost += s;
+      if (r.referral_status === 'booked' && r.referral_paid_at) D.ref.paid += s;
+    }
+    add(before, -1); add(after, 1); renderStats();
+  }
+
+  // ---- filter options
+  var FILTERS = view === 'referrals'
+    ? [['', 'All referrals'], ['ref:sent', 'Waiting to hear'], ['ref:booked', 'Booked'],
+       ['ref:unpaid', 'Booked, not paid'], ['ref:paid', 'Paid'], ['ref:no_booking', "Didn't book"]]
+    : [['', 'Every status'], ['open', 'Not closed']].concat(D.statuses.map(function(s){ return [s, s]; }));
+  FILTERS.forEach(function(f){ sf.appendChild(el('option', {value:f[0], text:f[1]})); });
+
+  function passes(r){
+    var f = sf.value;
+    if (f === 'open' && r.status === 'closed') return false;
+    if (f && f.indexOf('ref:') === 0) {
+      var want = f.slice(4);
+      if (want === 'unpaid') { if (r.referral_status !== 'booked' || r.referral_paid_at) return false; }
+      else if (want === 'paid') { if (!r.referral_paid_at) return false; }
+      else if (r.referral_status !== want) return false;
+    } else if (f && f !== 'open' && r.status !== f) return false;
+    var s = q.value.trim().toLowerCase();
+    if (!s) return true;
+    return ['name','phone','email','city','address','system','service','message','notes','id']
+      .some(function(k){ return String(r[k] == null ? '' : r[k]).toLowerCase().indexOf(s) >= 0; });
+  }
+
+  // ---- grid
+  function renderHead(){
+    head.textContent = '';
+    COLS.forEach(function(c, i){
+      var th = el('th', {text: c.label + (sortKey === c.k ? (sortDir > 0 ? ' ▲' : ' ▼') : ''),
+        className: (i === 0 ? 'sticky ' : '') + (sortKey === c.k ? 'sorted' : ''),
+        on:{click:function(){ if (sortKey === c.k) sortDir = -sortDir; else { sortKey = c.k; sortDir = 1; } render(); }}});
+      th.style.minWidth = c.w + 'px';
+      head.appendChild(th);
+    });
+  }
+
+  function cell(r, c, i){
+    var td = el('td', {className: i === 0 ? 'sticky' : ''});
+    td.style.minWidth = c.w + 'px'; td.style.maxWidth = (c.w + 80) + 'px';
+    var v = r[c.k] == null ? '' : r[c.k];
+
+    function input(){
+      var inp = el('input', {value:String(v), 'aria-label':c.label});
+      inp.addEventListener('change', function(){ save(r, c.k, inp.value, td); });
+      return inp;
+    }
+
+    if (c.type === 'name') {
+      td.appendChild(el('div', {className:'namecell'}, [
+        el('button', {className:'open', text:'›', title:'Open lead', type:'button',
+          on:{click:function(){ openLead(r); }}}),
+        input()
+      ]));
+    } else if (c.type === 'phone') {
+      td.appendChild(el('div', {className:'phonecell'}, [
+        input(), tel(v) ? el('a', {href:'tel:' + tel(v), text:'call', title:'Call'}) : null
+      ]));
+    } else if (c.type === 'text') {
+      td.appendChild(input());
+    } else if (c.type === 'select') {
+      var sel = el('select', {'aria-label':c.label});
+      if (c.blank || !v) sel.appendChild(el('option', {value:'', text:'—'}));
+      c.opts.forEach(function(o){ sel.appendChild(el('option', {value:o, text:(c.labels && c.labels[o]) || o})); });
+      sel.value = String(v);
+      if (c.k === 'referral_status' && !r.referred_at) sel.disabled = true;
+      sel.addEventListener('change', function(){
+        if (!sel.value) { sel.value = String(r[c.k] || ''); return; }
+        save(r, c.k, sel.value, td);
+      });
+      td.appendChild(sel);
+    } else if (c.type === 'paid') {
+      var cb = el('input', {type:'checkbox', checked:!!v, 'aria-label':'Paid',
+        title: r.referred_at ? (v ? 'Paid ' + fmtLong(v) : 'Mark as paid') : 'Not referred yet'});
+      cb.disabled = !r.referred_at;
+      cb.addEventListener('change', function(){
+        var before = Object.assign({}, r);
+        post({action:'paid', id:r.id, paid:cb.checked}).then(function(j){
+          r.referral_paid_at = j.value;
+          if (j.value) r.referral_status = 'booked';
+          bumpRef(before, r); flash(td, true);
+          if (j.value) render();
+        }, function(e){ cb.checked = !cb.checked; flash(td, false); alert(e.message); });
+      });
+      td.appendChild(cb);
+    } else if (c.type === 'ref') {
+      td.appendChild(el('div', {className:'ro', text:'PPT-' + r.id}));
+    } else if (c.type === 'date') {
+      td.appendChild(el('div', {className:'ro', text:fmt(v), title:fmtLong(v)}));
+    } else {
+      td.appendChild(el('div', {className:'ro', text:String(v), title:String(v)}));
+    }
+    return td;
+  }
+
+  function rowEl(r){
+    var tr = el('tr', {className: r.status === 'new' ? 'is-new' : r.status === 'closed' ? 'done' : ''});
+    COLS.forEach(function(c, i){ tr.appendChild(cell(r, c, i)); });
+    return tr;
+  }
+
+  function render(){
+    renderHead();
+    var list = rows.filter(passes);
+    if (sortKey) {
+      list.sort(function(a, b){
+        var x = a[sortKey] == null ? '' : String(a[sortKey]), y = b[sortKey] == null ? '' : String(b[sortKey]);
+        if (!x && y) return 1; if (x && !y) return -1;
+        return x.localeCompare(y, undefined, {numeric:true, sensitivity:'base'}) * sortDir;
+      });
+    }
+    body.textContent = '';
+    var frag = document.createDocumentFragment();
+    list.forEach(function(r){ frag.appendChild(rowEl(r)); });
+    body.appendChild(frag);
+    empty.hidden = list.length > 0;
+    shown.textContent = list.length === rows.length
+      ? rows.length + (rows.length === 1 ? ' row' : ' rows') : list.length + ' of ' + rows.length;
+  }
+
+  function save(r, field, value, td){
+    var before = Object.assign({}, r);
+    post({action:'update', id:r.id, field:field, value:value}).then(function(j){
+      r[field] = j.value;
+      if (field === 'referral_status' && j.value !== 'booked') r.referral_paid_at = null;
+      if (field === 'referral_status') bumpRef(before, r);
+      flash(td, true);
+      // Moved to the other pipeline: it no longer belongs on this tab.
+      if (field === 'pipeline' && (view === 'repair' || view === 'tuning') && j.value !== view) {
+        rows = rows.filter(function(x){ return x !== r; });
+      }
+      if (field === 'status' || field === 'pipeline' || field === 'referral_status') render();
+    }, function(e){ flash(td, false); alert(e.message); });
+  }
+
+  // ---- lead detail + World Class referral
+  function openLead(r){
+    dlgbody.textContent = '';
+    var f = fields(r);
+    var meta = [r.service, r.system, r.city].filter(Boolean).join(' · ');
+
+    dlgbody.appendChild(el('div', {className:'hd'}, [
+      el('div', null, [
+        el('h2', {text: r.name || 'No name given'}),
+        el('div', {className:'muted', text:'Received ' + fmtLong(r.created_at) + ' · PPT-' + r.id})
+      ]),
+      el('button', {className:'x', type:'button', text:'×', 'aria-label':'Close', on:{click:function(){ dlg.close(); }}})
+    ]));
+    if (meta) dlgbody.appendChild(el('div', {className:'meta', text:meta}));
+
+    var contact = el('div', {className:'contact'});
+    if (tel(r.phone)) contact.appendChild(el('a', {href:'tel:' + tel(r.phone), text:r.phone}));
+    if (r.email) contact.appendChild(el('a', {href:'mailto:' + r.email, text:r.email}));
+    if (r.address) contact.appendChild(el('a', {href:'https://maps.google.com/?q=' + encodeURIComponent(r.address),
+      target:'_blank', rel:'noopener', text:'Map'}));
+    dlgbody.appendChild(contact);
+
+    if (r.message) dlgbody.appendChild(el('div', {className:'msg', text:r.message}));
+
+    var keys = Object.keys(f);
+    if (keys.length) {
+      var dl = el('dl');
+      keys.forEach(function(k){
+        dl.appendChild(el('dt', {text:k.replace(/[_-]+/g, ' ')}));
+        dl.appendChild(el('dd', {text:String(f[k])}));
+      });
+      dlgbody.appendChild(el('details', null, [el('summary', {text:'Everything they submitted'}), dl]));
+    }
+    if (r.notes) dlgbody.appendChild(el('div', {className:'msg', text:r.notes}));
+
+    dlgbody.appendChild(referBox(r, f));
+    dlg.showModal();
+  }
+
+  function referBox(r, f){
+    var box = el('div', {className:'refer'});
+    box.appendChild(el('h3', {text:'World Class referral'}));
+
+    if (r.referred_at) {
+      box.appendChild(el('div', {className:'sent',
+        text:'Referred ' + fmtLong(r.referred_at) + ' as PPT-' + r.id + ' — ' +
+          (REF_LABEL[r.referral_status] || 'sent') + (r.referral_paid_at ? ', paid ' + fmt(r.referral_paid_at) : '') +
+          '. Track the outcome in the Referral column.'}));
+      return box;
+    }
+
+    var addr = el('input', {type:'text', value: r.address || '', placeholder:'Street, city, ZIP'});
+    var piano = el('input', {type:'text', value: r.system || (f.pianos ? f.pianos + ' piano(s)' : ''), placeholder:'e.g. Yamaha U1 upright'});
+    var times = el('input', {type:'text', value: f.preferred_dates || '', placeholder:'e.g. weekday mornings'});
+    var note = el('textarea', {placeholder:'Anything World Class should know — gate code, pitch raise likely, etc.'});
+    var tell = el('input', {type:'checkbox', checked: !!r.email, disabled: !r.email});
+    var btn = el('button', {className:'go full', type:'button', text:'Send to World Class'});
+    var manual = el('button', {className:'linkbtn', type:'button', text:'Already sent it another way? Mark as referred without emailing'});
+    var msg = el('p', {className:'warn'});
+
+    if (!D.wcReady) { btn.disabled = true; msg.textContent = 'Sending is off until a WORLDCLASS_EMAIL variable is added in Cloudflare.'; }
+
+    function go(isManual){
+      if (!isManual && !addr.value.trim() && !confirm('No address yet — send anyway? World Class will have to ask for it.')) return;
+      btn.disabled = true; btn.textContent = isManual ? 'Saving…' : 'Sending…'; msg.textContent = '';
+      var before = Object.assign({}, r);
+      post({action:'refer', id:r.id, manual:isManual, address:addr.value, system:piano.value,
+            times:times.value, note:note.value, tellCustomer:tell.checked})
+      .then(function(j){
+        Object.assign(r, j.row);
+        bumpRef(before, r); render(); openLead(r);
+      }, function(e){
+        btn.disabled = !D.wcReady; btn.textContent = 'Send to World Class'; msg.textContent = e.message;
+      });
+    }
+    btn.addEventListener('click', function(){ go(false); });
+    manual.addEventListener('click', function(){ go(true); });
+
+    [['Address', addr], ['Piano', piano], ['Preferred times', times], ['Note for World Class', note]]
+      .forEach(function(p){ box.appendChild(el('label', {text:p[0]})); box.appendChild(p[1]); });
+    box.appendChild(el('label', {className:'chk'}, [tell,
+      document.createTextNode(r.email ? 'Email ' + r.email + ' that World Class will call them' : 'No customer email on file')]));
+    box.appendChild(btn);
+    box.appendChild(msg);
+    box.appendChild(el('p', null, [manual]));
+    return box;
+  }
+
+  dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); });
+  q.addEventListener('input', render);
+  sf.addEventListener('change', render);
+  renderStats();
+  render();
 })();
 `;

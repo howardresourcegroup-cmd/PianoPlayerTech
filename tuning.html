@@ -674,6 +674,8 @@
                     <input type="email" id="t-email" name="email" placeholder="your@email.com" required>
                     <label for="t-phone">Phone</label>
                     <input type="tel" id="t-phone" name="phone" placeholder="(706) 000-0000" required>
+                    <label for="t-address">Where's the piano? <span style="font-weight:400;color:var(--gray)">(optional)</span></label>
+                    <input type="text" id="t-address" name="address" placeholder="Street, city, ZIP" autocomplete="street-address">
                     <label for="t-pianos">Number of pianos</label>
                     <select id="t-pianos" name="pianos" required>
                         <option value="">Select...</option>
@@ -685,7 +687,7 @@
                     <label for="t-dates">Preferred dates / times</label>
                     <input type="text" id="t-dates" name="preferred_dates" placeholder="e.g. weekday mornings, any Saturday in July" required>
                     <label for="t-notes">Anything else we should know? <span style="font-weight:400;color:var(--gray)">(optional)</span></label>
-                    <textarea id="t-notes" name="notes" placeholder="Piano make/model, address, last tuned, etc."></textarea>
+                    <textarea id="t-notes" name="notes" placeholder="Piano make/model, last tuned, gate code, etc."></textarea>
                     <button type="submit" id="booking-submit-btn">Request My Tuning</button>
                 </form>
             </div>
@@ -766,6 +768,7 @@
             name:            document.getElementById('t-name').value,
             email:           document.getElementById('t-email').value,
             phone:           document.getElementById('t-phone').value,
+            address:         document.getElementById('t-address').value,
             pianos:          document.getElementById('t-pianos').value,
             preferred_dates: document.getElementById('t-dates').value,
             notes:           document.getElementById('t-notes').value

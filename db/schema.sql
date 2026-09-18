@@ -5,6 +5,13 @@
 --
 -- Apply with:
 --   npx wrangler d1 execute pianoplayertech-leads --remote --file=db/schema.sql
+--
+-- Upgrading a database created before 2026-09-18 (the live one already has
+-- these; CREATE TABLE IF NOT EXISTS will not add columns to an old table):
+--   ALTER TABLE leads ADD COLUMN address TEXT;
+--   ALTER TABLE leads ADD COLUMN referred_at TEXT;
+--   ALTER TABLE leads ADD COLUMN referral_status TEXT;
+--   ALTER TABLE leads ADD COLUMN referral_paid_at TEXT;
 
 CREATE TABLE IF NOT EXISTS leads (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,6 +33,8 @@ CREATE TABLE IF NOT EXISTS leads (
   -- Player system or piano make/model, e.g. "Disklavier DKC-850".
   system      TEXT,
   city        TEXT,
+  -- Where the piano is. World Class needs it to take a referral.
+  address     TEXT,
   -- What the customer typed: issue / notes / message / quiz summary.
   message     TEXT,
 
@@ -36,11 +45,20 @@ CREATE TABLE IF NOT EXISTS leads (
   fields      TEXT,
 
   -- Internal only. Never shown to the customer.
-  notes       TEXT
+  notes       TEXT,
+
+  -- World Class referral tracking. We earn a fee only on referrals they
+  -- actually book, so "sent" and "booked" are tracked separately.
+  referred_at       TEXT,  -- when we handed it to World Class
+  referral_status   TEXT,  -- 'sent' | 'booked' | 'no_booking'
+  referral_paid_at  TEXT   -- when World Class paid us for it
 );
 
 -- The dashboard's main query: one pipeline, newest first.
 CREATE INDEX IF NOT EXISTS idx_leads_pipeline_created ON leads(pipeline, created_at DESC);
+
+-- The Referrals tab: everything handed to World Class, newest first.
+CREATE INDEX IF NOT EXISTS idx_leads_referred ON leads(referred_at);
 
 -- "What haven't I called back yet?" — the query that protects the
 -- 30-to-60-minute callback promise.
