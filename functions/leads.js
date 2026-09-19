@@ -10,8 +10,11 @@
 //   Secrets:    ADMIN_PASSWORD     password login, used until Access is set up
 //   Variables:  ACCESS_TEAM_DOMAIN e.g. pianoplayertech.cloudflareaccess.com
 //               ACCESS_AUD         the Access application's "Application Audience (AUD) Tag"
-//               With both set, sign-in is Cloudflare Access (email code /
-//               Google) and the password is no longer used.
+//               ACCESS_EMAILS      who may open the dashboard, comma-separated;
+//                                  "@pianoplayertech.com" allows a whole domain
+//               With the first two set, sign-in is Cloudflare Access (Google /
+//               email code) and the password is no longer used. ACCESS_EMAILS
+//               must then be set too — an empty list lets nobody in.
 //   Secrets:    STRIPE_SECRET_KEY  turns on invoicing (a restricted key with
 //                                  Customers, Invoices and Invoice Items write)
 //   Variables:  WORLDCLASS_EMAIL   optional; turns on emailing referrals
@@ -168,10 +171,23 @@ async function accessIdentity(request, env) {
   }
 }
 
+// The Access policy only proves who someone is; this list decides whether
+// they may see customer data. Fails closed: no list, nobody.
+function emailAllowed(env, email) {
+  const list = String(env.ACCESS_EMAILS || '').toLowerCase().split(/[\s,;]+/).filter(Boolean);
+  const e = String(email || '').toLowerCase();
+  if (!e.includes('@')) return false;
+  const domain = e.slice(e.indexOf('@'));
+  return list.some((x) => x === e || (x.startsWith('@') && x === domain));
+}
+
 // The one gate every read and write goes through. Returns who is signed in
 // (an email under Access, 'admin' under the password), or '' for nobody.
 async function signedIn(request, env) {
-  if (accessMode(env)) return (await accessIdentity(request, env)) || '';
+  if (accessMode(env)) {
+    const email = await accessIdentity(request, env);
+    return email && emailAllowed(env, email) ? email : '';
+  }
   if (!env.ADMIN_PASSWORD) return '';
   return (await tokenValid(env.ADMIN_PASSWORD, cookieValue(request, COOKIE))) ? 'admin' : '';
 }
@@ -229,6 +245,17 @@ export async function onRequestGet(context) {
         <div class="card narrow"><h1>Sign in required</h1>
         <p class="muted">Open <a href="https://pianoplayertech.com/leads" style="color:var(--gold)">pianoplayertech.com/leads</a>
         to sign in with your email.</p></div>`), { status: 403, headers });
+    }
+    if (!emailAllowed(env, who)) {
+      const none = !String(env.ACCESS_EMAILS || '').trim();
+      return new Response(page('Not on the list', `
+        <div class="card narrow"><h1>Not on the list</h1>
+        <p class="muted">You're signed in as <strong>${escape_(who)}</strong>, but that email isn't allowed to open the CRM.</p>
+        <p class="muted">${none
+          ? 'No one is allowed yet: add an <code>ACCESS_EMAILS</code> variable in Cloudflare Pages &rarr; Settings &rarr; Variables and secrets, then redeploy.'
+          : 'Add it to the <code>ACCESS_EMAILS</code> variable in Cloudflare Pages settings and redeploy, or sign in with a different account.'}</p>
+        <form method="post"><input type="hidden" name="action" value="logout">
+        <button class="go full" type="submit">Use a different account</button></form></div>`), { status: 403, headers });
     }
   } else if (!env.ADMIN_PASSWORD) {
     return new Response(page('Not set up yet', `
