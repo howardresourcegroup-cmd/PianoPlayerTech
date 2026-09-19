@@ -7,7 +7,11 @@
 //
 // Cloudflare Pages -> pianoplayertech -> Settings:
 //   Bindings:   DB (D1) -> pianoplayertech-leads
-//   Secrets:    ADMIN_PASSWORD
+//   Secrets:    ADMIN_PASSWORD     password login, used until Access is set up
+//   Variables:  ACCESS_TEAM_DOMAIN e.g. pianoplayertech.cloudflareaccess.com
+//               ACCESS_AUD         the Access application's "Application Audience (AUD) Tag"
+//               With both set, sign-in is Cloudflare Access (email code /
+//               Google) and the password is no longer used.
 //   Secrets:    STRIPE_SECRET_KEY  turns on invoicing (a restricted key with
 //                                  Customers, Invoices and Invoice Items write)
 //   Variables:  WORLDCLASS_EMAIL   optional; turns on emailing referrals
@@ -96,9 +100,84 @@ function cookieValue(request, name) {
   return '';
 }
 
+// ----------------------------------------------------- Cloudflare Access
+//
+// Access sits in front of /leads and signs every request it lets through
+// with a JWT. We verify that signature ourselves rather than trusting that
+// Access is in the way: the same function also answers on *.pages.dev
+// hostnames, which an Access rule for pianoplayertech.com does not cover.
+// No valid token, no page — whichever hostname the request came in on.
+
+function accessMode(env) {
+  return !!(env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD);
+}
+
+function teamDomain(env) {
+  return String(env.ACCESS_TEAM_DOMAIN).replace(/^https?:\/\//, '').replace(/\/+$/, '');
+}
+
+function b64urlBytes(s) {
+  const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4);
+  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+}
+
+let certCache = { at: 0, keys: [] };
+async function accessKeys(env, forceRefresh) {
+  if (!forceRefresh && certCache.keys.length && Date.now() - certCache.at < 3600 * 1000) return certCache.keys;
+  const r = await fetch(`https://${teamDomain(env)}/cdn-cgi/access/certs`);
+  if (!r.ok) throw new Error(`access certs ${r.status}`);
+  const j = await r.json();
+  certCache = { at: Date.now(), keys: j.keys || [] };
+  return certCache.keys;
+}
+
+// Returns the signed-in email, or null. Never throws.
+async function accessIdentity(request, env) {
+  try {
+    const token = request.headers.get('Cf-Access-Jwt-Assertion') || cookieValue(request, 'CF_Authorization');
+    const parts = String(token || '').split('.');
+    if (parts.length !== 3) return null;
+    const header = JSON.parse(new TextDecoder().decode(b64urlBytes(parts[0])));
+    const claims = JSON.parse(new TextDecoder().decode(b64urlBytes(parts[1])));
+    if (header.alg !== 'RS256' || !header.kid) return null;
+
+    let keys = await accessKeys(env, false);
+    let jwk = keys.find((k) => k.kid === header.kid);
+    if (!jwk) { keys = await accessKeys(env, true); jwk = keys.find((k) => k.kid === header.kid); }
+    if (!jwk) return null;
+
+    const key = await crypto.subtle.importKey(
+      'jwk', { kty: jwk.kty, n: jwk.n, e: jwk.e, alg: 'RS256', ext: true },
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']
+    );
+    const signed = await crypto.subtle.verify(
+      'RSASSA-PKCS1-v1_5', key, b64urlBytes(parts[2]), enc.encode(`${parts[0]}.${parts[1]}`)
+    );
+    if (!signed) return null;
+
+    const now = Date.now() / 1000;
+    const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+    if (!aud.includes(env.ACCESS_AUD)) return null;
+    if (claims.iss !== `https://${teamDomain(env)}`) return null;
+    if (typeof claims.exp !== 'number' || claims.exp < now) return null;
+    if (typeof claims.nbf === 'number' && claims.nbf > now + 60) return null;
+    return String(claims.email || claims.sub || 'signed in');
+  } catch (err) {
+    console.error('access check failed', err && err.message);
+    return null;
+  }
+}
+
+// The one gate every read and write goes through. Returns who is signed in
+// (an email under Access, 'admin' under the password), or '' for nobody.
+async function signedIn(request, env) {
+  if (accessMode(env)) return (await accessIdentity(request, env)) || '';
+  if (!env.ADMIN_PASSWORD) return '';
+  return (await tokenValid(env.ADMIN_PASSWORD, cookieValue(request, COOKIE))) ? 'admin' : '';
+}
+
 async function authed(request, env) {
-  if (!env.ADMIN_PASSWORD) return false;
-  return tokenValid(env.ADMIN_PASSWORD, cookieValue(request, COOKIE));
+  return !!(await signedIn(request, env));
 }
 
 // The SameSite=Strict cookie already stops cross-site posts; this is the
@@ -142,7 +221,16 @@ export async function onRequestGet(context) {
   const nonce = newNonce();
   const headers = privateHeaders(nonce);
 
-  if (!env.ADMIN_PASSWORD) {
+  let who = '';
+  if (accessMode(env)) {
+    who = await accessIdentity(request, env);
+    if (!who) {
+      return new Response(page('Sign in required', `
+        <div class="card narrow"><h1>Sign in required</h1>
+        <p class="muted">Open <a href="https://pianoplayertech.com/leads" style="color:var(--gold)">pianoplayertech.com/leads</a>
+        to sign in with your email.</p></div>`), { status: 403, headers });
+    }
+  } else if (!env.ADMIN_PASSWORD) {
     return new Response(page('Not set up yet', `
       <div class="card narrow"><h1>Dashboard not configured</h1>
       <p class="muted">Add an <code>ADMIN_PASSWORD</code> secret in Cloudflare Pages
@@ -150,9 +238,12 @@ export async function onRequestGet(context) {
       can open this page, including you.</p></div>`), { status: 503, headers });
   }
 
-  if (!(await authed(request, env))) {
-    const bad = new URL(request.url).searchParams.get('e') === '1';
-    return new Response(loginPage(bad), { status: bad ? 401 : 200, headers });
+  if (!who) {
+    who = await signedIn(request, env);
+    if (!who) {
+      const bad = new URL(request.url).searchParams.get('e') === '1';
+      return new Response(loginPage(bad), { status: bad ? 401 : 200, headers });
+    }
   }
 
   if (!env.DB) {
@@ -244,6 +335,7 @@ export async function onRequestGet(context) {
   }
 
   extra.wcReady = !!(env.WORLDCLASS_EMAIL && env.RESEND_API_KEY);
+  extra.who = accessMode(env) ? who : '';
   return new Response(dashboard(view, rows, counts, ref, extra, nonce), { headers });
 }
 
@@ -259,10 +351,15 @@ export async function onRequestPost(context) {
     if (action === 'logout') {
       return new Response(null, {
         status: 303,
-        headers: { Location: '/leads', 'Set-Cookie': `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict` }
+        headers: {
+          Location: accessMode(env) ? '/cdn-cgi/access/logout' : '/leads',
+          'Set-Cookie': `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`
+        }
       });
     }
 
+    // Under Access there is no password to try.
+    if (accessMode(env)) return new Response('forbidden', { status: 403 });
     if (!env.ADMIN_PASSWORD) return new Response('not configured', { status: 503 });
 
     if (safeEqual(form.get('password') || '', env.ADMIN_PASSWORD)) {
@@ -856,7 +953,8 @@ function dashboard(view, rows, counts, ref, extra, nonce) {
   return page(VIEWS[view], `
     <div class="top">
       <h1>Leads</h1>
-      <form method="post"><input type="hidden" name="action" value="logout">
+      <form method="post">${extra.who ? `<span class="muted">${escape_(extra.who)} &nbsp;</span>` : ''}
+        <input type="hidden" name="action" value="logout">
         <button class="linkbtn" type="submit">Sign out</button></form>
     </div>
     <nav class="tabs">${Object.keys(VIEWS).map(tab).join('')}</nav>
