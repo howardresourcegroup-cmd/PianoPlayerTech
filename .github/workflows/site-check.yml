@@ -44,4 +44,4 @@ jobs:
         run: node tools/harness.js --check
 
       - name: Unit tests
-        run: node --test 'tests/*.test.js'
+        run: node --test 'tests/*.test.js' 'tests/*.test.mjs'
