@@ -134,4 +134,67 @@ input[type=password]{width:100%;padding:.7rem .8rem;border-radius:7px;border:1px
 background:var(--ground);color:var(--text);font:inherit;margin:.7rem 0}
 input[type=password]:focus{outline:none;border-color:var(--gold)}
 .err{color:var(--bad);font-size:.87rem;margin:0}
+
+/* ---- record view: tabs, timeline, history ---- */
+.rtabs{display:flex;gap:.3rem;border-bottom:1px solid var(--border);margin:.9rem 0 .9rem;flex-wrap:wrap}
+.rtab{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);
+font:inherit;padding:.5rem .75rem;cursor:pointer;border-radius:6px 6px 0 0}
+.rtab:hover{color:var(--text);background:var(--raised)}
+.rtab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.rtab .n{font-size:.78rem;color:var(--muted);margin-left:.3rem}
+.rtab.on .n{color:var(--gold)}
+.panel[hidden]{display:none}
+.loading{color:var(--muted);font-size:.9rem;padding:.6rem 0}
+
+.compose{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.7rem;margin-bottom:.9rem}
+.compose textarea{width:100%;min-height:62px;background:var(--ground);color:var(--text);
+border:1px solid var(--border);border-radius:6px;padding:.5rem .65rem;font:inherit;resize:vertical}
+.compose .row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem}
+.compose select,.compose input[type=datetime-local]{background:var(--ground);color:var(--text);
+border:1px solid var(--border);border-radius:6px;padding:.4rem .5rem;font:inherit}
+.compose .go{margin-left:auto;padding:.45rem 1rem}
+
+.tl{list-style:none;margin:0;padding:0}
+.tl li{display:flex;align-items:flex-start;gap:.7rem;padding:.65rem 0;border-bottom:1px solid var(--border)}
+.tl li:last-child{border-bottom:none}
+.tl .kind{flex:0 0 auto;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;
+padding:.16rem .45rem;border-radius:4px;background:var(--raised);color:var(--soft);height:fit-content}
+.tl .kind.status{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.tl .kind.followup,.tl .kind.task{background:var(--gold);color:var(--ground);font-weight:600}
+.tl .kind.call{color:var(--gold)}
+.tl .grow{flex:1;min-width:0}
+.tl .subj{font-weight:600;overflow-wrap:anywhere}
+.tl .txt{color:var(--soft);white-space:pre-wrap;overflow-wrap:anywhere;margin-top:.15rem}
+.tl .when{color:var(--muted);font-size:.8rem;margin-top:.25rem}
+.tl .due{font-size:.8rem;color:var(--gold);margin-top:.25rem}
+.tl .due.late{color:var(--bad);font-weight:600}
+.tl .done .subj,.tl .done .txt{text-decoration:line-through;color:var(--muted)}
+.tl .tick{flex:0 0 auto;margin-top:.28rem}
+.tl .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0 .2rem}
+.tl .del:hover{color:var(--bad)}
+
+.hist{list-style:none;margin:0;padding:0}
+.hist li{display:flex;gap:.7rem;align-items:baseline;padding:.55rem 0;border-bottom:1px solid var(--border)}
+.hist li:last-child{border-bottom:none}
+.hist .date{flex:0 0 5.6rem;color:var(--muted);font-size:.83rem}
+.hist .what{flex:1;min-width:0;overflow-wrap:anywhere}
+.hist .tagp{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+border:1px solid var(--border);border-radius:4px;padding:.12rem .4rem}
+.hist .amt{color:var(--gold);font-weight:600;white-space:nowrap}
+.fubadge{background:var(--bad);color:#fff;border-radius:999px;padding:.05rem .45rem;
+font-size:.75rem;font-weight:600;margin-left:.35rem}
+
+/* On a phone the badge and the text fight over one line and the text loses.
+   Give the badge its own row and let the entry have the full width. */
+@media(max-width:560px){
+  .tl li{flex-wrap:wrap;gap:.45rem}
+  .tl .tick{order:0}
+  .tl .kind{order:1}
+  .tl .del{order:2;margin-left:auto}
+  .tl .grow{order:3;flex:1 0 100%}
+  .hist li{flex-wrap:wrap}
+  .hist .date{flex:0 0 auto}
+  .hist .what{flex:1 0 100%}
+  .compose .go{margin-left:0;flex:1}
+}
 `;

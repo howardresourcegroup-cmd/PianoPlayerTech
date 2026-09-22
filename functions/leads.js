@@ -28,7 +28,7 @@
 import { escape_, page, privateHeaders, newNonce, json } from './_lib/html.js';
 import {
   SESSION_HOURS, COOKIE, safeEqual, mintToken,
-  accessMode, accessIdentity, emailAllowed, signedIn, authed, sameOrigin
+  accessMode, accessIdentity, emailAllowed, signedIn, sameOrigin
 } from './_lib/auth.js';
 import {
   dashboard, VIEWS, SET_STATUSES, REFERRAL_STATUSES
@@ -37,6 +37,11 @@ import {
   createInvoice, voidInvoice, syncInvoices, INVOICE_COLUMNS
 } from './_lib/stripe.js';
 import { NOT_ARCHIVED, purgeCutoff, purgeExpired } from './_lib/db.js';
+import {
+  LOGGABLE_TYPES, SCHEDULED_TYPES, LIMITS as ACTIVITY_LIMITS, normStamp,
+  logActivity, logQuietly, contactIdFor, loadRecord, setActivityDone,
+  deleteActivity, openFollowups
+} from './_lib/activity.js';
 
 const PIPELINES = ['repair', 'tuning'];
 
@@ -46,6 +51,13 @@ const PIPELINES = ['repair', 'tuning'];
 const EDITABLE = {
   name: 200, phone: 50, email: 200, address: 300, city: 100,
   system: 200, service: 200, notes: 4000, status: 0, pipeline: 0, referral_status: 0
+};
+
+// Changes worth a line in the lead's history. Editing a typo in an address
+// is not a story; moving a job from new to booked is.
+const TRACKED_FIELDS = ['status', 'pipeline', 'referral_status'];
+const FIELD_LABEL = {
+  status: 'Status', pipeline: 'Pipeline', referral_status: 'Referral outcome'
 };
 
 const COLUMNS = [
@@ -195,6 +207,18 @@ export async function onRequestGet(context) {
 
   extra.wcReady = !!(env.WORLDCLASS_EMAIL && env.RESEND_API_KEY);
   extra.who = accessMode(env) ? who : '';
+
+  // Follow-ups you owe someone. A CRM that does not surface these is a
+  // list of names. Best-effort: a dashboard that loads without the badge
+  // beats one that does not load.
+  try {
+    const due = await openFollowups(env, new Date().toISOString(), 50);
+    extra.followups = { overdue: due.overdue.length, upcoming: due.upcoming.length, rows: due.all.slice(0, 20) };
+  } catch (err) {
+    console.error('follow-up lookup failed', err && err.message);
+    extra.followups = { overdue: 0, upcoming: 0, rows: [] };
+  }
+
   return new Response(dashboard(view, rows, counts, ref, extra, nonce), { headers });
 }
 
@@ -238,7 +262,11 @@ export async function onRequestPost(context) {
 
   // Everything else is a dashboard action and needs a valid session.
   if (!sameOrigin(request)) return json({ error: 'forbidden' }, 403);
-  if (!(await authed(request, env))) return json({ error: 'Signed out — reload and sign in again.' }, 401);
+  // signedIn is what authed wraps, so the gate is unchanged. Keeping the
+  // identity rather than discarding it is what lets an activity record who
+  // did the thing.
+  const actor = await signedIn(request, env);
+  if (!actor) return json({ error: 'Signed out — reload and sign in again.' }, 401);
   if (!env.DB) return json({ error: 'No database connected.' }, 503);
 
   let body;
@@ -256,6 +284,25 @@ export async function onRequestPost(context) {
     }
   }
 
+  // These are keyed by activity id, so they run before the lead lookup.
+  if (body.action === 'activityDone' || body.action === 'activityDelete') {
+    const aid = parseInt(body.activityId, 10);
+    if (!Number.isInteger(aid)) return json({ error: 'bad id' }, 400);
+    try {
+      if (body.action === 'activityDelete') {
+        return (await deleteActivity(env, aid))
+          ? json({ ok: true, deleted: aid })
+          : json({ error: 'That entry is already gone.' }, 404);
+      }
+      const row = await setActivityDone(env, aid, !!body.done, new Date().toISOString());
+      return row ? json({ ok: true, activity: row })
+        : json({ error: 'That entry is already gone.' }, 404);
+    } catch (err) {
+      console.error('activity action failed', body.action, err && err.message);
+      return json({ error: 'Could not save — try again.' }, 500);
+    }
+  }
+
   const id = parseInt(body.id, 10);
   if (!Number.isInteger(id)) return json({ error: 'bad id' }, 400);
 
@@ -264,12 +311,50 @@ export async function onRequestPost(context) {
   const target = await env.DB.prepare(
     'SELECT archived_at FROM leads WHERE id = ?').bind(id).first();
   if (!target) return json({ error: 'That lead no longer exists.' }, 404);
-  if (target.archived_at && !['restore', 'purge'].includes(body.action)) {
+  // 'record' is a read: an archived lead is still openable from the
+  // Archive tab, and refusing to show its history would be unhelpful.
+  if (target.archived_at && !['restore', 'purge', 'record'].includes(body.action)) {
     return json({ error: 'That lead is archived. Restore it first.' }, 409);
   }
 
   const now = new Date().toISOString();
   try {
+    // Everything the record view shows, fetched when the lead is opened
+    // rather than shipped with every row in the grid.
+    if (body.action === 'record') {
+      const rec = await loadRecord(env, id);
+      if (!rec) return json({ error: 'That lead no longer exists.' }, 404);
+      return json({ ok: true, record: rec });
+    }
+
+    // A note, a logged call, or a follow-up with a due date.
+    if (body.action === 'activity') {
+      const type = String(body.type || 'note');
+      if (!LOGGABLE_TYPES.includes(type)) return json({ error: 'bad activity type' }, 400);
+
+      const dueAt = normStamp(body.dueAt);
+      if (body.dueAt && !dueAt) return json({ error: "That date didn't make sense." }, 400);
+      if (SCHEDULED_TYPES.includes(type) && !dueAt) {
+        return json({ error: 'A follow-up needs a date.' }, 400);
+      }
+
+      const text = String(body.body == null ? '' : body.body).trim();
+      const subject = String(body.subject == null ? '' : body.subject).trim();
+      if (!text && !subject) return json({ error: 'Write something first.' }, 400);
+
+      const row = await logActivity(env, {
+        lead_id: id,
+        contact_id: await contactIdFor(env, id),
+        type,
+        subject: subject.slice(0, ACTIVITY_LIMITS.subject),
+        body: text.slice(0, ACTIVITY_LIMITS.body),
+        due_at: dueAt,
+        actor
+      }, now);
+      if (!row) return json({ error: 'Could not save that — try again.' }, 500);
+      return json({ ok: true, activity: row });
+    }
+
     if (body.action === 'update') {
       const field = body.field;
       if (!Object.prototype.hasOwnProperty.call(EDITABLE, field)) return json({ error: 'That column is read-only.' }, 400);
@@ -284,9 +369,25 @@ export async function onRequestPost(context) {
 
       // A referral nobody booked cannot have been paid for.
       const extra = field === 'referral_status' && value !== 'booked' ? ', referral_paid_at = NULL' : '';
+
+      // Read the old value first: once the UPDATE lands there is nothing
+      // left to say what it changed from.
+      const prev = TRACKED_FIELDS.includes(field)
+        ? await env.DB.prepare(`SELECT ${field} AS v, contact_id FROM leads WHERE id = ?`).bind(id).first()
+        : null;
+
       // `field` is safe to interpolate: it matched a key of EDITABLE above.
       await env.DB.prepare(`UPDATE leads SET ${field} = ?, updated_at = ?${extra} WHERE id = ?`)
         .bind(value, now, id).run();
+
+      // The save has already happened; a failed log must not undo it.
+      if (prev && String(prev.v == null ? '' : prev.v) !== value) {
+        await logQuietly(env, {
+          lead_id: id, contact_id: prev.contact_id, type: 'status', actor,
+          subject: `${FIELD_LABEL[field] || field} → ${value || 'none'}`,
+          meta: { field, from: prev.v == null ? '' : prev.v, to: value }
+        }, now);
+      }
       return json({ ok: true, value });
     }
 
@@ -308,6 +409,8 @@ export async function onRequestPost(context) {
       await env.DB.prepare(
         'UPDATE leads SET archived_at = ?, updated_at = ? WHERE id = ?')
         .bind(now, now, id).run();
+      await logQuietly(env, { lead_id: id, contact_id: await contactIdFor(env, id),
+        type: 'status', subject: 'Archived', actor, meta: { archived: true } }, now);
       return json({ ok: true, value: now });
     }
 
@@ -315,6 +418,8 @@ export async function onRequestPost(context) {
       await env.DB.prepare(
         'UPDATE leads SET archived_at = NULL, updated_at = ? WHERE id = ?')
         .bind(now, id).run();
+      await logQuietly(env, { lead_id: id, contact_id: await contactIdFor(env, id),
+        type: 'status', subject: 'Restored from archive', actor, meta: { archived: false } }, now);
       return json({ ok: true, value: null });
     }
 

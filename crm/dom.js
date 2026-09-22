@@ -31,6 +31,16 @@ export function fmt(ts){
   return d.toLocaleDateString([], {month:'short', day:'numeric', year: d.getFullYear() === new Date().getFullYear() ? undefined : '2-digit'});
 }
 export function fmtLong(ts){ var d = new Date(ts); return isNaN(d) ? '' : d.toLocaleString(); }
+
+// "Sep 19, 10:00 AM" -- a timeline is read at a glance, and seconds and a
+// four-digit year are noise in a narrow column.
+export function fmtWhen(ts){
+  var d = new Date(ts);
+  if (isNaN(d.getTime())) return '';
+  var sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleString([], {month:'short', day:'numeric',
+    year: sameYear ? undefined : 'numeric', hour:'numeric', minute:'2-digit'});
+}
 export function tel(p){ return String(p || '').replace(/[^0-9+]/g, ''); }
 export function money(c){ return '$' + (Number(c || 0) / 100).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
 

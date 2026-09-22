@@ -1,5 +1,5 @@
 // Writes a standalone page that mounts the real dashboard CSS and client
-// script against fixture leads, so the grid can be driven in a browser
+// modules against fixture leads, so the grid can be driven in a browser
 // without Cloudflare, D1 or auth. Also used by CI to syntax-check the script.
 //
 //   node tools/harness.js            -> writes .harness/harness.html
@@ -88,6 +88,40 @@ if (view === 'archive') {
   rows.length = 2;
 }
 
+// What the record view is given when a lead is opened.
+const mockRecord = {
+  lead: rows[0],
+  contact: { id: 1, created_at: '2026-01-04T10:00:00Z', name: 'Dana Whitfield',
+    phone: '(770) 555-0142', email: 'dana@example.com', city: 'Marietta' },
+  otherLeads: [
+    { id: 77, created_at: '2026-03-11T10:00:00Z', pipeline: 'repair', status: 'closed',
+      service: 'Player Repair', system: 'Disklavier DKC-850', city: 'Marietta' },
+    { id: 52, created_at: '2025-11-02T10:00:00Z', pipeline: 'tuning', status: 'closed',
+      service: 'Piano Tuning', system: 'Yamaha U1 upright', city: 'Marietta' }
+  ],
+  invoices: [
+    { id: 100, created_at: '2026-03-14T10:00:00Z', number: 'PPT-0031', description: 'Player system rebuild',
+      amount_cents: 84000, status: 'paid' }
+  ],
+  activities: [
+    { id: 5, created_at: '2026-09-21T15:30:00Z', lead_id: 101, contact_id: 1, type: 'followup',
+      subject: null, body: 'Ring back about the pitch raise quote.',
+      due_at: '2026-09-19T14:00:00Z', completed_at: null, actor: 'harness@example.com', meta: null },
+    { id: 4, created_at: '2026-09-21T15:00:00Z', lead_id: 101, contact_id: 1, type: 'followup',
+      subject: null, body: 'Confirm the appointment the day before.',
+      due_at: '2026-12-01T14:00:00Z', completed_at: null, actor: 'harness@example.com', meta: null },
+    { id: 3, created_at: '2026-09-20T16:10:00Z', lead_id: 101, contact_id: 1, type: 'call',
+      subject: null, body: 'Spoke to Dana. Four years since the last tuning, likely a pitch raise.',
+      due_at: null, completed_at: null, actor: 'harness@example.com', meta: null },
+    { id: 2, created_at: '2026-09-20T14:05:00Z', lead_id: 101, contact_id: 1, type: 'status',
+      subject: 'Status → called', body: null, due_at: null, completed_at: null,
+      actor: 'harness@example.com', meta: '{"field":"status","from":"new","to":"called"}' },
+    { id: 1, created_at: '2026-03-14T10:00:00Z', lead_id: 77, contact_id: 1, type: 'note',
+      subject: null, body: 'Rebuilt the power supply on the player system.',
+      due_at: null, completed_at: null, actor: 'harness@example.com', meta: null }
+  ]
+};
+
 const data = JSON.stringify({
   view, rows,
   statuses: ['new', 'called', 'referred', 'booked', 'closed'],
@@ -99,7 +133,9 @@ const data = JSON.stringify({
 }).replace(/</g, '\\u003c');
 
 fs.writeFileSync(path.join(OUT, 'harness.html'), `<!doctype html><html lang="en"><head>
-<meta charset="utf-8"><title>Harness</title><style>${css}</style></head><body>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harness</title><style>${css}</style></head><body>
 <div class="wrap">
 <div class="top"><h1>Leads</h1></div>
 <nav class="tabs"></nav>
@@ -115,7 +151,35 @@ fs.writeFileSync(path.join(OUT, 'harness.html'), `<!doctype html><html lang="en"
 <dialog id="dlg"><div class="dlg" id="dlgbody"></div></dialog>
 </div>
 <script type="application/json" id="data">${data}</script>
+<script type="module" src="./mock.js"></script>
 <script type="module" src="./app.js"></script></body></html>`);
+
+// A stand-in server, written by the harness and never copied from crm/, so
+// the client stays byte-for-byte what production serves. Module scripts run
+// in document order, so this patches fetch before app.js calls it.
+fs.writeFileSync(path.join(OUT, 'mock.js'), `// Harness only. Not part of the application.
+const RECORD = ${JSON.stringify(mockRecord, null, 2)};
+let nextId = 900;
+window.fetch = function (url, opts) {
+  const body = JSON.parse((opts && opts.body) || '{}');
+  const reply = (obj) => Promise.resolve(new Response(JSON.stringify(obj),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }));
+  console.log('[mock]', body.action, body);
+  if (body.action === 'record') return reply({ ok: true, record: RECORD });
+  if (body.action === 'activity') {
+    return reply({ ok: true, activity: {
+      id: nextId++, created_at: new Date().toISOString(), lead_id: body.id,
+      contact_id: 1, type: body.type, subject: null, body: body.body,
+      due_at: body.dueAt || null, completed_at: null, actor: 'harness@example.com', meta: null } });
+  }
+  if (body.action === 'activityDone') {
+    return reply({ ok: true, activity: Object.assign({}, RECORD.activities.find(a => a.id === body.activityId) || {},
+      { id: body.activityId, completed_at: body.done ? new Date().toISOString() : null }) });
+  }
+  if (body.action === 'activityDelete') return reply({ ok: true, deleted: body.activityId });
+  return reply({ ok: true, value: body.value });
+};
+`);
 
 // Copied rather than inlined so the harness loads the client exactly as the
 // dashboard does: as ES modules, which means strict mode. The whole directory

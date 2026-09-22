@@ -4,11 +4,12 @@
 // from its Refer button.
 
 import { D, REF_LABEL } from './state.js';
-import { el, dlg, dlgbody, fmt, fmtLong, tel, fields, showDlg, dlgHeader } from './dom.js';
+import { el, dlg, dlgbody, fmt, fmtLong, tel, money, fields, showDlg, dlgHeader } from './dom.js';
 import { post } from './api.js';
 import { bumpRef } from './stats.js';
 import { render } from './grid.js';
 import { invoiceDialog } from './invoices.js';
+import { composer, timeline, history } from './timeline.js';
 
 // Straight from the grid's Refer button: just the referral form, no detour
 // through the full lead record.
@@ -25,7 +26,7 @@ export function openRefer(r){
   showDlg();
 }
 
-export function openLead(r){
+export function openLead(r, tab){
   dlgbody.textContent = '';
   var f = fields(r);
   var meta = [r.service, r.system, r.city].filter(Boolean).join(' · ');
@@ -46,8 +47,41 @@ export function openLead(r){
     target:'_blank', rel:'noopener', text:'Map'}));
   dlgbody.appendChild(contact);
 
-  if (r.message) dlgbody.appendChild(el('div', {className:'msg', text:r.message}));
+  // ---- tabs
+  var panels = {
+    details: el('div', {className:'panel'}),
+    activity: el('div', {className:'panel'}),
+    history: el('div', {className:'panel'})
+  };
+  var bar = el('div', {className:'rtabs'});
+  var buttons = {};
+  var current = tab && panels[tab] ? tab : 'details';
 
+  function show(name){
+    current = name;
+    Object.keys(panels).forEach(function(k){
+      panels[k].hidden = k !== name;
+      buttons[k].className = 'rtab' + (k === name ? ' on' : '');
+      buttons[k].setAttribute('aria-selected', k === name ? 'true' : 'false');
+    });
+  }
+  [['details', 'Details'], ['activity', 'Activity'], ['history', 'History']].forEach(function(t){
+    var b = el('button', {className:'rtab', type:'button', role:'tab',
+      on:{click:function(){ show(t[0]); }}});
+    b.appendChild(document.createTextNode(t[1]));
+    if (t[0] !== 'details') b.appendChild(el('span', {className:'n', text:''}));
+    buttons[t[0]] = b;
+    bar.appendChild(b);
+  });
+  function setCount(name, n){
+    var span = buttons[name].querySelector('.n');
+    if (span) span.textContent = n == null ? '' : String(n);
+  }
+  dlgbody.appendChild(bar);
+  Object.keys(panels).forEach(function(k){ dlgbody.appendChild(panels[k]); });
+
+  // ---- details
+  if (r.message) panels.details.appendChild(el('div', {className:'msg', text:r.message}));
   var keys = Object.keys(f);
   if (keys.length) {
     var dl = el('dl');
@@ -55,17 +89,49 @@ export function openLead(r){
       dl.appendChild(el('dt', {text:k.replace(/[_-]+/g, ' ')}));
       dl.appendChild(el('dd', {text:String(f[k])}));
     });
-    dlgbody.appendChild(el('details', null, [el('summary', {text:'Everything they submitted'}), dl]));
+    panels.details.appendChild(el('details', null, [el('summary', {text:'Everything they submitted'}), dl]));
   }
-  if (r.notes) dlgbody.appendChild(el('div', {className:'msg', text:r.notes}));
-
-  dlgbody.appendChild(referBox(r, f));
-  dlgbody.appendChild(el('div', {className:'refer'}, [
+  if (r.notes) panels.details.appendChild(el('div', {className:'msg', text:r.notes}));
+  panels.details.appendChild(referBox(r, f));
+  panels.details.appendChild(el('div', {className:'refer'}, [
     el('h3', {text:'Invoice'}),
     el('button', {className:'ghost', type:'button', text:'Create an invoice for ' + (r.name || 'this customer'),
       on:{click:function(){ invoiceDialog({billTo:r.name, email:r.email, leadId:r.id}); }}})
   ]));
+
+  // ---- activity and history, fetched on open
+  var actBox = el('div');
+  panels.activity.appendChild(composer(r.id, function(row){
+    acts.unshift(row); paintActivity();
+  }));
+  panels.activity.appendChild(actBox);
+  var loading = el('p', {className:'loading', text:'Loading history…'});
+  actBox.appendChild(loading);
+  panels.history.appendChild(el('p', {className:'loading', text:'Loading history…'}));
+
+  var acts = [];
+  function paintActivity(){
+    actBox.textContent = '';
+    actBox.appendChild(timeline(acts, function(next){ acts = next; paintActivity(); }));
+    setCount('activity', acts.length);
+  }
+
+  show(current);
   showDlg();
+
+  post({action:'record', id:r.id}).then(function(j){
+    var rec = j.record;
+    acts = rec.activities || [];
+    paintActivity();
+    panels.history.textContent = '';
+    panels.history.appendChild(history(rec, money));
+    setCount('history', (rec.otherLeads || []).length + (rec.invoices || []).length);
+  }, function(e){
+    actBox.textContent = '';
+    actBox.appendChild(el('p', {className:'warn', text:'Could not load the history: ' + e.message}));
+    panels.history.textContent = '';
+    panels.history.appendChild(el('p', {className:'warn', text:e.message}));
+  });
 }
 
 export function referBox(r, f){

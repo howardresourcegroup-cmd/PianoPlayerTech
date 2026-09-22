@@ -39,8 +39,21 @@ test('every branch of the grid WHERE clause handles archiving', () => {
 
 test('mutating actions refuse an archived lead', () => {
   assert.match(SRC, /That lead is archived\. Restore it first\./);
+
+  // Read the exemption list rather than pinning its exact text: the point is
+  // which actions are exempt, not how the array is punctuated.
+  const m = SRC.match(/if \(target\.archived_at && !\[([^\]]*)\]\.includes\(body\.action\)\)/);
+  assert.ok(m, 'could not find the archived-lead guard');
+  const exempt = m[1].split(',').map((x) => x.trim().replace(/^'|'$/g, '')).filter(Boolean);
+
   // Restore and purge must stay reachable, or an archived lead is a dead end.
-  assert.match(SRC, /\['restore', 'purge'\]\.includes\(body\.action\)/);
+  for (const a of ['restore', 'purge']) {
+    assert.ok(exempt.includes(a), `${a} must stay reachable on an archived lead`);
+  }
+  // Nothing that changes a lead may be exempt. A read may.
+  for (const a of ['update', 'paid', 'refer', 'archive', 'activity']) {
+    assert.ok(!exempt.includes(a), `${a} writes, so it must not bypass the archive guard`);
+  }
 });
 
 test('the grid receives the archive columns', () => {
