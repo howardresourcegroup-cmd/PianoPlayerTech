@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const { extractBlock } = require('./extract.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -27,25 +27,30 @@ function findBlock(name, files) {
 
 const css = findBlock('CSS', ['functions/_lib/css.js', 'functions/leads.js']);
 
-// The client is a real file now, so there is nothing to extract and
-// `node --check` can see it directly.
-const jsPath = path.join(ROOT, 'crm/app.js');
+// The client is a directory of ES modules now, so there is nothing to
+// extract: the same files the dashboard loads are checked and copied.
+const SRC = path.join(ROOT, 'crm');
+const clientFiles = fs.readdirSync(SRC).filter((f) => f.endsWith('.js')).sort();
 
 fs.mkdirSync(OUT, { recursive: true });
 
 // This is the check CI could not do before: a syntax error inside GRID_JS
 // used to ship silently, because to Node the script is just a string.
-// Kept now that the client is a real file: ESLint and node --check both see
-// it directly, and this still proves the page the harness serves is the same
-// code production serves.
-try {
-  execFileSync(process.execPath, ['--check', jsPath], { stdio: 'inherit' });
-} catch {
-  // execFileSync would otherwise bury the SyntaxError under its own stack.
-  console.error(`\ncrm/app.js does not parse -- see the error above.`);
-  process.exit(1);
+//
+// It has to be `--input-type=module` reading from stdin. Given a path,
+// `node --check` decides the file is CommonJS, fails, silently retries in a
+// mode that accepts almost anything, and exits 0 -- verified against a file
+// containing `let b = ;`. A check that cannot fail is worse than no check,
+// because it is believed.
+let bad = 0;
+for (const f of clientFiles) {
+  const src = fs.readFileSync(path.join(SRC, f));
+  const r = spawnSync(process.execPath, ['--input-type=module', '--check'],
+    { input: src, stdio: ['pipe', 'inherit', 'inherit'] });
+  if (r.status !== 0) { console.error(`crm/${f} does not parse -- see above.`); bad++; }
 }
-console.log('crm/app.js parses');
+if (bad) process.exit(1);
+console.log(`crm/: ${clientFiles.length} modules parse`);
 
 if (process.argv.includes('--check')) process.exit(0);
 
@@ -113,6 +118,7 @@ fs.writeFileSync(path.join(OUT, 'harness.html'), `<!doctype html><html lang="en"
 <script type="module" src="./app.js"></script></body></html>`);
 
 // Copied rather than inlined so the harness loads the client exactly as the
-// dashboard does: as a module, which means strict mode.
-fs.copyFileSync(jsPath, path.join(OUT, 'app.js'));
+// dashboard does: as ES modules, which means strict mode. The whole directory
+// goes across, because app.js imports the rest by relative path.
+for (const f of clientFiles) fs.copyFileSync(path.join(SRC, f), path.join(OUT, f));
 console.log('wrote .harness/harness.html');
