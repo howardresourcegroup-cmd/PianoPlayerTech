@@ -6,6 +6,7 @@
 // payload so no value a customer typed can close the script tag.
 
 import { escape_, page } from './html.js';
+import { REFERRAL_FEE } from './db.js';
 
 export const VIEWS = { repair: 'Repair & Pneumatic', tuning: 'Tuning', referrals: 'Referrals', all: 'All', invoices: 'Invoices' };
 
@@ -17,8 +18,7 @@ export const STATUSES = ['new', 'called', 'referred', 'booked', 'closed'];
 // never reached the Referrals tab, the stats, or a World Class invoice.
 export const SET_STATUSES = STATUSES.filter((s) => s !== 'referred');
 
-// World Class pays per referral they actually book — not per referral sent.
-export const REFERRAL_FEE = 25;
+export { REFERRAL_FEE };
 
 export const REFERRAL_STATUSES = ['sent', 'booked', 'no_booking'];
 
