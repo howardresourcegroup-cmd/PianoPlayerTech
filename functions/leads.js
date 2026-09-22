@@ -29,6 +29,13 @@ const SESSION_HOURS = 12;
 const COOKIE = 'ppt_admin';
 const VIEWS = { repair: 'Repair & Pneumatic', tuning: 'Tuning', referrals: 'Referrals', all: 'All', invoices: 'Invoices' };
 const STATUSES = ['new', 'called', 'referred', 'booked', 'closed'];
+
+// What a person may pick in the Status dropdown. 'referred' is missing on
+// purpose: it is set only by the refer flow, which also stamps referred_at.
+// Choosing it by hand used to set the status and nothing else, so the lead
+// never reached the Referrals tab, the stats, or a World Class invoice.
+const SET_STATUSES = STATUSES.filter((s) => s !== 'referred');
+
 const PIPELINES = ['repair', 'tuning'];
 
 // World Class pays per referral they actually book — not per referral sent.
@@ -433,7 +440,10 @@ export async function onRequestPost(context) {
       const field = body.field;
       if (!Object.prototype.hasOwnProperty.call(EDITABLE, field)) return json({ error: 'That column is read-only.' }, 400);
       let value = String(body.value == null ? '' : body.value).trim();
-      if (field === 'status' && !STATUSES.includes(value)) return json({ error: 'bad status' }, 400);
+      if (field === 'status' && value === 'referred') {
+        return json({ error: 'Use the Refer button so the referral is recorded and can be billed.' }, 400);
+      }
+      if (field === 'status' && !SET_STATUSES.includes(value)) return json({ error: 'bad status' }, 400);
       if (field === 'pipeline' && !PIPELINES.includes(value)) return json({ error: 'bad pipeline' }, 400);
       if (field === 'referral_status' && !REFERRAL_STATUSES.includes(value)) return json({ error: 'bad referral status' }, 400);
       if (EDITABLE[field]) value = value.slice(0, EDITABLE[field]);
@@ -880,8 +890,13 @@ td input[type=checkbox]:disabled{opacity:.3;cursor:not-allowed}
 .namecell{display:flex;align-items:center}
 .namecell input{flex:1;font-weight:600}
 .open{flex:none;margin-right:.35rem;background:var(--raised);border:1px solid var(--border);color:var(--gold);
-border-radius:5px;width:26px;height:24px;cursor:pointer;font:inherit;font-weight:700}
+border-radius:5px;padding:0 .45rem;height:24px;cursor:pointer;font:inherit;font-size:.78rem;font-weight:600}
 .open:hover{border-color:var(--gold)}
+/* The Referral column's call to action. Gold-filled so it reads as the one
+   thing to press on a tuning lead that hasn't been handed over yet. */
+.refergo{width:100%;background:var(--gold);border:1px solid var(--gold);color:#1a1205;
+border-radius:5px;padding:.3rem .5rem;cursor:pointer;font:inherit;font-size:.8rem;font-weight:700}
+.refergo:hover{filter:brightness(1.08)}
 .phonecell{display:flex;align-items:center}
 .phonecell a{flex:none;color:var(--gold);text-decoration:none;padding:0 .5rem;font-size:.8rem}
 tr.is-new td.sticky{box-shadow:inset 3px 0 0 var(--gold),1px 0 0 var(--border)}
@@ -974,7 +989,8 @@ function dashboard(view, rows, counts, ref, extra, nonce) {
   // Everything the grid needs, handed to the script as data. `<` is escaped
   // so no value a customer typed can close this script tag.
   const data = JSON.stringify({
-    view, rows, statuses: STATUSES, refStatuses: REFERRAL_STATUSES, fee: REFERRAL_FEE, ref, ...extra
+    view, rows, statuses: STATUSES, setStatuses: SET_STATUSES,
+    refStatuses: REFERRAL_STATUSES, fee: REFERRAL_FEE, ref, ...extra
   }).replace(/</g, '\\u003c');
 
   return page(VIEWS[view], `
@@ -1009,9 +1025,9 @@ const GRID_JS = `
   var REF_LABEL = {sent:'Sent — waiting', booked:'Booked', no_booking:"Didn't book"};
 
   var COLS = [
-    {k:'name', label:'Name', type:'name', w:200},
+    {k:'name', label:'Name', type:'name', w:240},
     {k:'phone', label:'Phone', type:'phone', w:170},
-    {k:'status', label:'Status', type:'select', opts:D.statuses, w:110}
+    {k:'status', label:'Status', type:'select', opts:D.setStatuses, w:110}
   ];
   if (view === 'referrals') {
     COLS.push(
@@ -1037,7 +1053,7 @@ const GRID_JS = `
     );
     if (view !== 'repair') {
       COLS.push(
-        {k:'referral_status', label:'Referral', type:'select', opts:D.refStatuses, labels:REF_LABEL, blank:true, w:140},
+        {k:'referral_status', label:'Referral', type:'refer', opts:D.refStatuses, labels:REF_LABEL, blank:true, w:140},
         {k:'referral_paid_at', label:'$' + D.fee + ' paid', type:'paid', w:80}
       );
     }
@@ -1154,6 +1170,27 @@ const GRID_JS = `
     });
   }
 
+  function cellSelect(r, c, td){
+    var v = r[c.k] == null ? '' : r[c.k];
+    var sel = el('select', {'aria-label':c.label});
+    if (c.blank || !v) sel.appendChild(el('option', {value:'', text:'—'}));
+    // A stored value nobody may choose any more — 'referred' — still has to
+    // show on the leads that already carry it. Added disabled, so it displays
+    // without being something you could pick for yourself.
+    if (v && c.opts.indexOf(String(v)) < 0) {
+      sel.appendChild(el('option', {value:String(v), disabled:true,
+        text:(c.labels && c.labels[v]) || String(v)}));
+    }
+    c.opts.forEach(function(o){ sel.appendChild(el('option', {value:o, text:(c.labels && c.labels[o]) || o})); });
+    sel.value = String(v);
+    if (c.k === 'referral_status' && !r.referred_at) sel.disabled = true;
+    sel.addEventListener('change', function(){
+      if (!sel.value) { sel.value = String(r[c.k] || ''); return; }
+      save(r, c.k, sel.value, td);
+    });
+    return sel;
+  }
+
   function cell(r, c, i){
     var td = el('td', {className: i === 0 ? 'sticky' : ''});
     td.style.minWidth = c.w + 'px'; td.style.maxWidth = (c.w + 80) + 'px';
@@ -1167,7 +1204,7 @@ const GRID_JS = `
 
     if (c.type === 'name') {
       td.appendChild(el('div', {className:'namecell'}, [
-        el('button', {className:'open', text:'›', title:'Open lead', type:'button',
+        el('button', {className:'open', text:'Open', title:'Open the whole lead', type:'button',
           on:{click:function(){ openLead(r); }}}),
         input()
       ]));
@@ -1177,17 +1214,22 @@ const GRID_JS = `
       ]));
     } else if (c.type === 'text') {
       td.appendChild(input());
+    } else if (c.type === 'refer') {
+      // Before a referral exists this column used to be a disabled dropdown —
+      // the one control named "Referral", greyed out on exactly the leads you
+      // want to refer. It is now the button that starts the referral.
+      if (r.referred_at) {
+        td.appendChild(cellSelect(r, c, td));
+      } else if (r.pipeline === 'tuning') {
+        td.appendChild(el('button', {className:'refergo', type:'button', text:'Refer →',
+          title:'Send this lead to World Class',
+          on:{click:function(){ openRefer(r); }}}));
+      }
+      // A repair lead gets nothing here: World Class takes tuning work. The
+      // All tab mixes both pipelines, so this column would otherwise put a
+      // prominent button on jobs that should never be handed over.
     } else if (c.type === 'select') {
-      var sel = el('select', {'aria-label':c.label});
-      if (c.blank || !v) sel.appendChild(el('option', {value:'', text:'—'}));
-      c.opts.forEach(function(o){ sel.appendChild(el('option', {value:o, text:(c.labels && c.labels[o]) || o})); });
-      sel.value = String(v);
-      if (c.k === 'referral_status' && !r.referred_at) sel.disabled = true;
-      sel.addEventListener('change', function(){
-        if (!sel.value) { sel.value = String(r[c.k] || ''); return; }
-        save(r, c.k, sel.value, td);
-      });
-      td.appendChild(sel);
+      td.appendChild(cellSelect(r, c, td));
     } else if (c.type === 'paid') {
       var cb = el('input', {type:'checkbox', checked:!!v, 'aria-label':'Paid',
         title: r.referred_at ? (v ? 'Paid ' + fmtLong(v) : 'Mark as paid') : 'Not referred yet'});
@@ -1259,6 +1301,22 @@ const GRID_JS = `
   }
 
   // ---- lead detail + World Class referral
+
+  // Straight from the grid's Refer button: just the referral form, no detour
+  // through the full lead record.
+  function openRefer(r){
+    dlgbody.textContent = '';
+    dlgHeader('Refer ' + (r.name || 'this lead'),
+      [r.phone, r.city].filter(Boolean).join(' · ') || ('PPT-' + r.id));
+    if (r.message) dlgbody.appendChild(el('div', {className:'msg', text:r.message}));
+    dlgbody.appendChild(referBox(r, fields(r)));
+    dlgbody.appendChild(el('p', null, [
+      el('button', {className:'linkbtn', type:'button', text:'See the whole lead instead',
+        on:{click:function(){ openLead(r); }}})
+    ]));
+    showDlg();
+  }
+
   function openLead(r){
     dlgbody.textContent = '';
     var f = fields(r);
