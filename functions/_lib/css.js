@@ -7,7 +7,12 @@ export const CSS = `
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--ground);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{padding:1.2rem 16px 4rem;max-width:1600px;margin:0 auto}
+.wrap{padding:1.2rem 16px 4rem;margin:0 auto;max-width:none}
+/* A data application, not an article: the grid should use the whole window.
+   Gutters grow a little on very wide screens so content is not flush to the
+   bezel, but nothing is capped. */
+@media(min-width:1500px){.wrap{padding-left:28px;padding-right:28px}}
+/* Only the sign-in and error cards stay narrow -- .narrow sets its own width. */
 h1{font-size:1.3rem;margin:0}
 h2{font-size:1.1rem;margin:0}
 .muted{color:var(--muted);font-size:.88rem}
