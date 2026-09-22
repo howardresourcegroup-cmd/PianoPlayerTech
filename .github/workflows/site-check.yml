@@ -28,9 +28,20 @@ jobs:
         run: |
           python3 -c "import xml.dom.minidom as m; m.parse('sitemap.xml'); print('sitemap.xml: valid XML')"
 
+      # -print0 because this word-split on any path containing a space. It
+      # passed only because no tracked .js path has one; the untracked saved
+      # page under Images/ breaks it immediately.
       - name: Syntax-check JavaScript
         run: |
-          for f in $(find . -name '*.js' -not -path './node_modules/*' -not -path './.github/*'); do
-            node --check "$f" || exit 1
-          done
+          find . -name '*.js' -not -path './node_modules/*' -not -path './.github/*' \
+            -not -path './.harness/*' -print0 |
+          while IFS= read -r -d '' f; do node --check "$f" || exit 1; done
           echo "all JS parses"
+
+      # node --check cannot see inside a template literal, so the dashboard's
+      # client script was never syntax-checked. A broken grid used to ship.
+      - name: Syntax-check the dashboard's client script
+        run: node tools/harness.js --check
+
+      - name: Unit tests
+        run: node --test 'tests/*.test.js'

@@ -89,7 +89,7 @@ test('extractBlock throws when the constant is absent', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `node --test tests/extract.test.js`
+Run: `node --test 'tests/*.test.js'extract.test.js`
 Expected: FAIL — `Cannot find module '../tools/extract.js'`
 
 - [ ] **Step 3: Write minimal implementation**
@@ -117,7 +117,7 @@ module.exports = { extractBlock };
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `node --test tests/extract.test.js`
+Run: `node --test 'tests/*.test.js'extract.test.js`
 Expected: PASS, 3 tests
 
 - [ ] **Step 5: Add the syntax check that CI was missing**
@@ -235,7 +235,7 @@ step, add:
         run: node tools/harness.js --check
 
       - name: Unit tests
-        run: node --test tests/
+        run: node --test 'tests/*.test.js'
 ```
 
 Also fix the existing sweep in that file, which word-splits on paths
@@ -337,7 +337,7 @@ test('leads.js imports its stylesheet rather than inlining it', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `node --test tests/routing.test.js`
+Run: `node --test 'tests/*.test.js'routing.test.js`
 Expected: FAIL — `functions/_lib must exist`
 
 - [ ] **Step 3: Move the stylesheet**
@@ -397,7 +397,7 @@ paragraph with:
 
 - [ ] **Step 6: Run the tests**
 
-Run: `node --test tests/`
+Run: `node --test 'tests/*.test.js'`
 Expected: PASS
 
 Run: `node tools/harness.js --check`
@@ -482,7 +482,7 @@ test('an empty ACCESS_EMAILS list admits nobody', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `node --test tests/auth.test.js`
+Run: `node --test 'tests/*.test.js'auth.test.js`
 Expected: FAIL — no such file `functions/_lib/auth.js`
 
 - [ ] **Step 3: Move the auth block**
@@ -513,7 +513,7 @@ inside `auth.js`, drop them from the import rather than leaving unused names.
 
 - [ ] **Step 5: Run the tests**
 
-Run: `node --test tests/`
+Run: `node --test 'tests/*.test.js'`
 Expected: PASS
 
 - [ ] **Step 6: Verify the compile still routes correctly**
@@ -576,7 +576,7 @@ test('the harness builds and the client script parses', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `node --test tests/harness.test.js`
+Run: `node --test 'tests/*.test.js'harness.test.js`
 Expected: FAIL once `GRID_JS` has moved out of `leads.js` in Step 3 — run this
 step after Step 3 if it passes now.
 
@@ -653,7 +653,7 @@ import {
 
 - [ ] **Step 6: Run the tests**
 
-Run: `node --test tests/`
+Run: `node --test 'tests/*.test.js'`
 Expected: PASS, including the new `export const` case.
 
 - [ ] **Step 7: Verify the grid still renders**
@@ -719,7 +719,7 @@ test('invoice line limits are enforced', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `node --test tests/stripe.test.js`
+Run: `node --test 'tests/*.test.js'stripe.test.js`
 Expected: FAIL — no such file
 
 - [ ] **Step 3: Move the Stripe block**
@@ -739,7 +739,7 @@ import {
 
 - [ ] **Step 5: Run the tests and the compile check**
 
-Run: `node --test tests/`
+Run: `node --test 'tests/*.test.js'`
 Expected: PASS
 
 Run:
@@ -837,7 +837,7 @@ test('the migration is idempotent against an already-migrated database', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `node --test tests/schema.test.js`
+Run: `node --test 'tests/*.test.js'schema.test.js`
 Expected: FAIL — `leads.scheduled_at missing`
 
 - [ ] **Step 3: Update schema.sql**
@@ -916,7 +916,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 - [ ] **Step 5: Run the tests**
 
-Run: `node --test tests/schema.test.js`
+Run: `node --test 'tests/*.test.js'schema.test.js`
 Expected: PASS, 3 tests
 
 - [ ] **Step 6: Commit**
@@ -1010,7 +1010,7 @@ test('the clause actually excludes archived rows in SQLite', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `node --test tests/archived-exclusion.test.js`
+Run: `node --test 'tests/*.test.js'archived-exclusion.test.js`
 Expected: FAIL — the grid, counts and stats queries lack the clause
 
 - [ ] **Step 3: Create the shared constant**
@@ -1082,7 +1082,7 @@ check, add:
 
 - [ ] **Step 6: Run the tests**
 
-Run: `node --test tests/`
+Run: `node --test 'tests/*.test.js'`
 Expected: PASS
 
 - [ ] **Step 7: Commit**
@@ -1150,7 +1150,7 @@ test('purge is a hard delete, archive is not', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `node --test tests/archive.test.js`
+Run: `node --test 'tests/*.test.js'archive.test.js`
 Expected: FAIL — missing handler for action archive
 
 - [ ] **Step 3: Add the actions**
@@ -1280,7 +1280,7 @@ than `'pair'`.
 
 - [ ] **Step 7: Run the tests and the harness**
 
-Run: `node --test tests/`
+Run: `node --test 'tests/*.test.js'`
 Expected: PASS
 
 Run: `node tools/harness.js`
@@ -1370,7 +1370,7 @@ test('the purge deletes only leads archived more than thirty days ago', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `node --test tests/purge.test.js`
+Run: `node --test 'tests/*.test.js'purge.test.js`
 Expected: FAIL — `purgeCutoff` not found in `_lib/db.js`
 
 - [ ] **Step 3: Implement the purge**
@@ -1445,7 +1445,7 @@ promise precision the implementation does not have.
 
 - [ ] **Step 6: Run the tests**
 
-Run: `node --test tests/`
+Run: `node --test 'tests/*.test.js'`
 Expected: PASS
 
 - [ ] **Step 7: Commit**
@@ -1474,7 +1474,7 @@ EOF
 - [ ] **Step 1: Full local verification**
 
 ```bash
-node --test tests/
+node --test 'tests/*.test.js'
 node tools/harness.js --check
 node .github/scripts/check-site.js
 npx wrangler pages functions build --outdir=.harness/worker
