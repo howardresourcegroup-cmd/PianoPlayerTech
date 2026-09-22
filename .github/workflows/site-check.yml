@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       # Catches what `node --check` cannot: code that is valid grammar but
       # refers to something that no longer exists. A refactor once left
@@ -53,4 +53,8 @@ jobs:
         run: node tools/harness.js --check
 
       - name: Unit tests
-        run: node --test 'tests/*.test.js' 'tests/*.test.mjs'
+        # Unquoted on purpose: the shell expands these into real paths.
+        # node --test only learned to expand glob patterns itself in Node 22,
+        # so a quoted pattern makes older runtimes look for a file literally
+        # named "tests/*.test.js".
+        run: node --test tests/*.test.js tests/*.test.mjs
