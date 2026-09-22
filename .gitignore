@@ -18,3 +18,6 @@ PianoPlayerTech-Workflow.md
 
 # Local test harness output
 .harness/
+
+# Dev tooling only; the runtime has no dependencies
+node_modules/

@@ -21,6 +21,15 @@ jobs:
         with:
           node-version: '20'
 
+      # Catches what `node --check` cannot: code that is valid grammar but
+      # refers to something that no longer exists. A refactor once left
+      # REFERRAL_FEE behind as a free variable and every other check passed.
+      - name: Install dev tooling
+        run: npm ci
+
+      - name: Lint
+        run: npx eslint .
+
       - name: Validate links, assets, forms, SEO and structured data
         run: node .github/scripts/check-site.js
 
