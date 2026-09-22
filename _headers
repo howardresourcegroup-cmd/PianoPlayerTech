@@ -9,3 +9,7 @@
 
 /js/*
   Cache-Control: public, max-age=31536000, immutable
+
+/crm/*
+  Cache-Control: no-cache, must-revalidate
+  X-Content-Type-Options: nosniff

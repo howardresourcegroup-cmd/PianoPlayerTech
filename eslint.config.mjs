@@ -95,8 +95,8 @@ export default [
     rules: ERRORS
   },
   {
-    // Client code, once Phase 2 moves it out of a template literal.
-    files: ['public/**/*.js'],
+    // The CRM client application, served as a static asset.
+    files: ['crm/**/*.js'],
     languageOptions: {
       ecmaVersion: 2023, sourceType: 'module', globals: BROWSER_GLOBALS
     },

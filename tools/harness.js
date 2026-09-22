@@ -26,25 +26,26 @@ function findBlock(name, files) {
 }
 
 const css = findBlock('CSS', ['functions/_lib/css.js', 'functions/leads.js']);
-const js = findBlock('GRID_JS', ['functions/_lib/grid.js', 'functions/leads.js']);
+
+// The client is a real file now, so there is nothing to extract and
+// `node --check` can see it directly.
+const jsPath = path.join(ROOT, 'crm/app.js');
 
 fs.mkdirSync(OUT, { recursive: true });
-const jsPath = path.join(OUT, 'grid.js');
-fs.writeFileSync(jsPath, js);
 
 // This is the check CI could not do before: a syntax error inside GRID_JS
 // used to ship silently, because to Node the script is just a string.
-// Verified by deliberately breaking the script and watching this fail while
-// `node --check functions/leads.js` still reported the file as fine.
+// Kept now that the client is a real file: ESLint and node --check both see
+// it directly, and this still proves the page the harness serves is the same
+// code production serves.
 try {
   execFileSync(process.execPath, ['--check', jsPath], { stdio: 'inherit' });
 } catch {
   // execFileSync would otherwise bury the SyntaxError under its own stack.
-  console.error(`\nGRID_JS does not parse. The error above is at a line in ${
-    path.relative(ROOT, jsPath)}; find it in the GRID_JS template literal.`);
+  console.error(`\ncrm/app.js does not parse -- see the error above.`);
   process.exit(1);
 }
-console.log('GRID_JS parses');
+console.log('crm/app.js parses');
 
 if (process.argv.includes('--check')) process.exit(0);
 
@@ -109,6 +110,9 @@ fs.writeFileSync(path.join(OUT, 'harness.html'), `<!doctype html><html lang="en"
 <dialog id="dlg"><div class="dlg" id="dlgbody"></div></dialog>
 </div>
 <script type="application/json" id="data">${data}</script>
-<script>${js}</script></body></html>`);
+<script type="module" src="./app.js"></script></body></html>`);
 
+// Copied rather than inlined so the harness loads the client exactly as the
+// dashboard does: as a module, which means strict mode.
+fs.copyFileSync(jsPath, path.join(OUT, 'app.js'));
 console.log('wrote .harness/harness.html');

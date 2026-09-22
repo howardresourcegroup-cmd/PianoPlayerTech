@@ -17,8 +17,15 @@ export function privateHeaders(nonce, type = 'text/html; charset=utf-8') {
     'X-Robots-Tag': 'noindex, nofollow, noarchive',
     'Referrer-Policy': 'no-referrer',
     'X-Content-Type-Options': 'nosniff',
+    // script-src allows 'self' as well as the nonce: the dashboard's client
+    // application is served from /crm/ as a real module, which a nonce cannot
+    // cover. That is a genuine loosening -- any script this origin serves may
+    // now run here -- and it is acceptable because default-src 'none' still
+    // blocks every external source and the origin serves only this repo's
+    // files. What actually stops a customer's text from running as markup is
+    // that the client writes it with textContent, never innerHTML.
     'Content-Security-Policy':
-      `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; ` +
+      `default-src 'none'; script-src 'self' 'nonce-${nonce}'; style-src 'unsafe-inline'; ` +
       `connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'`
   };
 }
@@ -34,11 +41,15 @@ export function json(obj, status = 200) {
   });
 }
 
-export function page(title, inner, js, nonce) {
+// `js` is an inline script for the small pages that need one; `moduleSrc` is
+// a path under /crm/ for the dashboard's application.
+export function page(title, inner, js, nonce, moduleSrc) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>${escape_(title)} · PianoPlayerTech</title><style>${CSS}</style></head>
-<body><div class="wrap">${inner}</div>${js ? `<script nonce="${nonce}">${js}</script>` : ''}</body></html>`;
+<body><div class="wrap">${inner}</div>${
+  js ? `<script nonce="${nonce}">${js}</script>` : ''}${
+  moduleSrc ? `<script type="module" src="${moduleSrc}"></script>` : ''}</body></html>`;
 }
 

@@ -38,8 +38,16 @@ test('the new-lead count shows as a pill', () => {
   assert.ok(render([lead()]).includes('<span class="pill">1</span>'));
 });
 
-test('the inline script is bound to the CSP nonce', () => {
-  assert.ok(render([lead()]).includes('<script nonce="NONCE123">'));
+test('the client loads as a module asset, not an inline script', () => {
+  const html = render([lead()]);
+  assert.ok(html.includes('<script type="module" src="/crm/app.js"></script>'),
+    'the dashboard should load the client from /crm/');
+  // The only other script tag is the JSON data island, which carries no code.
+  const tags = html.match(/<script[^>]*>/g) || [];
+  assert.strictEqual(tags.length, 2, `expected two script tags, saw ${tags.join(' ')}`);
+  assert.ok(tags.some((t) => t.includes('application/json')));
+  assert.ok(!html.includes('<script nonce='),
+    'the dashboard no longer inlines a script');
 });
 
 // The payload is JSON inside a <script> tag. A customer who types "<" must not
