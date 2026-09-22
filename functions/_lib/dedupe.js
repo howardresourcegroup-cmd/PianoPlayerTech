@@ -65,16 +65,6 @@ function makeFinder() {
   return { find, union };
 }
 
-// Prefer a longer, more complete value.
-function best(rows, key) {
-  let out = '';
-  for (const r of rows) {
-    const v = String(r[key] == null ? '' : r[key]).trim();
-    if (v.length > out.length) out = v;
-  }
-  return out;
-}
-
 // A repeat submission often arrives as "Arthur Schiff 2". That trailing count
 // is an artifact of the form, not part of anyone's name, and it must not end
 // up on an invoice. Strip it -- but only when what remains is still a name,

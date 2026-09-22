@@ -82,6 +82,12 @@ async function accessKeys(env, forceRefresh) {
   const r = await fetch(`https://${teamDomain(env)}/cdn-cgi/access/certs`);
   if (!r.ok) throw new Error(`access certs ${r.status}`);
   const j = await r.json();
+  // Two concurrent requests can both fetch and both assign here. That is
+  // harmless: these are Cloudflare's public signing keys, the assignment
+  // replaces the whole object rather than mutating it, and the loser of the
+  // race has written an equally valid cache. The only cost is one extra
+  // fetch an hour.
+  // eslint-disable-next-line require-atomic-updates
   certCache = { at: Date.now(), keys: j.keys || [] };
   return certCache.keys;
 }

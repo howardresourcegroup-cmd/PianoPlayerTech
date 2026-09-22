@@ -1,0 +1,14 @@
+{
+  "name": "pianoplayertech",
+  "private": true,
+  "description": "PianoPlayerTech site and CRM. The runtime has no dependencies: this file exists only for development tooling. Note there is deliberately no \"type\": \"module\" -- tools and tests are CommonJS .js, server and client modules are ESM and bundled by wrangler, which does not consult this file.",
+  "scripts": {
+    "test": "node --test 'tests/*.test.js' 'tests/*.test.mjs'",
+    "lint": "eslint .",
+    "check": "npm run lint && npm test && node tools/harness.js --check",
+    "harness": "node tools/harness.js"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

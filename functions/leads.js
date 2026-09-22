@@ -31,12 +31,12 @@ import {
   accessMode, accessIdentity, emailAllowed, signedIn, authed, sameOrigin
 } from './_lib/auth.js';
 import {
-  dashboard, VIEWS, SET_STATUSES, REFERRAL_STATUSES, REFERRAL_FEE
+  dashboard, VIEWS, SET_STATUSES, REFERRAL_STATUSES
 } from './_lib/grid.js';
 import {
   createInvoice, voidInvoice, syncInvoices, INVOICE_COLUMNS
 } from './_lib/stripe.js';
-import { NOT_ARCHIVED, PURGE_DAYS, purgeCutoff, purgeExpired } from './_lib/db.js';
+import { NOT_ARCHIVED, purgeCutoff, purgeExpired } from './_lib/db.js';
 
 const PIPELINES = ['repair', 'tuning'];
 
@@ -232,7 +232,7 @@ export async function onRequestPost(context) {
       });
     }
     // Slow down guessing without making a real typo feel broken.
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => { setTimeout(r, 1000); });
     return new Response(null, { status: 303, headers: { Location: '/leads?e=1' } });
   }
 
