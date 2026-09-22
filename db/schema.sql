@@ -13,6 +13,11 @@
 --   ALTER TABLE leads ADD COLUMN referral_status TEXT;
 --   ALTER TABLE leads ADD COLUMN referral_paid_at TEXT;
 --   ALTER TABLE leads ADD COLUMN referral_invoice_id INTEGER;
+--
+-- Added 2026-09-22 (see db/2026-09-22-add-scheduling-and-archive.sql):
+--   ALTER TABLE leads ADD COLUMN scheduled_at TEXT;
+--   ALTER TABLE leads ADD COLUMN scheduled_mins INTEGER;
+--   ALTER TABLE leads ADD COLUMN archived_at TEXT;
 
 CREATE TABLE IF NOT EXISTS leads (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,6 +53,13 @@ CREATE TABLE IF NOT EXISTS leads (
   -- Internal only. Never shown to the customer.
   notes       TEXT,
 
+  -- When the job is booked for, and how long it runs. Feeds the calendar.
+  scheduled_at   TEXT,     -- ISO-8601 UTC
+  scheduled_mins INTEGER,  -- NULL means the 90-minute default
+
+  -- Set = archived: hidden from every working view, purged after 30 days.
+  archived_at    TEXT,
+
   -- World Class referral tracking. We earn a fee only on referrals they
   -- actually book, so "sent" and "booked" are tracked separately.
   referred_at       TEXT,  -- when we handed it to World Class
@@ -61,6 +73,21 @@ CREATE INDEX IF NOT EXISTS idx_leads_pipeline_created ON leads(pipeline, created
 
 -- The Referrals tab: everything handed to World Class, newest first.
 CREATE INDEX IF NOT EXISTS idx_leads_referred ON leads(referred_at);
+
+-- Upcoming work, for the calendar feed and the schedule view.
+CREATE INDEX IF NOT EXISTS idx_leads_scheduled ON leads(scheduled_at)
+  WHERE scheduled_at IS NOT NULL;
+
+-- The Archive tab, and the purge that sweeps it.
+CREATE INDEX IF NOT EXISTS idx_leads_archived ON leads(archived_at);
+
+-- Small key/value store. Holds the calendar feed token, so it can be rotated
+-- from the dashboard without a redeploy.
+CREATE TABLE IF NOT EXISTS settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TEXT
+);
 
 -- "What haven't I called back yet?" — the query that protects the
 -- 30-to-60-minute callback promise.
