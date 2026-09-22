@@ -6,9 +6,10 @@
 // payload so no value a customer typed can close the script tag.
 
 import { escape_, page } from './html.js';
-import { REFERRAL_FEE } from './db.js';
+import { REFERRAL_FEE, PURGE_DAYS } from './db.js';
 
-export const VIEWS = { repair: 'Repair & Pneumatic', tuning: 'Tuning', referrals: 'Referrals', all: 'All', invoices: 'Invoices' };
+export const VIEWS = { repair: 'Repair & Pneumatic', tuning: 'Tuning',
+  referrals: 'Referrals', all: 'All', invoices: 'Invoices', archive: 'Archive' };
 
 export const STATUSES = ['new', 'called', 'referred', 'booked', 'closed'];
 
@@ -33,7 +34,7 @@ export function dashboard(view, rows, counts, ref, extra, nonce) {
   // so no value a customer typed can close this script tag.
   const data = JSON.stringify({
     view, rows, statuses: STATUSES, setStatuses: SET_STATUSES,
-    refStatuses: REFERRAL_STATUSES, fee: REFERRAL_FEE, ref, ...extra
+    refStatuses: REFERRAL_STATUSES, fee: REFERRAL_FEE, purgeDays: PURGE_DAYS, ref, ...extra
   }).replace(/</g, '\\u003c');
 
   return page(VIEWS[view], `
@@ -73,7 +74,16 @@ export const GRID_JS = `
     {k:'phone', label:'Phone', type:'phone', w:170},
     {k:'status', label:'Status', type:'select', opts:D.setStatuses, w:110}
   ];
-  if (view === 'referrals') {
+  if (view === 'archive') {
+    COLS.push(
+      {k:'archived_at', label:'Archived', type:'date', w:120},
+      {k:'archived_at', label:'Deletes in', type:'purgein', w:110},
+      {k:'created_at', label:'Received', type:'date', w:120},
+      {k:'city', label:'City', type:'text', w:120},
+      {k:'service', label:'Service', type:'text', w:150},
+      {k:'id', label:'', type:'archiveacts', w:190}
+    );
+  } else if (view === 'referrals') {
     COLS.push(
       {k:'id', label:'Referral #', type:'ref', w:95},
       {k:'referred_at', label:'Sent', type:'date', w:120},
@@ -250,6 +260,9 @@ export const GRID_JS = `
       td.appendChild(el('div', {className:'namecell'}, [
         el('button', {className:'open', text:'Open', title:'Open the whole lead', type:'button',
           on:{click:function(){ openLead(r); }}}),
+        view === 'archive' ? null : el('button', {className:'ghost sm arch', type:'button',
+          text:'Archive', title:'Hide this lead; deleted permanently in about ' + D.purgeDays + ' days',
+          on:{click:function(){ archiveAction(r, 'archive'); }}}),
         input()
       ]));
     } else if (c.type === 'phone') {
@@ -258,6 +271,18 @@ export const GRID_JS = `
       ]));
     } else if (c.type === 'text') {
       td.appendChild(input());
+    } else if (c.type === 'purgein') {
+      var left = D.purgeDays -
+        Math.floor((Date.now() - new Date(r.archived_at).getTime()) / 86400000);
+      td.appendChild(el('div', {className:'ro' + (left <= 3 ? ' soon' : ''),
+        text: left > 0 ? left + (left === 1 ? ' day' : ' days') : 'any time now'}));
+    } else if (c.type === 'archiveacts') {
+      td.appendChild(el('div', {className:'cellacts'}, [
+        el('button', {className:'ghost sm', type:'button', text:'Restore',
+          on:{click:function(){ archiveAction(r, 'restore'); }}}),
+        el('button', {className:'danger', type:'button', text:'Delete now',
+          on:{click:function(){ archiveAction(r, 'purge'); }}})
+      ]));
     } else if (c.type === 'refer') {
       // Before a referral exists this column used to be a disabled dropdown —
       // the one control named "Referral", greyed out on exactly the leads you
@@ -327,6 +352,18 @@ export const GRID_JS = `
     renderBanner();
     shown.textContent = list.length === rows.length
       ? rows.length + (rows.length === 1 ? ' row' : ' rows') : list.length + ' of ' + rows.length;
+  }
+
+  function archiveAction(r, action){
+    if (action === 'purge' &&
+        !confirm('Delete ' + (r.name || 'this lead') +
+                 ' permanently? This cannot be undone.')) return;
+    post({action:action, id:r.id}).then(function(){
+      // It no longer belongs on this tab either way: archived leaves the
+      // working views, restored leaves the Archive tab.
+      rows = rows.filter(function(x){ return x !== r; });
+      render();
+    }, function(e){ alert(e.message); });
   }
 
   function save(r, field, value, td){
@@ -414,6 +451,13 @@ export const GRID_JS = `
 
   // The monthly World Class bill on the Referrals tab.
   function renderBanner(){
+    if (view === 'archive') {
+      var ab = document.getElementById('banner');
+      ab.textContent = 'Archived leads are deleted permanently about ' +
+        D.purgeDays + ' days after archiving. Restore one to keep it.';
+      ab.hidden = false;
+      return;
+    }
     var b = document.getElementById('banner');
     if (view !== 'referrals') return;
     var due = rows.filter(function(r){ return r.referral_status === 'booked' && !r.referral_paid_at && !r.referral_invoice_id; });

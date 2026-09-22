@@ -62,6 +62,16 @@ border-radius:5px;padding:0 .45rem;height:24px;cursor:pointer;font:inherit;font-
 .refergo{width:100%;background:var(--gold);border:1px solid var(--gold);color:#1a1205;
 border-radius:5px;padding:.3rem .5rem;cursor:pointer;font:inherit;font-size:.8rem;font-weight:700}
 .refergo:hover{filter:brightness(1.08)}
+/* Destructive, and looks it. Only appears in the Archive tab. */
+.danger{flex:none;background:none;border:1px solid var(--bad);color:var(--bad);
+border-radius:5px;padding:.25rem .5rem;cursor:pointer;font:inherit;font-size:.75rem}
+.danger:hover{background:var(--bad);color:var(--ground)}
+/* .ghost is flex:1 and .pair carries vertical margins -- both wrong inside a
+   36px table cell, hence these overrides and a separate wrapper. */
+.ghost.sm{flex:none;font-size:.72rem;padding:0 .45rem;height:24px;line-height:1}
+.namecell .arch{margin-left:.3rem}
+.cellacts{display:flex;gap:.35rem;align-items:center;padding:0 .4rem;margin:0}
+.ro.soon{color:var(--bad)}
 .phonecell{display:flex;align-items:center}
 .phonecell a{flex:none;color:var(--gold);text-decoration:none;padding:0 .5rem;font-size:.8rem}
 tr.is-new td.sticky{box-shadow:inset 3px 0 0 var(--gold),1px 0 0 var(--border)}

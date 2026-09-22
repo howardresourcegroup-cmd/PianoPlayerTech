@@ -36,6 +36,7 @@ import {
 import {
   createInvoice, voidInvoice, syncInvoices, INVOICE_COLUMNS
 } from './_lib/stripe.js';
+import { NOT_ARCHIVED, PURGE_DAYS, purgeCutoff, purgeExpired } from './_lib/db.js';
 
 const PIPELINES = ['repair', 'tuning'];
 
@@ -50,7 +51,8 @@ const EDITABLE = {
 const COLUMNS = [
   'id', 'created_at', 'updated_at', 'pipeline', 'status', 'name', 'phone', 'email',
   'address', 'city', 'system', 'service', 'message', 'notes', 'source',
-  'referred_at', 'referral_status', 'referral_paid_at', 'referral_invoice_id', 'fields'
+  'referred_at', 'referral_status', 'referral_paid_at', 'referral_invoice_id',
+  'scheduled_at', 'scheduled_mins', 'archived_at', 'fields'
 ];
 
 // ----------------------------------------------------------------- routes
@@ -105,6 +107,12 @@ export async function onRequestGet(context) {
       { headers });
   }
 
+  // Off the response path: a slow delete must never make the dashboard slow.
+  context.waitUntil(
+    purgeExpired(env, purgeCutoff(new Date()))
+      .catch((err) => console.error('purge failed', err && err.message))
+  );
+
   const url = new URL(request.url);
   const view = Object.prototype.hasOwnProperty.call(VIEWS, url.searchParams.get('p'))
     ? url.searchParams.get('p') : 'repair';
@@ -140,11 +148,12 @@ export async function onRequestGet(context) {
     ).first();
     extra.lastWcEmail = (last && last.email) || '';
 
-    const where = view === 'all' || view === 'invoices' ? ''
-      : view === 'referrals' ? 'WHERE referred_at IS NOT NULL'
-      : 'WHERE pipeline = ?';
-    const order = view === 'referrals'
-      ? 'ORDER BY referred_at DESC'
+    const where = view === 'archive' ? 'WHERE archived_at IS NOT NULL'
+      : view === 'all' || view === 'invoices' ? `WHERE ${NOT_ARCHIVED}`
+      : view === 'referrals' ? `WHERE referred_at IS NOT NULL AND ${NOT_ARCHIVED}`
+      : `WHERE pipeline = ? AND ${NOT_ARCHIVED}`;
+    const order = view === 'archive' ? 'ORDER BY archived_at DESC'
+      : view === 'referrals' ? 'ORDER BY referred_at DESC'
       : `ORDER BY CASE status WHEN 'new' THEN 0 ELSE 1 END, created_at DESC`;
     let stmt = env.DB.prepare(`SELECT ${COLUMNS.join(', ')} FROM leads ${where} ${order} LIMIT 5000`);
     if (view === 'repair' || view === 'tuning') stmt = stmt.bind(view);
@@ -161,7 +170,7 @@ export async function onRequestGet(context) {
     }
 
     const c = await env.DB.prepare(
-      `SELECT pipeline, SUM(status = 'new') AS n FROM leads GROUP BY pipeline`
+      `SELECT pipeline, SUM(status = 'new') AS n FROM leads WHERE ${NOT_ARCHIVED} GROUP BY pipeline`
     ).all();
     for (const r of (c.results || [])) {
       if (r.pipeline in counts) counts[r.pipeline] = r.n || 0;
@@ -172,7 +181,7 @@ export async function onRequestGet(context) {
               SUM(referral_status = 'booked') AS booked,
               SUM(referral_status = 'no_booking') AS lost,
               SUM(referral_status = 'booked' AND referral_paid_at IS NOT NULL) AS paid
-         FROM leads WHERE referred_at IS NOT NULL`
+         FROM leads WHERE referred_at IS NOT NULL AND ${NOT_ARCHIVED}`
     ).first();
     if (s) ref = { sent: s.sent || 0, booked: s.booked || 0, lost: s.lost || 0, paid: s.paid || 0 };
   } catch (err) {
@@ -250,6 +259,15 @@ export async function onRequestPost(context) {
   const id = parseInt(body.id, 10);
   if (!Number.isInteger(id)) return json({ error: 'bad id' }, 400);
 
+  // An archived lead is invisible in every view, so an action against one is
+  // always a stale tab. Refusing beats silently mutating a row nobody can see.
+  const target = await env.DB.prepare(
+    'SELECT archived_at FROM leads WHERE id = ?').bind(id).first();
+  if (!target) return json({ error: 'That lead no longer exists.' }, 404);
+  if (target.archived_at && !['restore', 'purge'].includes(body.action)) {
+    return json({ error: 'That lead is archived. Restore it first.' }, 409);
+  }
+
   const now = new Date().toISOString();
   try {
     if (body.action === 'update') {
@@ -285,6 +303,30 @@ export async function onRequestPost(context) {
     }
 
     if (body.action === 'refer') return await refer(env, id, body, now);
+
+    if (body.action === 'archive') {
+      await env.DB.prepare(
+        'UPDATE leads SET archived_at = ?, updated_at = ? WHERE id = ?')
+        .bind(now, now, id).run();
+      return json({ ok: true, value: now });
+    }
+
+    if (body.action === 'restore') {
+      await env.DB.prepare(
+        'UPDATE leads SET archived_at = NULL, updated_at = ? WHERE id = ?')
+        .bind(now, id).run();
+      return json({ ok: true, value: null });
+    }
+
+    // Irreversible. Only reachable from the Archive tab, and only for a lead
+    // that is already archived.
+    if (body.action === 'purge') {
+      if (!target.archived_at) {
+        return json({ error: 'Archive this lead before deleting it.' }, 400);
+      }
+      await env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(id).run();
+      return json({ ok: true, purged: true });
+    }
 
     return json({ error: 'unknown action' }, 400);
   } catch (err) {

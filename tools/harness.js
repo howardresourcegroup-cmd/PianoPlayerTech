@@ -73,8 +73,17 @@ const rows = [
     referral_invoice_id: null, archived_at: null, fields: '{}' }
 ];
 
+const view = process.env.HARNESS_VIEW || 'all';
+if (view === 'archive') {
+  // Two archived leads: one with weeks left, one about to be purged.
+  const day = 86400000;
+  rows[0].archived_at = new Date(Date.now() - 2 * day).toISOString();
+  rows[1].archived_at = new Date(Date.now() - 28 * day).toISOString();
+  rows.length = 2;
+}
+
 const data = JSON.stringify({
-  view: 'all', rows,
+  view, rows,
   statuses: ['new', 'called', 'referred', 'booked', 'closed'],
   setStatuses: ['new', 'called', 'booked', 'closed'],
   refStatuses: ['sent', 'booked', 'no_booking'], fee: 25,
