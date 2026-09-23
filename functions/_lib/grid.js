@@ -54,6 +54,7 @@ export function dashboard(view, rows, counts, ref, extra, nonce) {
   return page(VIEWS[view], `
     <div class="top">
       <h1>Leads</h1>
+      <span id="upcoming" hidden></span>
       <form method="post">${extra.who ? `<span class="muted">${escape_(extra.who)} &nbsp;</span>` : ''}
         <input type="hidden" name="action" value="logout">
         <button class="linkbtn" type="submit">Sign out</button></form>

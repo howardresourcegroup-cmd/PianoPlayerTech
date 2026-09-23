@@ -36,6 +36,7 @@ if (view === 'archive') {
   );
 } else {
   COLS.push(
+    {k:'scheduled_at', label:'Scheduled', type:'when', w:180},
     {k:'created_at', label:'Received', type:'date', w:120},
     {k:'system', label:'Piano / system', type:'text', w:170},
     {k:'service', label:'Service', type:'text', w:150},

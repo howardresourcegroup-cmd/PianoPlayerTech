@@ -62,6 +62,7 @@ const rows = [
     message: 'Not tuned in four years.', notes: null, source: '/tuning#form',
     referred_at: null, referral_status: null, referral_paid_at: null,
     referral_invoice_id: null, archived_at: null,
+    scheduled_at: new Date(Date.now() + 2 * 86400000).toISOString(), scheduled_mins: 90,
     fields: '{"preferred_dates":"weekday mornings"}' },
   { id: 102, created_at: '2026-09-18T11:15:00Z', updated_at: '2026-09-18T12:00:00Z',
     pipeline: 'tuning', status: 'referred', name: 'Priya Raman',
@@ -69,7 +70,8 @@ const rows = [
     city: 'Atlanta', system: 'Steinway M', service: 'Piano Tuning', message: '',
     notes: 'Emailed to World Class', source: '/piano-tuning-atlanta#form',
     referred_at: '2026-09-18T12:00:00Z', referral_status: 'sent',
-    referral_paid_at: null, referral_invoice_id: null, archived_at: null, fields: '{}' },
+    referral_paid_at: null, referral_invoice_id: null, archived_at: null,
+    scheduled_at: new Date(Date.now() - 86400000).toISOString(), scheduled_mins: 60, fields: '{}' },
   { id: 103, created_at: '2026-09-21T09:00:00Z', updated_at: null, pipeline: 'repair',
     status: 'new', name: 'Glenn Portier', phone: '(770) 555-0188',
     email: 'g@example.com', address: '9 Oak Rd, Atlanta, GA', city: 'Atlanta',
@@ -153,7 +155,17 @@ const data = JSON.stringify({
   refStatuses: ['sent', 'booked', 'no_booking'], fee: 25,
   ref: { sent: 1, booked: 0, lost: 0, paid: 0 },
   stripeReady: true, invoices: [], lastWcEmail: '', wcReady: true,
-  purgeDays: 30, who: 'harness@example.com'
+  purgeDays: 30, who: 'harness@example.com',
+  views: [],
+  calendarUrl: '',
+  followups: { overdue: 2, upcoming: 1, rows: [
+    { id: 5, lead_id: 101, due_at: '2026-09-19T14:00:00Z', subject: null,
+      body: 'Ring back about the pitch raise quote.', completed_at: null, lead_name: 'Dana Whitfield' },
+    { id: 8, lead_id: 103, due_at: '2026-09-21T13:00:00Z', subject: 'Chase the part',
+      body: null, completed_at: null, lead_name: 'Glenn Portier' },
+    { id: 9, lead_id: 102, due_at: '2026-12-01T14:00:00Z', subject: 'Confirm the appointment',
+      body: null, completed_at: null, lead_name: 'Priya Raman' }
+  ] }
 }).replace(/</g, '\\u003c');
 
 fs.writeFileSync(path.join(OUT, 'harness.html'), `<!doctype html><html lang="en"><head>
@@ -161,7 +173,7 @@ fs.writeFileSync(path.join(OUT, 'harness.html'), `<!doctype html><html lang="en"
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Harness</title><style>${css}</style></head><body>
 <div class="wrap">
-<div class="top"><h1>Leads</h1></div>
+<div class="top"><h1>Leads</h1><span id="upcoming" hidden></span></div>
 <nav class="tabs"></nav>
 <div class="stats" id="stats"></div>
 <div class="banner" id="banner" hidden></div>
@@ -211,6 +223,10 @@ window.fetch = function (url, opts) {
       sort: 10, config: body.config } });
   }
   if (body.action === 'viewDelete') return reply({ ok: true, deleted: body.viewId });
+  if (body.action === 'calendarOn' || body.action === 'calendarRotate') {
+    return reply({ ok: true, url: location.origin + '/calendar/' + Math.random().toString(36).slice(2) + '.ics' });
+  }
+  if (body.action === 'calendarOff') return reply({ ok: true, url: '' });
   if (body.action === 'bulk') {
     // Mirrors the server: archived leads are skipped, and the reply reports
     // how many actually changed rather than how many were asked for.

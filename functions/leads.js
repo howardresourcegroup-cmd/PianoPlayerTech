@@ -39,6 +39,7 @@ import {
 import { NOT_ARCHIVED, purgeCutoff, purgeExpired, loadStatuses } from './_lib/db.js';
 import { BULK_OPS, parseIds, applyBulk } from './_lib/bulk.js';
 import { listViews, saveView, deleteView } from './_lib/views.js';
+import { getCalendarToken, rotateCalendarToken, disableCalendar } from './_lib/settings.js';
 import {
   LOGGABLE_TYPES, SCHEDULED_TYPES, LIMITS as ACTIVITY_LIMITS, normStamp,
   logActivity, logQuietly, contactIdFor, loadRecord, setActivityDone,
@@ -50,9 +51,16 @@ const PIPELINES = ['repair', 'tuning'];
 // Grid cells a person may edit, with the longest value each one accepts.
 // Anything not listed here (message, source, fields) is what the customer
 // submitted and stays exactly as they sent it.
+// A field maps to how it is validated: a number is a maximum length, 0 is
+// an enum checked below, and a string names a kind.
 const EDITABLE = {
   name: 200, phone: 50, email: 200, address: 300, city: 100,
-  system: 200, service: 200, notes: 4000, status: 0, pipeline: 0, referral_status: 0
+  system: 200, service: 200, notes: 4000, status: 0, pipeline: 0, referral_status: 0,
+  // The browser sends local wall-clock time. It is parsed and stored as the
+  // normalised UTC instant, never as the text that arrived -- a string no
+  // query can compare is worse than no value.
+  scheduled_at: 'datetime',
+  scheduled_mins: 'minutes'
 };
 
 // Changes worth a line in the lead's history. Editing a typo in an address
@@ -212,6 +220,10 @@ export async function onRequestGet(context) {
   // The pipeline's own vocabulary, not a list hardcoded in the client.
   extra.statusList = await loadStatuses(env);
   extra.views = await listViews(env);
+  // Only if it has been switched on. The URL is a bearer credential, so it
+  // is never created just by loading the page.
+  const calTok = await getCalendarToken(env);
+  extra.calendarUrl = calTok ? `${url.origin}/calendar/${calTok}.ics` : '';
 
   // Follow-ups you owe someone. A CRM that does not surface these is a
   // list of names. Best-effort: a dashboard that loads without the badge
@@ -286,6 +298,25 @@ export async function onRequestPost(context) {
     } catch (err) {
       console.error('invoice action failed', body.action, err && err.message);
       return json({ error: err && err.stripe ? `Stripe said: ${err.message}` : 'Could not complete that — try again.' }, 502);
+    }
+  }
+
+  // Turning the calendar feed on, rotating it, or switching it off.
+  if (body.action === 'calendarOn' || body.action === 'calendarRotate' || body.action === 'calendarOff') {
+    try {
+      if (body.action === 'calendarOff') {
+        await disableCalendar(env);
+        return json({ ok: true, url: '' });
+      }
+      const tok = body.action === 'calendarRotate'
+        ? await rotateCalendarToken(env)
+        : await getCalendarToken(env, { create: true });
+      const origin = new URL(request.url).origin;
+      return json({ ok: true, url: `${origin}/calendar/${tok}.ics` });
+    } catch (err) {
+      // Never let the token reach a log line.
+      console.error('calendar action failed', body.action, err && err.message);
+      return json({ error: 'Could not change the calendar feed — try again.' }, 500);
     }
   }
 
@@ -405,6 +436,33 @@ export async function onRequestPost(context) {
       const field = body.field;
       if (!Object.prototype.hasOwnProperty.call(EDITABLE, field)) return json({ error: 'That column is read-only.' }, 400);
       let value = String(body.value == null ? '' : body.value).trim();
+
+      if (EDITABLE[field] === 'datetime') {
+        if (value) {
+          const t = new Date(value);
+          if (isNaN(t.getTime())) return json({ error: "That date didn't make sense." }, 400);
+          value = t.toISOString();
+        }
+        await env.DB.prepare('UPDATE leads SET scheduled_at = ?, updated_at = ? WHERE id = ?')
+          .bind(value || null, now, id).run();
+        await logQuietly(env, { lead_id: id, contact_id: await contactIdFor(env, id),
+          type: 'status', actor,
+          subject: value ? 'Scheduled' : 'Unscheduled',
+          meta: { field: 'scheduled_at', to: value || null } }, now);
+        return json({ ok: true, value: value || null });
+      }
+
+      if (EDITABLE[field] === 'minutes') {
+        const n = parseInt(value, 10);
+        // Nothing legitimate is negative or longer than a working day.
+        if (value && (!Number.isInteger(n) || n < 5 || n > 720)) {
+          return json({ error: 'A job runs between 5 and 720 minutes.' }, 400);
+        }
+        await env.DB.prepare('UPDATE leads SET scheduled_mins = ?, updated_at = ? WHERE id = ?')
+          .bind(value ? n : null, now, id).run();
+        return json({ ok: true, value: value ? n : null });
+      }
+
       if (field === 'status' && value === 'referred') {
         return json({ error: 'Use the Refer button so the referral is recorded and can be billed.' }, 400);
       }
@@ -416,7 +474,7 @@ export async function onRequestPost(context) {
       }
       if (field === 'pipeline' && !PIPELINES.includes(value)) return json({ error: 'bad pipeline' }, 400);
       if (field === 'referral_status' && !REFERRAL_STATUSES.includes(value)) return json({ error: 'bad referral status' }, 400);
-      if (EDITABLE[field]) value = value.slice(0, EDITABLE[field]);
+      if (typeof EDITABLE[field] === 'number' && EDITABLE[field]) value = value.slice(0, EDITABLE[field]);
 
       // A referral nobody booked cannot have been paid for.
       const extra = field === 'referral_status' && value !== 'booked' ? ', referral_paid_at = NULL' : '';

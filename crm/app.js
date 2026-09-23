@@ -29,6 +29,9 @@ import { initFilters } from './filters.js';
 import { renderStats } from './stats.js';
 import { render } from './grid.js';
 import { initInvoices } from './invoices.js';
+import { renderUpcoming } from './upcoming.js';
+import { state } from './state.js';
+import { openLead } from './record.js';
 
 // Clicking the backdrop closes the dialog. A click inside it has a different
 // target, so this does not fire on the form.
@@ -44,4 +47,12 @@ if (view === 'invoices') {
   sf.addEventListener('change', render);
   renderStats();
   render();
+  // The follow-ups the server has been counting all along. Opening one is
+  // only offered when the lead is on this tab -- the panel lists them all.
+  renderUpcoming(function(leadId, probe){
+    var r = state.rows.find(function(x){ return x.id === leadId; });
+    if (probe) return !!r;
+    if (r) openLead(r, 'activity');
+    return true;
+  });
 }

@@ -152,6 +152,64 @@ test('every documented condition is implemented', () => {
   }
 });
 
+// ----------------------------------------------------------- scheduling
+// "Today" must mean the day the person is having, not a UTC day that starts
+// at 8pm for somebody in Georgia.
+test('is:today follows the viewer local day, not UTC', () => {
+  // 11pm local on the 23rd is already the 24th in UTC for a US zone.
+  const now = new Date(2026, 8, 23, 23, 0, 0);          // local 23 Sep, 11pm
+  const lateTonight = new Date(2026, 8, 23, 23, 30, 0); // local, 30 min later
+  const r = lead({ scheduled_at: lateTonight.toISOString() });
+  assert.ok(matchesTerms(r, parseQuery('is:today'), now),
+    'a job later tonight is still today');
+
+  const tomorrowMorning = new Date(2026, 8, 24, 9, 0, 0);
+  const r2 = lead({ scheduled_at: tomorrowMorning.toISOString() });
+  assert.ok(!matchesTerms(r2, parseQuery('is:today'), now));
+  assert.ok(matchesTerms(r2, parseQuery('is:tomorrow'), now));
+});
+
+test('is:week covers the next seven days from today', () => {
+  const now = new Date(2026, 8, 23, 10, 0, 0);
+  const inSix = new Date(2026, 8, 29, 10, 0, 0);
+  const inEight = new Date(2026, 9, 1, 10, 0, 0);
+  assert.ok(matchesTerms(lead({ scheduled_at: inSix.toISOString() }), parseQuery('is:week'), now));
+  assert.ok(!matchesTerms(lead({ scheduled_at: inEight.toISOString() }), parseQuery('is:week'), now));
+});
+
+test('scheduled and unscheduled are opposites', () => {
+  const now = new Date(2026, 8, 23, 10, 0, 0);
+  const booked = lead({ scheduled_at: '2026-09-25T14:00:00Z' });
+  assert.ok(matchesTerms(booked, parseQuery('is:scheduled'), now));
+  assert.ok(!matchesTerms(booked, parseQuery('is:unscheduled'), now));
+  assert.ok(matchesTerms(lead(), parseQuery('is:unscheduled'), now));
+});
+
+// The one that earns its keep: a job whose time has passed and which nobody
+// closed out.
+test('is:late finds a job that has gone by without being finished', () => {
+  const now = new Date(2026, 8, 23, 10, 0, 0);
+  const yesterday = new Date(2026, 8, 22, 9, 0, 0).toISOString();
+  assert.ok(matchesTerms(lead({ scheduled_at: yesterday, status: 'booked' }), parseQuery('is:late'), now));
+  // Finished, so not late.
+  for (const done of ['completed', 'closed', 'paid', 'lost']) {
+    assert.ok(!matchesTerms(lead({ scheduled_at: yesterday, status: done }), parseQuery('is:late'), now),
+      `${done} should not be late`);
+  }
+  // Still to come, so not late.
+  const later = new Date(2026, 8, 24, 9, 0, 0).toISOString();
+  assert.ok(!matchesTerms(lead({ scheduled_at: later, status: 'booked' }), parseQuery('is:late'), now));
+  assert.ok(matchesTerms(lead({ scheduled_at: later, status: 'booked' }), parseQuery('is:upcoming'), now));
+});
+
+test('every row in one pass is judged against the same instant', () => {
+  const now = new Date(2026, 8, 23, 10, 0, 0);
+  const m = makeMatcher('is:today', now);
+  const todayJob = lead({ scheduled_at: new Date(2026, 8, 23, 15, 0, 0).toISOString() });
+  assert.ok(m(todayJob));
+  assert.ok(m(todayJob), 'a second call gives the same answer');
+});
+
 // ------------------------------------------------------------ combining
 test('the real query this was built for', () => {
   const rows = [

@@ -40,9 +40,18 @@ const norm = (v) => String(v == null ? '' : v).toLowerCase();
 // same search. Anyone typing a phone number expects that.
 const digits = (v) => String(v == null ? '' : v).replace(/\D/g, '');
 
+// Day boundaries in the viewer's own zone, because "today" means the day
+// they are having, not a UTC day that starts at 8pm for them.
+function dayStart(d){ var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function within(iso, from, to){
+  if (!iso) return false;
+  var t = new Date(iso).getTime();
+  return !isNaN(t) && t >= from.getTime() && t < to.getTime();
+}
+
 /**
- * Computed conditions. Each takes the row and a context holding `now`, and
- * answers a question no single column can.
+ * Computed conditions. Each takes the row and the current time, and answers
+ * a question no single column can.
  */
 export const IS = {
   new: (r) => r.status === 'new',
@@ -55,7 +64,29 @@ export const IS = {
   unbilled: (r) => r.referral_status === 'booked' && !r.referral_paid_at && !r.referral_invoice_id,
   archived: (r) => !!r.archived_at,
   tuning: (r) => r.pipeline === 'tuning',
-  repair: (r) => r.pipeline === 'repair'
+  repair: (r) => r.pipeline === 'repair',
+
+  // Scheduling.
+  scheduled: (r) => !!r.scheduled_at,
+  unscheduled: (r) => !r.scheduled_at,
+  today: (r, now) => {
+    var from = dayStart(now);
+    return within(r.scheduled_at, from, new Date(from.getTime() + 86400000));
+  },
+  tomorrow: (r, now) => {
+    var from = new Date(dayStart(now).getTime() + 86400000);
+    return within(r.scheduled_at, from, new Date(from.getTime() + 86400000));
+  },
+  // The next seven days, which is what somebody means by "this week" when
+  // they are looking at a work diary on a Wednesday.
+  week: (r, now) => {
+    var from = dayStart(now);
+    return within(r.scheduled_at, from, new Date(from.getTime() + 7 * 86400000));
+  },
+  upcoming: (r, now) => !!r.scheduled_at && new Date(r.scheduled_at).getTime() >= now.getTime(),
+  // A job whose time has passed and which nobody has closed out.
+  late: (r, now) => !!r.scheduled_at && new Date(r.scheduled_at).getTime() < now.getTime() &&
+    r.status !== 'completed' && r.status !== 'closed' && r.status !== 'paid' && r.status !== 'lost'
 };
 
 export const HAS = {
@@ -130,10 +161,11 @@ function freeMatches(row, value) {
  * unknown is:/has: condition matches nothing rather than everything: a typo
  * should show you no results, not silently show you all of them.
  */
-export function matchesTerms(row, terms) {
+export function matchesTerms(row, terms, now) {
+  const when = now instanceof Date ? now : new Date();
   for (const t of terms) {
     let hit;
-    if (t.kind === 'is') hit = Object.prototype.hasOwnProperty.call(IS, t.value) ? !!IS[t.value](row) : false;
+    if (t.kind === 'is') hit = Object.prototype.hasOwnProperty.call(IS, t.value) ? !!IS[t.value](row, when) : false;
     else if (t.kind === 'has') hit = Object.prototype.hasOwnProperty.call(HAS, t.value) ? !!HAS[t.value](row) : false;
     else if (t.kind === 'field') hit = fieldMatches(row, t.field, t.value);
     else hit = freeMatches(row, t.value);
@@ -144,13 +176,18 @@ export function matchesTerms(row, terms) {
 }
 
 // Convenience for callers that just have a string.
-export function makeMatcher(raw) {
+export function makeMatcher(raw, now) {
   const terms = parseQuery(raw);
-  return (row) => matchesTerms(row, terms);
+  // Captured once so every row in a pass is judged against the same instant.
+  const when = now instanceof Date ? now : new Date();
+  return (row) => matchesTerms(row, terms, when);
 }
 
 // What the search box offers as help.
 export const SEARCH_HINTS = [
+  ['is:today', "today's jobs"],
+  ['is:week', 'the next seven days'],
+  ['is:unscheduled', 'no date yet'],
   ['city:marietta', 'one field'],
   ['"pitch raise"', 'a phrase'],
   ['is:unbilled', 'booked, not paid, not invoiced'],

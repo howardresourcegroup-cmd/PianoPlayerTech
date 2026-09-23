@@ -17,6 +17,17 @@ import { renderViews } from './views.js';
 import { loadWidths, addResizer } from './widths.js';
 import { download } from './export.js';
 
+// An ISO instant as the value a datetime-local input wants: local wall-clock
+// time with no zone, which is why it cannot just be sliced off the ISO string.
+function toLocalInput(iso){
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  var p = function(n){ return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+         'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
 // The rows currently on screen, which is what "select all" means: ticking
 // the header must never quietly select 5,000 leads you cannot see.
 var visible = [];
@@ -120,6 +131,21 @@ function cell(r, c, i){
     ]));
   } else if (c.type === 'text') {
     td.appendChild(input());
+  } else if (c.type === 'when') {
+    // datetime-local speaks local wall-clock time, which is what somebody
+    // booking a job means. The conversion to UTC happens once, here.
+    var when = el('input', {type:'datetime-local', value: toLocalInput(v), 'aria-label':'Scheduled'});
+    when.addEventListener('change', function(){
+      var iso = when.value ? new Date(when.value).toISOString() : '';
+      save(r, 'scheduled_at', iso, td);
+    });
+    var wbox = el('div', {className:'whencell'}, [when]);
+    if (v) {
+      var late = new Date(v).getTime() < Date.now() &&
+        ['completed','closed','paid','lost'].indexOf(r.status) < 0;
+      if (late) wbox.appendChild(el('span', {className:'latetag', text:'past due', title:'This job time has gone by'}));
+    }
+    td.appendChild(wbox);
   } else if (c.type === 'purgein') {
     var left = D.purgeDays -
       Math.floor((Date.now() - new Date(r.archived_at).getTime()) / 86400000);

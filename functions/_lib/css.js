@@ -223,6 +223,18 @@ user-select:none;touch-action:none}
 .grip:hover{background:var(--gold);opacity:.5}
 body.resizing{cursor:col-resize;user-select:none}
 body.resizing .grip{background:var(--gold);opacity:.5}
+/* ---- scheduling and the follow-up badge ---- */
+.whencell{display:flex;align-items:center;gap:.4rem}
+.whencell input{background:var(--ground);color:var(--text);border:1px solid var(--border);
+border-radius:6px;padding:.35rem .45rem;font:inherit;font-size:.88rem;width:100%}
+.whencell input:focus{outline:none;border-color:var(--gold)}
+.latetag{flex:0 0 auto;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;
+color:var(--bad);font-weight:600;white-space:nowrap}
+.upbtn{background:var(--surface);border:1px solid var(--border);color:var(--soft);
+font:inherit;font-size:.86rem;padding:.3rem .75rem;border-radius:999px;cursor:pointer;
+margin-left:.8rem;display:inline-flex;align-items:center}
+.upbtn:hover{border-color:var(--gold);color:var(--text)}
+.upbtn.late{border-color:var(--bad);color:var(--text)}
 .fubadge{background:var(--bad);color:#fff;border-radius:999px;padding:.05rem .45rem;
 font-size:.75rem;font-weight:600;margin-left:.35rem}
 
