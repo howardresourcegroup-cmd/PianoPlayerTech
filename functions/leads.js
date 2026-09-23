@@ -17,7 +17,11 @@
 //               must then be set too — an empty list lets nobody in.
 //   Secrets:    STRIPE_SECRET_KEY  turns on invoicing (a restricted key with
 //                                  Customers, Invoices and Invoice Items write)
-//   Variables:  WORLDCLASS_EMAIL   optional; turns on emailing referrals
+//   Variables:  ALERT_EMAIL        optional; where CRM errors are emailed.
+//                                  Falls back to LEAD_NOTIFY_EMAIL. Needs
+//                                  RESEND_API_KEY and LEAD_FROM_EMAIL, which
+//                                  are already set for lead notifications.
+//               WORLDCLASS_EMAIL   optional; turns on emailing referrals
 //               RESEND_API_KEY, LEAD_FROM_EMAIL, LEAD_NOTIFY_EMAIL (shared
 //               with functions/api/lead.js)
 //
@@ -40,6 +44,7 @@ import { NOT_ARCHIVED, purgeCutoff, purgeExpired, loadStatuses } from './_lib/db
 import { BULK_OPS, parseIds, applyBulk } from './_lib/bulk.js';
 import { listViews, saveView, deleteView } from './_lib/views.js';
 import { getCalendarToken, rotateCalendarToken, disableCalendar } from './_lib/settings.js';
+import { alertError } from './_lib/alert.js';
 import {
   LOGGABLE_TYPES, SCHEDULED_TYPES, LIMITS as ACTIVITY_LIMITS, normStamp,
   logActivity, logQuietly, contactIdFor, loadRecord, setActivityDone,
@@ -132,7 +137,10 @@ export async function onRequestGet(context) {
   // Off the response path: a slow delete must never make the dashboard slow.
   context.waitUntil(
     purgeExpired(env, purgeCutoff(new Date()))
-      .catch((err) => console.error('purge failed', err && err.message))
+      .catch((err) => {
+        console.error('purge failed', err && err.message);
+        return alertError(env, 'archive purge', err);
+      })
   );
 
   const url = new URL(request.url);
@@ -207,6 +215,7 @@ export async function onRequestGet(context) {
     ).first();
     if (s) ref = { sent: s.sent || 0, booked: s.booked || 0, lost: s.lost || 0, paid: s.paid || 0 };
   } catch (err) {
+    context.waitUntil(alertError(env, 'dashboard load', err, { action: 'read leads' }));
     return new Response(page('Leads', `
       <div class="card narrow"><h1>Could not read the database</h1>
       <p class="muted">${escape_(err && err.message)}</p>
@@ -241,6 +250,10 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  // Alerting runs off the response path. It must never delay a save, and it
+  // must never be able to fail one.
+  const report = (where, err, action) =>
+    context.waitUntil(alertError(env, where, err, { action }));
   const type = request.headers.get('Content-Type') || '';
 
   // Login / logout arrive as a normal form post.
@@ -297,6 +310,7 @@ export async function onRequestPost(context) {
         : await voidInvoice(env, parseInt(body.id, 10));
     } catch (err) {
       console.error('invoice action failed', body.action, err && err.message);
+      report('invoice', err, body.action);
       return json({ error: err && err.stripe ? `Stripe said: ${err.message}` : 'Could not complete that — try again.' }, 502);
     }
   }
@@ -316,6 +330,7 @@ export async function onRequestPost(context) {
     } catch (err) {
       // Never let the token reach a log line.
       console.error('calendar action failed', body.action, err && err.message);
+      report('calendar setting', err, body.action);
       return json({ error: 'Could not change the calendar feed — try again.' }, 500);
     }
   }
@@ -330,6 +345,7 @@ export async function onRequestPost(context) {
       return out.error ? json({ error: out.error }, 400) : json({ ok: true, ...out });
     } catch (err) {
       console.error('view action failed', body.action, err && err.message);
+      report('saved view', err, body.action);
       return json({ error: 'Could not save that view — try again.' }, 500);
     }
   }
@@ -357,6 +373,7 @@ export async function onRequestPost(context) {
       return json({ ok: true, ...out });
     } catch (err) {
       console.error('bulk action failed', op, err && err.message);
+      report('bulk action', err, op);
       return json({ error: 'Could not apply that to all of them — reload and check.' }, 500);
     }
   }
@@ -376,6 +393,7 @@ export async function onRequestPost(context) {
         : json({ error: 'That entry is already gone.' }, 404);
     } catch (err) {
       console.error('activity action failed', body.action, err && err.message);
+      report('activity', err, body.action);
       return json({ error: 'Could not save — try again.' }, 500);
     }
   }
@@ -545,6 +563,7 @@ export async function onRequestPost(context) {
     return json({ error: 'unknown action' }, 400);
   } catch (err) {
     console.error('dashboard action failed', body.action, err && err.message);
+    report('dashboard action', err, body.action);
     return json({ error: 'Could not save — try again.' }, 500);
   }
 }

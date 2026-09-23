@@ -19,6 +19,7 @@ import { safeEqual } from '../_lib/auth.js';
 import { getSetting, CALENDAR_TOKEN } from '../_lib/settings.js';
 import { buildCalendar, eventsFor } from '../_lib/ics.js';
 import { NOT_ARCHIVED } from '../_lib/db.js';
+import { alertError } from '../_lib/alert.js';
 
 function notFound() {
   return new Response('Not found', {
@@ -63,8 +64,9 @@ export async function onRequestGet(context) {
           AND (l.id IS NULL OR l.archived_at IS NULL)
         LIMIT 500`).all()).results || [];
   } catch (err) {
-    // Never name the token in a log line.
+    // Never name the token in a log line, and never in an alert either.
     console.error('calendar feed query failed', err && err.message);
+    context.waitUntil(alertError(env, 'calendar feed', err));
     // An empty calendar beats an error page: a client that gets a 500
     // may unsubscribe on its own.
     return calendarResponse(buildCalendar([]));
