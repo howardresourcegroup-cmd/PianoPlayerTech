@@ -65,9 +65,11 @@ export function dashboard(view, rows, counts, ref, extra, nonce) {
       <input type="search" id="q" placeholder="Search, or try city:marietta or is:unbilled" aria-label="Search">
       <select id="sf" aria-label="Filter"></select>
       <span class="muted" id="shown"></span>
-      <a href="/leads?p=${view}&amp;export=csv">Export CSV</a>
+      <a href="/leads?p=${view}&amp;export=csv">Export all</a>
+      <button class="linkbtn" type="button" id="exportfiltered" hidden></button>
     </div>
     <div class="quick" id="quick"></div>
+    <div class="views" id="views"></div>
     <div class="bulkbar" id="bulkbar" hidden></div>
     <div class="gridwrap"><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
       <div class="empty" id="empty" hidden>Nothing here yet.</div></div>

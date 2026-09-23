@@ -169,8 +169,10 @@ fs.writeFileSync(path.join(OUT, 'harness.html'), `<!doctype html><html lang="en"
   <input type="search" id="q" placeholder="Search, or try city:marietta or is:unbilled" aria-label="Search">
   <select id="sf" aria-label="Filter"></select>
   <span class="muted" id="shown"></span>
+  <button class="linkbtn" type="button" id="exportfiltered" hidden></button>
 </div>
 <div class="quick" id="quick"></div>
+    <div class="views" id="views"></div>
 <div class="bulkbar" id="bulkbar" hidden></div>
 <div class="gridwrap"><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
   <div class="empty" id="empty" hidden>Nothing here yet.</div></div>
@@ -204,6 +206,11 @@ window.fetch = function (url, opts) {
       { id: body.activityId, completed_at: body.done ? new Date().toISOString() : null }) });
   }
   if (body.action === 'activityDelete') return reply({ ok: true, deleted: body.activityId });
+  if (body.action === 'viewSave') {
+    return reply({ ok: true, view: { id: nextId++, name: body.name, owner: 'harness@example.com',
+      sort: 10, config: body.config } });
+  }
+  if (body.action === 'viewDelete') return reply({ ok: true, deleted: body.viewId });
   if (body.action === 'bulk') {
     // Mirrors the server: archived leads are skipped, and the reply reports
     // how many actually changed rather than how many were asked for.

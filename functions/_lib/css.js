@@ -201,6 +201,28 @@ border-radius:6px;padding:.35rem .5rem;font:inherit}
 .pager button:disabled{opacity:.4;cursor:default}
 th.pickcol,td.pickcol{width:34px;min-width:34px;max-width:34px;text-align:center;padding:0 .2rem}
 td.pickcol input,th.pickcol input{margin:0;cursor:pointer}
+/* ---- saved views, column grips ---- */
+.views{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin:0 0 .8rem}
+.vchip{display:inline-flex;align-items:center;background:var(--surface);
+border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.vchip.on{border-color:var(--gold);background:var(--raised)}
+.vname{background:none;border:none;color:var(--soft);font:inherit;font-size:.86rem;
+padding:.3rem .2rem .3rem .75rem;cursor:pointer}
+.vchip.on .vname{color:var(--gold);font-weight:600}
+.vname:hover{color:var(--text)}
+.vdel{background:none;border:none;color:var(--muted);font-size:.95rem;line-height:1;
+cursor:pointer;padding:.3rem .55rem .3rem .3rem}
+.vdel:hover{color:var(--bad)}
+.vsave{background:none;border:1px dashed var(--border);color:var(--muted);font:inherit;
+font-size:.86rem;padding:.3rem .75rem;border-radius:999px;cursor:pointer}
+.vsave:hover{border-color:var(--gold);color:var(--gold)}
+
+th{position:relative}
+.grip{position:absolute;top:0;right:0;width:9px;height:100%;cursor:col-resize;
+user-select:none;touch-action:none}
+.grip:hover{background:var(--gold);opacity:.5}
+body.resizing{cursor:col-resize;user-select:none}
+body.resizing .grip{background:var(--gold);opacity:.5}
 .fubadge{background:var(--bad);color:#fff;border-radius:999px;padding:.05rem .45rem;
 font-size:.75rem;font-weight:600;margin-left:.35rem}
 

@@ -38,6 +38,7 @@ import {
 } from './_lib/stripe.js';
 import { NOT_ARCHIVED, purgeCutoff, purgeExpired, loadStatuses } from './_lib/db.js';
 import { BULK_OPS, parseIds, applyBulk } from './_lib/bulk.js';
+import { listViews, saveView, deleteView } from './_lib/views.js';
 import {
   LOGGABLE_TYPES, SCHEDULED_TYPES, LIMITS as ACTIVITY_LIMITS, normStamp,
   logActivity, logQuietly, contactIdFor, loadRecord, setActivityDone,
@@ -210,6 +211,7 @@ export async function onRequestGet(context) {
   extra.who = accessMode(env) ? who : '';
   // The pipeline's own vocabulary, not a list hardcoded in the client.
   extra.statusList = await loadStatuses(env);
+  extra.views = await listViews(env);
 
   // Follow-ups you owe someone. A CRM that does not surface these is a
   // list of names. Best-effort: a dashboard that loads without the badge
@@ -284,6 +286,20 @@ export async function onRequestPost(context) {
     } catch (err) {
       console.error('invoice action failed', body.action, err && err.message);
       return json({ error: err && err.stripe ? `Stripe said: ${err.message}` : 'Could not complete that — try again.' }, 502);
+    }
+  }
+
+  // Saved views are their own objects, so these run before the lead lookup.
+  if (body.action === 'viewSave' || body.action === 'viewDelete') {
+    try {
+      const out = body.action === 'viewDelete'
+        ? await deleteView(env, body.viewId)
+        : await saveView(env, { id: body.viewId, name: body.name, config: body.config, owner: actor },
+                         new Date().toISOString());
+      return out.error ? json({ error: out.error }, 400) : json({ ok: true, ...out });
+    } catch (err) {
+      console.error('view action failed', body.action, err && err.message);
+      return json({ error: 'Could not save that view — try again.' }, 500);
     }
   }
 

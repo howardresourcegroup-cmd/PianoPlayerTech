@@ -13,10 +13,18 @@ import { bumpRef } from './stats.js';
 import { openLead, openRefer } from './record.js';
 import { invById, renderBanner } from './invoices.js';
 import { renderBulkBar, bulkSummary } from './bulkbar.js';
+import { renderViews } from './views.js';
+import { loadWidths, addResizer } from './widths.js';
+import { download } from './export.js';
 
 // The rows currently on screen, which is what "select all" means: ticking
 // the header must never quietly select 5,000 leads you cannot see.
 var visible = [];
+
+// Column widths this browser remembers, keyed by column so the same column
+// keeps its width when the tab changes shape.
+var widths = loadWidths();
+const colKey = (c, i) => c.k + ':' + i;
 
 function renderHead(){
   head.textContent = '';
@@ -36,12 +44,15 @@ function renderHead(){
       var pth = el('th', {className:'sticky pickcol'}, [box]);
       pth.style.minWidth = c.w + 'px';
       head.appendChild(pth);
-      return;
+      return;   // the tick column is a fixed width; there is nothing to drag
     }
     var th = el('th', {text: c.label + (state.sortKey === c.k ? (state.sortDir > 0 ? ' ▲' : ' ▼') : ''),
       className: (i === 0 ? 'sticky ' : '') + (state.sortKey === c.k ? 'sorted' : ''),
       on:{click:function(){ if (state.sortKey === c.k) state.sortDir = -state.sortDir; else { state.sortKey = c.k; state.sortDir = 1; } render(); }}});
-    th.style.minWidth = c.w + 'px';
+    var w = widths[colKey(c, i)] || c.w;
+    th.style.minWidth = w + 'px';
+    if (widths[colKey(c, i)]) th.style.maxWidth = w + 'px';
+    addResizer(th, colKey(c, i), widths, render);
     head.appendChild(th);
   });
 }
@@ -69,7 +80,9 @@ function cellSelect(r, c, td){
 
 function cell(r, c, i){
   var td = el('td', {className: i <= 1 ? 'sticky' : ''});
-  td.style.minWidth = c.w + 'px'; td.style.maxWidth = (c.w + 80) + 'px';
+  var w = widths[colKey(c, i)] || c.w;
+  td.style.minWidth = w + 'px';
+  td.style.maxWidth = (widths[colKey(c, i)] ? w : w + 80) + 'px';
   var v = r[c.k] == null ? '' : r[c.k];
 
   function input(){
@@ -198,7 +211,9 @@ export function render(){
   empty.hidden = list.length > 0;
   renderBanner();
   renderBulkBar(afterBulk);
+  renderViews(render);
   renderPager(list.length, pages);
+  paintExport(list);
 
   var filtered = list.length !== state.rows.length;
   shown.textContent = !filtered && state.pageSize <= 0
@@ -206,6 +221,18 @@ export function render(){
     : (visible.length < list.length
         ? (from + 1) + '–' + (from + visible.length) + ' of ' + list.length
         : list.length + (filtered ? ' of ' + state.rows.length : (list.length === 1 ? ' row' : ' rows')));
+}
+
+// The tab's own link exports the whole view, which is right for a backup and
+// wrong after you have narrowed to eleven leads. This offers the narrowed
+// list, and only when it is actually narrower.
+function paintExport(list){
+  var btn = document.getElementById('exportfiltered');
+  if (!btn) return;
+  var filtered = list.length !== state.rows.length;
+  btn.hidden = !filtered;
+  btn.textContent = 'Export these ' + list.length;
+  btn.onclick = function(){ download(list, view, 'filtered'); };
 }
 
 function renderPager(total, pages){
