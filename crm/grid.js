@@ -5,7 +5,7 @@
 // lead that looks saved is worse than a slow one.
 
 import { D, view, state, INV_LABEL, PAGE_SIZES } from './state.js';
-import { el, head, body, shown, empty, fmt, fmtLong, tel, flash } from './dom.js';
+import { el, head, body, shown, empty, fmt, fmtLong, fmtWhen, tel, flash } from './dom.js';
 import { post } from './api.js';
 import { COLS } from './columns.js';
 import { passes, refreshMatcher } from './filters.js';
@@ -13,6 +13,7 @@ import { bumpRef } from './stats.js';
 import { openLead, openRefer } from './record.js';
 import { invById, renderBanner } from './invoices.js';
 import { renderBulkBar, bulkSummary } from './bulkbar.js';
+import { editableText, editableChoice, BLANK } from './edit.js';
 import { renderViews } from './views.js';
 import { loadWidths, addResizer } from './widths.js';
 import { download } from './export.js';
@@ -68,25 +69,30 @@ function renderHead(){
   });
 }
 
+// A status or pipeline: a quiet pill until you click it.
 function cellSelect(r, c, td){
-  var v = r[c.k] == null ? '' : r[c.k];
-  var sel = el('select', {'aria-label':c.label});
-  if (c.blank || !v) sel.appendChild(el('option', {value:'', text:'—'}));
-  // A stored value nobody may choose any more — 'referred' — still has to
-  // show on the leads that already carry it. Added disabled, so it displays
-  // without being something you could pick for yourself.
-  if (v && c.opts.indexOf(String(v)) < 0) {
-    sel.appendChild(el('option', {value:String(v), disabled:true,
-      text:(c.labels && c.labels[v]) || String(v)}));
-  }
-  c.opts.forEach(function(o){ sel.appendChild(el('option', {value:o, text:(c.labels && c.labels[o]) || o})); });
-  sel.value = String(v);
-  if (c.k === 'referral_status' && !r.referred_at) sel.disabled = true;
-  sel.addEventListener('change', function(){
-    if (!sel.value) { sel.value = String(r[c.k] || ''); return; }
-    save(r, c.k, sel.value, td);
+  return editableChoice({
+    value: r[c.k] == null ? '' : r[c.k],
+    label: c.label,
+    blank: !!c.blank,
+    options: (c.opts || []).map(function(o){
+      return { value: o, label: (c.labels && c.labels[o]) || o };
+    }),
+    allLabels: c.k === 'status' ? D.statusLabels : (c.labels || null),
+    tone: c.k === 'status' ? statusTone : null,
+    disabled: c.k === 'referral_status' && !r.referred_at,
+    disabledReason: 'Not referred yet',
+    save: function(v){ save(r, c.k, v, td); }
   });
-  return sel;
+}
+
+// Colour carries meaning only where it earns it: work still open, work won,
+// work lost. Everything else stays neutral so the exceptions stand out.
+function statusTone(v){
+  if (v === 'new') return 'is-newpill';
+  if (v === 'paid' || v === 'completed') return 'is-won';
+  if (v === 'lost' || v === 'closed') return 'is-done';
+  return '';
 }
 
 function cell(r, c, i){
@@ -96,18 +102,17 @@ function cell(r, c, i){
   td.style.maxWidth = (widths[colKey(c, i)] ? w : w + 80) + 'px';
   var v = r[c.k] == null ? '' : r[c.k];
 
-  function input(){
-    var inp = el('input', {value:String(v), 'aria-label':c.label});
-    inp.addEventListener('change', function(){ save(r, c.k, inp.value, td); });
-    return inp;
+  function text(opts){
+    return editableText(Object.assign({
+      value: v, label: c.label,
+      save: function(next){ save(r, c.k, next, td); }
+    }, opts || {}));
   }
 
   if (c.type === 'pick') {
     var box = el('input', {type:'checkbox', checked:state.selected.has(r.id), 'aria-label':'Select this lead'});
     box.addEventListener('change', function(){
       if (box.checked) state.selected.add(r.id); else state.selected.delete(r.id);
-      // Redrawing the head keeps the select-all box honest, and the bar
-      // appears or disappears with the selection.
       renderHead();
       renderBulkBar(afterBulk);
     });
@@ -117,64 +122,86 @@ function cell(r, c, i){
   }
 
   if (c.type === 'name') {
-    td.appendChild(el('div', {className:'namecell'}, [
-      el('button', {className:'open', text:'Open', title:'Open the whole lead', type:'button',
-        on:{click:function(){ openLead(r); }}}),
-      view === 'archive' ? null : el('button', {className:'ghost sm arch', type:'button',
-        text:'Archive', title:'Hide this lead; deleted permanently in about ' + D.purgeDays + ' days',
-        on:{click:function(){ archiveAction(r, 'archive'); }}}),
-      input()
-    ]));
-  } else if (c.type === 'phone') {
-    td.appendChild(el('div', {className:'phonecell'}, [
-      input(), tel(v) ? el('a', {href:'tel:' + tel(v), text:'call', title:'Call'}) : null
-    ]));
-  } else if (c.type === 'text') {
-    td.appendChild(input());
-  } else if (c.type === 'when') {
-    // datetime-local speaks local wall-clock time, which is what somebody
-    // booking a job means. The conversion to UTC happens once, here.
-    var when = el('input', {type:'datetime-local', value: toLocalInput(v), 'aria-label':'Scheduled'});
-    when.addEventListener('change', function(){
-      var iso = when.value ? new Date(when.value).toISOString() : '';
-      save(r, 'scheduled_at', iso, td);
+    // The name is the row's handle: it opens the record. Editing it is the
+    // rarer act, so it moves to the pencil that appears on hover.
+    var name = el('button', {className:'namebtn', type:'button', text: v || '(no name)',
+      title:'Open this lead', on:{click:function(){ openLead(r); }}});
+    var pencil = el('button', {className:'inlineedit', type:'button', text:'✎',
+      title:'Rename', 'aria-label':'Rename this lead'});
+    var holder = el('div', {className:'namecell'}, [name, pencil]);
+    pencil.addEventListener('click', function(){
+      holder.textContent = '';
+      var inp = el('input', {value:String(v), 'aria-label':'Name'});
+      var done = false;
+      function finish(commit){
+        if (done) return; done = true;
+        var next = inp.value;
+        td.textContent = ''; td.appendChild(cell(r, c, i));
+        if (commit && next !== String(v)) save(r, c.k, next, td);
+      }
+      inp.addEventListener('keydown', function(e){
+        if (e.key === 'Escape') { done = true; td.textContent = ''; td.appendChild(cell(r, c, i)); }
+        else if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      });
+      inp.addEventListener('blur', function(){ finish(true); });
+      holder.appendChild(inp); inp.focus(); inp.select();
     });
-    var wbox = el('div', {className:'whencell'}, [when]);
-    if (v) {
-      var late = new Date(v).getTime() < Date.now() &&
-        ['completed','closed','paid','lost'].indexOf(r.status) < 0;
-      if (late) wbox.appendChild(el('span', {className:'latetag', text:'past due', title:'This job time has gone by'}));
-    }
-    td.appendChild(wbox);
-  } else if (c.type === 'purgein') {
+    td.appendChild(holder);
+    return td;
+  }
+
+  if (c.type === 'phone') {
+    var wrap = el('div', {className:'cellv phonecell'});
+    wrap.appendChild(text());
+    if (tel(v)) wrap.appendChild(el('a', {className:'callico', href:'tel:' + tel(v),
+      text:'call', title:'Call ' + (r.name || 'this lead')}));
+    td.appendChild(wrap);
+    return td;
+  }
+
+  if (c.type === 'text') { td.appendChild(text()); return td; }
+  if (c.type === 'long') { td.appendChild(text({ multi: true })); return td; }
+
+  if (c.type === 'when') {
+    // Read as a date, edit as a picker. An unscheduled lead shows a dash,
+    // not mm/dd/yyyy -- most leads have no date and that noise was on
+    // every one of them.
+    td.appendChild(editableWhen(r, td));
+    return td;
+  }
+
+  if (c.type === 'purgein') {
     var left = D.purgeDays -
       Math.floor((Date.now() - new Date(r.archived_at).getTime()) / 86400000);
     td.appendChild(el('div', {className:'ro' + (left <= 3 ? ' soon' : ''),
       text: left > 0 ? left + (left === 1 ? ' day' : ' days') : 'any time now'}));
-  } else if (c.type === 'archiveacts') {
+    return td;
+  }
+
+  if (c.type === 'archiveacts') {
     td.appendChild(el('div', {className:'cellacts'}, [
       el('button', {className:'ghost sm', type:'button', text:'Restore',
         on:{click:function(){ archiveAction(r, 'restore'); }}}),
       el('button', {className:'danger', type:'button', text:'Delete now',
         on:{click:function(){ archiveAction(r, 'purge'); }}})
     ]));
-  } else if (c.type === 'refer') {
-    // Before a referral exists this column used to be a disabled dropdown —
-    // the one control named "Referral", greyed out on exactly the leads you
-    // want to refer. It is now the button that starts the referral.
-    if (r.referred_at) {
-      td.appendChild(cellSelect(r, c, td));
-    } else if (r.pipeline === 'tuning') {
+    return td;
+  }
+
+  if (c.type === 'refer') {
+    if (r.referred_at) td.appendChild(cellSelect(r, c, td));
+    else if (r.pipeline === 'tuning') {
       td.appendChild(el('button', {className:'refergo', type:'button', text:'Refer →',
         title:'Send this lead to World Class',
         on:{click:function(){ openRefer(r); }}}));
     }
-    // A repair lead gets nothing here: World Class takes tuning work. The
-    // All tab mixes both pipelines, so this column would otherwise put a
-    // prominent button on jobs that should never be handed over.
-  } else if (c.type === 'select') {
-    td.appendChild(cellSelect(r, c, td));
-  } else if (c.type === 'paid') {
+    // A repair lead gets nothing here: World Class takes tuning work.
+    return td;
+  }
+
+  if (c.type === 'select') { td.appendChild(cellSelect(r, c, td)); return td; }
+
+  if (c.type === 'paid') {
     var cb = el('input', {type:'checkbox', checked:!!v, 'aria-label':'Paid',
       title: r.referred_at ? (v ? 'Paid ' + fmtLong(v) : 'Mark as paid') : 'Not referred yet'});
     cb.disabled = !r.referred_at;
@@ -188,19 +215,72 @@ function cell(r, c, i){
       }, function(e){ cb.checked = !cb.checked; flash(td, false); alert(e.message); });
     });
     td.appendChild(cb);
-  } else if (c.type === 'inv') {
+    return td;
+  }
+
+  if (c.type === 'inv') {
     var inv = v ? invById(v) : null;
     var billed = inv ? (inv.number || 'Invoice') + ' · ' + (INV_LABEL[inv.status] || inv.status)
       : (r.referral_status === 'booked' && !r.referral_paid_at ? 'Not billed yet' : '');
-    td.appendChild(el('div', {className:'ro', text:billed, title:billed}));
-  } else if (c.type === 'ref') {
-    td.appendChild(el('div', {className:'ro', text:'PPT-' + r.id}));
-  } else if (c.type === 'date') {
-    td.appendChild(el('div', {className:'ro', text:fmt(v), title:fmtLong(v)}));
-  } else {
-    td.appendChild(el('div', {className:'ro', text:String(v), title:String(v)}));
+    td.appendChild(el('div', {className:'ro' + (billed ? '' : ' empty'), text:billed || BLANK, title:billed}));
+    return td;
   }
+
+  if (c.type === 'ref') {
+    td.appendChild(el('div', {className:'ro', text:'PPT-' + r.id}));
+    return td;
+  }
+
+  if (c.type === 'date') {
+    td.appendChild(el('div', {className:'ro' + (v ? '' : ' empty'), text:fmt(v) || BLANK, title:fmtLong(v)}));
+    return td;
+  }
+
+  td.appendChild(el('div', {className:'ro' + (v ? '' : ' empty'), text:String(v) || BLANK, title:String(v)}));
   return td;
+}
+
+// The scheduled time: text until clicked, then a real picker.
+function editableWhen(r, td){
+  var host = el('div', {className:'cellv'});
+
+  function show(){
+    host.textContent = '';
+    var v = r.scheduled_at;
+    var late = v && new Date(v).getTime() < Date.now() &&
+      ['completed','closed','paid','lost'].indexOf(r.status) < 0;
+    var view = el('button', {type:'button',
+      className:'val whenval' + (v ? (late ? ' late' : '') : ' empty'),
+      text: v ? fmtWhen(v) : BLANK,
+      title: v ? (late ? 'This job time has gone by' : fmtLong(v)) : 'Not scheduled',
+      'aria-label':'Scheduled' + (v ? ': ' + fmtLong(v) : ': not yet')});
+    view.addEventListener('click', edit);
+    host.appendChild(view);
+  }
+
+  function edit(){
+    host.textContent = '';
+    var inp = el('input', {type:'datetime-local', value: toLocalInput(r.scheduled_at), 'aria-label':'Scheduled'});
+    var done = false;
+    function finish(commit){
+      if (done) return; done = true;
+      var iso = inp.value ? new Date(inp.value).toISOString() : '';
+      var changed = iso !== (r.scheduled_at || '');
+      show();
+      if (commit && changed) save(r, 'scheduled_at', iso, td);
+    }
+    inp.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') { done = true; show(); }
+      else if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    });
+    inp.addEventListener('change', function(){ finish(true); });
+    inp.addEventListener('blur', function(){ finish(true); });
+    host.appendChild(inp);
+    inp.focus();
+  }
+
+  show();
+  return host;
 }
 
 function rowEl(r){

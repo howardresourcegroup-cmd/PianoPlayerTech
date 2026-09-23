@@ -19,7 +19,7 @@ h2{font-size:1.1rem;margin:0}
 code{background:var(--raised);padding:.1em .4em;border-radius:4px;font-size:.85em}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem}
 .narrow{max-width:420px;margin:12vh auto 0}
-.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.7rem;flex-wrap:wrap}
 .top form{margin:0}
 .linkbtn{background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;text-decoration:underline;cursor:pointer;padding:0}
 .linkbtn:hover{color:var(--gold)}
@@ -29,14 +29,24 @@ color:var(--soft);text-decoration:none;font-size:.9rem;font-weight:500}
 .tab.on{background:var(--raised);color:var(--text);border-color:var(--gold)}
 .pill{display:inline-block;min-width:1.3rem;margin-left:.35rem;padding:0 .35rem;border-radius:9px;
 background:var(--gold);color:#17120e;font-size:.72rem;font-weight:700;line-height:1.3rem;text-align:center}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.5rem;margin-bottom:.9rem}
-@media(max-width:600px){.stat{padding:.45rem .6rem}.stat b{font-size:1.1rem}}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem}
-.stat b{display:block;font-size:1.35rem;font-variant-numeric:tabular-nums}
-.stat span{color:var(--muted);font-size:.8rem}
-.stat.owed{border-color:var(--gold)}
+/* One quiet strip, not five cards. These are a glance, not the point of the
+   page: five boxes reading "1, 1, 0, $0, $0" took more vertical space than
+   the first three leads. The number stays on the left so the column of
+   figures lines up. */
+.stats{display:flex;flex-wrap:wrap;gap:.35rem .5rem;margin-bottom:.7rem;
+background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem}
+.stat{display:flex;align-items:baseline;gap:.35rem;padding:.1rem .5rem;border-radius:6px}
+.stat + .stat{border-left:1px solid var(--border);padding-left:.8rem}
+.stat b{font-size:1.02rem;font-weight:600;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:.82rem}
+/* Money you are owed is the one number worth colour. */
 .stat.owed b{color:var(--gold)}
-.tools{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem}
+.stat.owed span{color:var(--soft)}
+@media(max-width:600px){
+  .stat + .stat{border-left:none;padding-left:.5rem}
+  .stats{gap:.2rem .3rem}
+}
+.tools{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.5rem}
 .tools input,.tools select{background:var(--surface);color:var(--text);border:1px solid var(--border);
 border-radius:7px;padding:.45rem .6rem;font:inherit}
 .tools input{flex:1;min-width:180px}
@@ -57,7 +67,7 @@ td select{cursor:pointer}
 td input:focus,td select:focus{outline:2px solid var(--gold);outline-offset:-2px;background:var(--ground)}
 td input[type=checkbox]{width:18px;height:18px;margin:0 auto;display:block;accent-color:var(--ok);cursor:pointer}
 td input[type=checkbox]:disabled{opacity:.3;cursor:not-allowed}
-.namecell{display:flex;align-items:center}
+.namecell{display:flex;align-items:center;gap:.1rem;min-width:0}
 .namecell input{flex:1;font-weight:600}
 .open{flex:none;margin-right:.35rem;background:var(--raised);border:1px solid var(--border);color:var(--gold);
 border-radius:5px;padding:0 .45rem;height:24px;cursor:pointer;font:inherit;font-size:.78rem;font-weight:600}
@@ -181,7 +191,7 @@ padding:.16rem .45rem;border-radius:4px;background:var(--raised);color:var(--sof
 .hist .tagp{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
 border:1px solid var(--border);border-radius:4px;padding:.12rem .4rem}
 .hist .amt{color:var(--gold);font-weight:600;white-space:nowrap}
-.quick{display:flex;gap:.4rem;flex-wrap:wrap;margin:0 0 .8rem}
+.quick{display:flex;gap:.4rem;flex-wrap:wrap;margin:0 0 .6rem}
 .chip{background:var(--surface);border:1px solid var(--border);color:var(--soft);
 font:inherit;font-size:.86rem;padding:.3rem .7rem;border-radius:999px;cursor:pointer}
 .chip:hover{border-color:var(--gold);color:var(--text)}
@@ -235,6 +245,61 @@ font:inherit;font-size:.86rem;padding:.3rem .75rem;border-radius:999px;cursor:po
 margin-left:.8rem;display:inline-flex;align-items:center}
 .upbtn:hover{border-color:var(--gold);color:var(--text)}
 .upbtn.late{border-color:var(--bad);color:var(--text)}
+/* A row states its exception, not its existence: a new lead gets the gold
+   edge, finished work recedes, everything else is simply legible. */
+tbody tr:hover{background:var(--surface)}
+tbody tr.done .val,tbody tr.done .ro,tbody tr.done .namebtn{color:var(--muted)}
+
+/* ---- read-first cells ----
+   The grid used to render every field as a bordered input: thirteen boxes a
+   row, all shouting equally. A cell is text now and becomes the control it
+   always was on click. The hover tint is the only hint it is editable,
+   which is enough once you know the table is editable at all. */
+.cellv{min-width:0}
+.val{padding:.25rem .4rem;border:1px solid transparent;border-radius:5px;cursor:text;
+overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:1.55rem;line-height:1.3}
+.val:hover{background:var(--raised);border-color:var(--border)}
+.val:focus{outline:none;background:var(--raised);border-color:var(--gold)}
+.val.empty,.ro.empty{color:var(--border)}
+.cellv input,.cellv textarea{width:100%;background:var(--ground);color:var(--text);
+border:1px solid var(--gold);border-radius:5px;padding:.25rem .4rem;font:inherit;line-height:1.3}
+.cellv textarea{min-height:4.5rem;resize:vertical;white-space:pre-wrap}
+.cellv input:focus,.cellv textarea:focus{outline:none}
+.cellv select{width:100%;background:var(--ground);color:var(--text);
+border:1px solid var(--gold);border-radius:5px;padding:.22rem .35rem;font:inherit}
+
+/* A chosen value reads as a quiet pill. Colour only where it means
+   something: live work, won work, finished work. */
+.pillv{background:none;border:1px solid transparent;border-radius:999px;color:var(--soft);
+font:inherit;font-size:.86rem;padding:.16rem .6rem;cursor:pointer;max-width:100%;
+overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pillv:hover{border-color:var(--border);background:var(--raised)}
+.pillv.is-newpill{background:rgba(212,178,90,.16);color:var(--gold);font-weight:600}
+.pillv.is-won{color:var(--ok)}
+.pillv.is-done{color:var(--muted)}
+.pillv.empty{color:var(--border)}
+.pillv:disabled{cursor:default;color:var(--border)}
+.pillv:disabled:hover{background:none;border-color:transparent}
+
+/* The name is the handle for the row: it opens the record. Renaming is the
+   rarer act, so it hides until hover. */
+.namebtn{background:none;border:none;color:var(--text);font:inherit;font-weight:600;
+padding:.25rem .3rem;cursor:pointer;text-align:left;overflow:hidden;text-overflow:ellipsis;
+white-space:nowrap;min-width:0;flex:1}
+.namebtn:hover{color:var(--gold);text-decoration:underline}
+.inlineedit{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;
+padding:0 .3rem;opacity:0;flex:0 0 auto}
+tr:hover .inlineedit,.inlineedit:focus{opacity:1}
+.inlineedit:hover{color:var(--gold)}
+
+.whenval{background:none;text-align:left;width:100%;font:inherit;color:var(--soft)}
+.whenval.late{color:var(--bad);font-weight:600}
+.callico{flex:0 0 auto;color:var(--gold);font-size:.78rem;text-decoration:none;
+opacity:0;padding:0 .2rem}
+tr:hover .callico,.callico:focus{opacity:1}
+.phonecell{display:flex;align-items:center;gap:.15rem}
+.phonecell .cellv,.phonecell .val{flex:1;min-width:0}
+
 .fubadge{background:var(--bad);color:#fff;border-radius:999px;padding:.05rem .45rem;
 font-size:.75rem;font-weight:600;margin-left:.35rem}
 
