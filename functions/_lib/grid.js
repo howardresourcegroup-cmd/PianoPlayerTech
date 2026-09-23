@@ -73,6 +73,7 @@ export function dashboard(view, rows, counts, ref, extra, nonce) {
     <div class="views" id="views"></div>
     <div class="bulkbar" id="bulkbar" hidden></div>
     <div class="gridwrap"><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
+      <div class="cards" id="cards" hidden></div>
       <div class="empty" id="empty" hidden>Nothing here yet.</div></div>
     <div class="pager" id="pager"></div>
     <dialog id="dlg"><div class="dlg" id="dlgbody"></div></dialog>

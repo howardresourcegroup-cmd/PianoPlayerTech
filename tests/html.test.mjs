@@ -64,3 +64,17 @@ test('json carries its status and is never cached', () => {
   assert.strictEqual(r.status, 418);
   assert.strictEqual(r.headers.get('Cache-Control'), 'no-store');
 });
+
+// The home-screen install needs two things the strict policy would
+// otherwise deny: default-src 'none' covers img-src and manifest-src by
+// fallback, so an icon and the manifest are blocked unless named.
+test('the policy permits the app manifest and its icons, and nothing remote', () => {
+  const csp = privateHeaders('n')['Content-Security-Policy'];
+  assert.match(csp, /img-src 'self' data:/);
+  assert.match(csp, /manifest-src 'self'/);
+  // Still nothing off-origin.
+  assert.ok(!/img-src[^;]*https?:/.test(csp), 'no remote image origin');
+  assert.match(csp, /default-src 'none'/, "everything unnamed is still denied");
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.match(csp, /base-uri 'none'/);
+});

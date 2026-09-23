@@ -13,3 +13,10 @@
 /crm/*
   Cache-Control: no-cache, must-revalidate
   X-Content-Type-Options: nosniff
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=3600
+
+/Images/app/*
+  Cache-Control: public, max-age=604800

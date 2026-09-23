@@ -28,6 +28,9 @@ const BROWSER_GLOBALS = {
   sessionStorage: 'readonly', matchMedia: 'readonly', Event: 'readonly',
   CustomEvent: 'readonly', HTMLElement: 'readonly', getComputedStyle: 'readonly',
   requestAnimationFrame: 'readonly', Intl: 'readonly',
+  innerWidth: 'readonly', innerHeight: 'readonly', scrollTo: 'readonly',
+  removeEventListener: 'readonly', Blob: 'readonly', FileReader: 'readonly',
+  matchMedia: 'readonly',
   // Injected by the Google Analytics tag in the page, not by us.
   gtag: 'readonly', dataLayer: 'readonly'
 };

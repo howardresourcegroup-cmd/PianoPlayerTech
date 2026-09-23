@@ -14,6 +14,8 @@ import { openLead, openRefer } from './record.js';
 import { invById, renderBanner } from './invoices.js';
 import { renderBulkBar, bulkSummary } from './bulkbar.js';
 import { editableText, editableChoice, BLANK } from './edit.js';
+import { cardFor, isPhone, onLayoutChange } from './cards.js';
+import { isPastDue } from './fields.js';
 import { renderViews } from './views.js';
 import { loadWidths, addResizer } from './widths.js';
 import { download } from './export.js';
@@ -247,8 +249,7 @@ function editableWhen(r, td){
   function show(){
     host.textContent = '';
     var v = r.scheduled_at;
-    var late = v && new Date(v).getTime() < Date.now() &&
-      ['completed','closed','paid','lost'].indexOf(r.status) < 0;
+    var late = isPastDue(r);
     var view = el('button', {type:'button',
       className:'val whenval' + (v ? (late ? ' late' : '') : ' empty'),
       text: v ? fmtWhen(v) : BLANK,
@@ -309,11 +310,27 @@ export function render(){
   var from = state.page * size;
   visible = state.pageSize > 0 ? list.slice(from, from + size) : list;
 
-  renderHead();
-  body.textContent = '';
-  var frag = document.createDocumentFragment();
-  visible.forEach(function(r){ frag.appendChild(rowEl(r)); });
-  body.appendChild(frag);
+  // Below 760px the table becomes a list of cards. Different elements, not
+  // a reflowed <table>: reflowing one loses the semantics a screen reader
+  // uses and fights every fixed width the grid sets.
+  var phone = isPhone();
+  var table = document.querySelector('.gridwrap table');
+  var cards = document.getElementById('cards');
+  if (table) table.hidden = phone;
+  if (cards) cards.hidden = !phone;
+
+  if (phone && cards) {
+    cards.textContent = '';
+    var cfrag = document.createDocumentFragment();
+    visible.forEach(function(r){ cfrag.appendChild(cardFor(r, cardHandlers)); });
+    cards.appendChild(cfrag);
+  } else {
+    renderHead();
+    body.textContent = '';
+    var frag = document.createDocumentFragment();
+    visible.forEach(function(r){ frag.appendChild(rowEl(r)); });
+    body.appendChild(frag);
+  }
   empty.hidden = list.length > 0;
   renderBanner();
   renderBulkBar(afterBulk);
@@ -340,6 +357,26 @@ function paintExport(list){
   btn.textContent = 'Export these ' + list.length;
   btn.onclick = function(){ download(list, view, 'filtered'); };
 }
+
+// What a card can do, wired to the same functions the table cells use.
+var cardHandlers = {
+  onOpen: function(r){ openLead(r); },
+  onRefer: function(r){ openRefer(r); },
+  onSave: function(r, field, value, host){ save(r, field, value, host); },
+  onArchive: function(r){ archiveAction(r, 'archive'); },
+  // Just this card and the bar. Re-rendering the whole list on every tick
+  // rebuilt sixty cards and threw away the scroll position, which on a
+  // phone reads as the app losing your place.
+  onToggle: function(r, on, card){
+    if (on) state.selected.add(r.id); else state.selected.delete(r.id);
+    if (card) card.classList.toggle('picked', on);
+    renderBulkBar(afterBulk);
+  }
+};
+
+// Rotating a phone, or dragging a desktop window narrow, changes which
+// layout is right. Re-render only when the mode actually flips.
+onLayoutChange(function(){ render(); });
 
 function renderPager(total, pages){
   var box = document.getElementById('pager');

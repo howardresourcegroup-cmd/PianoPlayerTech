@@ -7,7 +7,13 @@ export const CSS = `
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--ground);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{padding:1.2rem 16px 4rem;margin:0 auto;max-width:none}
+.wrap{padding:1.2rem 16px 4rem;margin:0 auto;max-width:none;
+padding-left:max(16px,env(safe-area-inset-left));
+padding-right:max(16px,env(safe-area-inset-right));
+padding-bottom:max(4rem,env(safe-area-inset-bottom))}
+/* Installed to a home screen there is no browser chrome, so the page owns
+   the space under the status bar. */
+@media(display-mode:standalone){.wrap{padding-top:max(1.2rem,env(safe-area-inset-top))}}
 /* A data application, not an article: the grid should use the whole window.
    Gutters grow a little on very wide screens so content is not flush to the
    bezel, but nothing is capped. */
@@ -299,6 +305,51 @@ opacity:0;padding:0 .2rem}
 tr:hover .callico,.callico:focus{opacity:1}
 .phonecell{display:flex;align-items:center;gap:.15rem}
 .phonecell .cellv,.phonecell .val{flex:1;min-width:0}
+
+/* ---- the phone layout ----
+   Built as cards rather than a reflowed table. Touch targets are 44px,
+   which is the smallest thing a thumb hits reliably. */
+.cards{display:flex;flex-direction:column;gap:.6rem;padding:.1rem}
+.card-lead{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+padding:.75rem .85rem;display:flex;flex-direction:column;gap:.4rem}
+.card-lead.is-new{border-left:3px solid var(--gold)}
+.card-lead.done{opacity:.62}
+.card-lead.picked{border-color:var(--gold);background:var(--raised)}
+.cl-head{display:flex;align-items:center;gap:.55rem}
+.cl-head input[type=checkbox]{width:20px;height:20px;flex:0 0 auto;margin:0}
+.cl-name{flex:1;min-width:0;background:none;border:none;color:var(--text);font:inherit;
+font-size:1.02rem;font-weight:600;text-align:left;padding:.2rem 0;cursor:pointer;
+overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-head .cellv{flex:0 0 auto;max-width:48%}
+.cl-what{color:var(--soft);font-size:.92rem}
+.cl-where{color:var(--muted);font-size:.86rem}
+.cl-when{display:flex;justify-content:space-between;gap:.5rem;align-items:baseline;
+font-size:.86rem;flex-wrap:wrap}
+.cl-date{color:var(--gold)}
+.cl-date.late{color:var(--bad);font-weight:600}
+.cl-date.empty{color:var(--muted)}
+.cl-came{color:var(--muted);font-size:.8rem}
+.cl-ref{color:var(--muted);font-size:.82rem}
+.cl-msg{color:var(--soft);font-size:.88rem;background:var(--ground);border-radius:6px;
+padding:.45rem .55rem;white-space:pre-wrap;overflow-wrap:anywhere;
+display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cl-tel{color:var(--muted);font-size:.82rem;font-variant-numeric:tabular-nums}
+.cl-tel.empty{color:var(--border)}
+.cl-acts{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.15rem}
+.cl-btn{flex:1 1 auto;min-width:72px;min-height:44px;display:inline-flex;align-items:center;
+justify-content:center;background:var(--raised);border:1px solid var(--border);
+border-radius:8px;color:var(--text);font:inherit;font-size:.9rem;text-decoration:none;
+cursor:pointer;padding:0 .6rem}
+.cl-btn:active{background:var(--border)}
+.cl-btn.primary{background:var(--gold);border-color:var(--gold);color:var(--ground);font-weight:600}
+.cl-btn.refer{border-color:var(--gold);color:var(--gold)}
+
+/* The table and its horizontal scroll go away entirely on a phone, rather
+   than sitting there as an empty box. */
+@media(max-width:760px){
+  .gridwrap{border:none;background:none;overflow:visible}
+  .gridwrap table{display:none}
+}
 
 .fubadge{background:var(--bad);color:#fff;border-radius:999px;padding:.05rem .45rem;
 font-size:.75rem;font-weight:600;margin-left:.35rem}

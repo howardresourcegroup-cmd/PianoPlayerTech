@@ -24,8 +24,14 @@ export function privateHeaders(nonce, type = 'text/html; charset=utf-8') {
     // blocks every external source and the origin serves only this repo's
     // files. What actually stops a customer's text from running as markup is
     // that the client writes it with textContent, never innerHTML.
+    // default-src 'none' means every directive that is not named here is
+    // denied -- including img-src and manifest-src, which fall back to it.
+    // The home-screen icon and the manifest are same-origin files, so they
+    // get 'self' and nothing more. data: is allowed for images because a
+    // favicon or an inline SVG may arrive that way; no remote origin is.
     'Content-Security-Policy':
       `default-src 'none'; script-src 'self' 'nonce-${nonce}'; style-src 'unsafe-inline'; ` +
+      `img-src 'self' data:; manifest-src 'self'; ` +
       `connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'`
   };
 }
@@ -45,8 +51,17 @@ export function json(obj, status = 200) {
 // a path under /crm/ for the dashboard's application.
 export function page(title, inner, js, nonce, moduleSrc) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#17120e">
+<!-- Installable from a phone's share sheet. The manifest is linked only
+     from the CRM, never from the marketing pages, so "add to home screen"
+     on the public site does not install a lead dashboard. -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PPT Leads">
+<link rel="apple-touch-icon" href="/Images/app/icon-180.png">
 <title>${escape_(title)} · PianoPlayerTech</title><style>${CSS}</style></head>
 <body><div class="wrap">${inner}</div>${
   js ? `<script nonce="${nonce}">${js}</script>` : ''}${
