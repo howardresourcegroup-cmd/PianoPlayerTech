@@ -37,6 +37,7 @@ import {
   createInvoice, voidInvoice, syncInvoices, INVOICE_COLUMNS
 } from './_lib/stripe.js';
 import { NOT_ARCHIVED, purgeCutoff, purgeExpired, loadStatuses } from './_lib/db.js';
+import { BULK_OPS, parseIds, applyBulk } from './_lib/bulk.js';
 import {
   LOGGABLE_TYPES, SCHEDULED_TYPES, LIMITS as ACTIVITY_LIMITS, normStamp,
   logActivity, logQuietly, contactIdFor, loadRecord, setActivityDone,
@@ -283,6 +284,33 @@ export async function onRequestPost(context) {
     } catch (err) {
       console.error('invoice action failed', body.action, err && err.message);
       return json({ error: err && err.stripe ? `Stripe said: ${err.message}` : 'Could not complete that — try again.' }, 502);
+    }
+  }
+
+  // Many leads at once, so it runs before the single-lead lookup.
+  if (body.action === 'bulk') {
+    const op = String(body.op || '');
+    if (!BULK_OPS.includes(op)) return json({ error: 'unknown bulk action' }, 400);
+
+    const parsed = parseIds(body.ids);
+    if (parsed.error) return json({ error: parsed.error }, 400);
+
+    const value = String(body.value == null ? '' : body.value).trim();
+    if (op === 'status') {
+      if (value === 'referred') {
+        return json({ error: 'Use the Refer button so each referral is recorded and can be billed.' }, 400);
+      }
+      const known = (await loadStatuses(env)).some((x) => x.key === value);
+      if (!known) return json({ error: 'bad status' }, 400);
+    }
+    if (op === 'pipeline' && !PIPELINES.includes(value)) return json({ error: 'bad pipeline' }, 400);
+
+    try {
+      const out = await applyBulk(env, parsed.ids, { op, value, actor }, new Date().toISOString());
+      return json({ ok: true, ...out });
+    } catch (err) {
+      console.error('bulk action failed', op, err && err.message);
+      return json({ error: 'Could not apply that to all of them — reload and check.' }, 500);
     }
   }
 

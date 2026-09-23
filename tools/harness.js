@@ -79,6 +79,23 @@ const rows = [
     referral_invoice_id: null, archived_at: null, fields: '{}' }
 ];
 
+// HARNESS_ROWS=500 clones the fixtures, for testing paging and for seeing
+// whether typing in the search box still feels instant at size.
+const want = parseInt(process.env.HARNESS_ROWS || '0', 10);
+if (want > rows.length) {
+  const cities = ['Marietta', 'Atlanta', 'Cumming', 'Gainesville', 'Roswell'];
+  const base = rows.slice();
+  let n = 200;
+  while (rows.length < want) {
+    const src = base[rows.length % base.length];
+    rows.push({ ...src, id: ++n,
+      name: src.name + ' ' + n,
+      city: cities[n % cities.length],
+      status: ['new', 'contacted', 'quoted', 'booked', 'closed'][n % 5],
+      created_at: new Date(Date.parse(src.created_at) - n * 3600000).toISOString() });
+  }
+}
+
 const view = process.env.HARNESS_VIEW || 'all';
 if (view === 'archive') {
   // Two archived leads: one with weeks left, one about to be purged.
@@ -154,8 +171,10 @@ fs.writeFileSync(path.join(OUT, 'harness.html'), `<!doctype html><html lang="en"
   <span class="muted" id="shown"></span>
 </div>
 <div class="quick" id="quick"></div>
+<div class="bulkbar" id="bulkbar" hidden></div>
 <div class="gridwrap"><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
   <div class="empty" id="empty" hidden>Nothing here yet.</div></div>
+<div class="pager" id="pager"></div>
 <dialog id="dlg"><div class="dlg" id="dlgbody"></div></dialog>
 </div>
 <script type="application/json" id="data">${data}</script>
@@ -185,6 +204,12 @@ window.fetch = function (url, opts) {
       { id: body.activityId, completed_at: body.done ? new Date().toISOString() : null }) });
   }
   if (body.action === 'activityDelete') return reply({ ok: true, deleted: body.activityId });
+  if (body.action === 'bulk') {
+    // Mirrors the server: archived leads are skipped, and the reply reports
+    // how many actually changed rather than how many were asked for.
+    const n = (body.ids || []).length;
+    return reply({ ok: true, changed: n, skipped: 0, value: null });
+  }
   return reply({ ok: true, value: body.value });
 };
 `);

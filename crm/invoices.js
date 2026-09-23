@@ -5,7 +5,7 @@
 // prices referrals itself, so a tampered request cannot change the fee.
 
 import { D, view, state, INV_LABEL } from './state.js';
-import { el, head, body, q, sf, shown, empty, dlgbody, fmt, money, showDlg, dlgHeader } from './dom.js';
+import { el, head, body, q, sf, shown, empty, dlgbody, fmt, money, showDlg, dlgHeader, debounce } from './dom.js';
 import { post } from './api.js';
 import { render } from './grid.js';
 
@@ -210,7 +210,7 @@ export function initInvoices(){
   tools.insertBefore(el('button', {className:'go', type:'button', text:'New invoice',
     on:{click:function(){ invoiceDialog({}); }}}), tools.firstChild);
   q.placeholder = 'Search name, email, invoice #…';
-  q.addEventListener('input', renderInvoices);
+  q.addEventListener('input', debounce(renderInvoices, 120));
   sf.addEventListener('change', renderInvoices);
   renderInvoices();
 }

@@ -24,7 +24,7 @@
 // grid.js and record.js free to import each other.
 
 import { view } from './state.js';
-import { dlg, q, sf } from './dom.js';
+import { dlg, q, sf, debounce } from './dom.js';
 import { initFilters } from './filters.js';
 import { renderStats } from './stats.js';
 import { render } from './grid.js';
@@ -38,7 +38,9 @@ if (view === 'invoices') {
   initInvoices();
 } else {
   initFilters(render);
-  q.addEventListener('input', render);
+  // A chip or a dropdown is one decision, so it redraws at once. Typing is
+  // many, so it waits for a pause.
+  q.addEventListener('input', debounce(render, 120));
   sf.addEventListener('change', render);
   renderStats();
   render();

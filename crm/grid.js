@@ -4,7 +4,7 @@
 // red. There is no save button and no dirty state, because a half-edited
 // lead that looks saved is worse than a slow one.
 
-import { D, view, state, INV_LABEL } from './state.js';
+import { D, view, state, INV_LABEL, PAGE_SIZES } from './state.js';
 import { el, head, body, shown, empty, fmt, fmtLong, tel, flash } from './dom.js';
 import { post } from './api.js';
 import { COLS } from './columns.js';
@@ -12,10 +12,32 @@ import { passes, refreshMatcher } from './filters.js';
 import { bumpRef } from './stats.js';
 import { openLead, openRefer } from './record.js';
 import { invById, renderBanner } from './invoices.js';
+import { renderBulkBar, bulkSummary } from './bulkbar.js';
+
+// The rows currently on screen, which is what "select all" means: ticking
+// the header must never quietly select 5,000 leads you cannot see.
+var visible = [];
 
 function renderHead(){
   head.textContent = '';
   COLS.forEach(function(c, i){
+    if (c.type === 'pick') {
+      var all = visible.length > 0 && visible.every(function(r){ return state.selected.has(r.id); });
+      var some = !all && visible.some(function(r){ return state.selected.has(r.id); });
+      var box = el('input', {type:'checkbox', checked:all,
+        'aria-label': all ? 'Clear the selection' : 'Select every row shown'});
+      box.indeterminate = some;
+      box.addEventListener('change', function(){
+        visible.forEach(function(r){
+          if (box.checked) state.selected.add(r.id); else state.selected.delete(r.id);
+        });
+        render();
+      });
+      var pth = el('th', {className:'sticky pickcol'}, [box]);
+      pth.style.minWidth = c.w + 'px';
+      head.appendChild(pth);
+      return;
+    }
     var th = el('th', {text: c.label + (state.sortKey === c.k ? (state.sortDir > 0 ? ' ▲' : ' ▼') : ''),
       className: (i === 0 ? 'sticky ' : '') + (state.sortKey === c.k ? 'sorted' : ''),
       on:{click:function(){ if (state.sortKey === c.k) state.sortDir = -state.sortDir; else { state.sortKey = c.k; state.sortDir = 1; } render(); }}});
@@ -46,7 +68,7 @@ function cellSelect(r, c, td){
 }
 
 function cell(r, c, i){
-  var td = el('td', {className: i === 0 ? 'sticky' : ''});
+  var td = el('td', {className: i <= 1 ? 'sticky' : ''});
   td.style.minWidth = c.w + 'px'; td.style.maxWidth = (c.w + 80) + 'px';
   var v = r[c.k] == null ? '' : r[c.k];
 
@@ -54,6 +76,20 @@ function cell(r, c, i){
     var inp = el('input', {value:String(v), 'aria-label':c.label});
     inp.addEventListener('change', function(){ save(r, c.k, inp.value, td); });
     return inp;
+  }
+
+  if (c.type === 'pick') {
+    var box = el('input', {type:'checkbox', checked:state.selected.has(r.id), 'aria-label':'Select this lead'});
+    box.addEventListener('change', function(){
+      if (box.checked) state.selected.add(r.id); else state.selected.delete(r.id);
+      // Redrawing the head keeps the select-all box honest, and the bar
+      // appears or disappears with the selection.
+      renderHead();
+      renderBulkBar(afterBulk);
+    });
+    td.appendChild(box);
+    td.className = 'sticky pickcol';
+    return td;
   }
 
   if (c.type === 'name') {
@@ -135,7 +171,6 @@ function rowEl(r){
 }
 
 export function render(){
-  renderHead();
   refreshMatcher();
   var list = state.rows.filter(passes);
   if (state.sortKey) {
@@ -145,14 +180,92 @@ export function render(){
       return x.localeCompare(y, undefined, {numeric:true, sensitivity:'base'}) * state.sortDir;
     });
   }
+
+  // Paging is over the filtered list. Filtering to four rows should show one
+  // page of four, not page three of nothing -- so a page that no longer
+  // exists falls back to the last one that does.
+  var size = state.pageSize > 0 ? state.pageSize : list.length || 1;
+  var pages = Math.max(1, Math.ceil(list.length / size));
+  if (state.page >= pages) state.page = pages - 1;
+  var from = state.page * size;
+  visible = state.pageSize > 0 ? list.slice(from, from + size) : list;
+
+  renderHead();
   body.textContent = '';
   var frag = document.createDocumentFragment();
-  list.forEach(function(r){ frag.appendChild(rowEl(r)); });
+  visible.forEach(function(r){ frag.appendChild(rowEl(r)); });
   body.appendChild(frag);
   empty.hidden = list.length > 0;
   renderBanner();
-  shown.textContent = list.length === state.rows.length
-    ? state.rows.length + (state.rows.length === 1 ? ' row' : ' rows') : list.length + ' of ' + state.rows.length;
+  renderBulkBar(afterBulk);
+  renderPager(list.length, pages);
+
+  var filtered = list.length !== state.rows.length;
+  shown.textContent = !filtered && state.pageSize <= 0
+    ? state.rows.length + (state.rows.length === 1 ? ' row' : ' rows')
+    : (visible.length < list.length
+        ? (from + 1) + '–' + (from + visible.length) + ' of ' + list.length
+        : list.length + (filtered ? ' of ' + state.rows.length : (list.length === 1 ? ' row' : ' rows')));
+}
+
+function renderPager(total, pages){
+  var box = document.getElementById('pager');
+  if (!box) return;
+  box.textContent = '';
+  // Nothing to page through and nothing to choose: stay out of the way.
+  if (total <= PAGE_SIZES[0] && state.pageSize === 100) { box.hidden = true; return; }
+  box.hidden = false;
+
+  var sizer = el('select', {'aria-label':'Rows per page'});
+  PAGE_SIZES.forEach(function(n){
+    sizer.appendChild(el('option', {value:String(n), text: n ? n + ' per page' : 'Show all'}));
+  });
+  sizer.value = String(state.pageSize);
+  sizer.addEventListener('change', function(){
+    state.pageSize = parseInt(sizer.value, 10);
+    state.page = 0;
+    render();
+  });
+  box.appendChild(sizer);
+
+  if (pages > 1) {
+    box.appendChild(el('button', {className:'ghost sm', type:'button', text:'‹ Previous',
+      disabled: state.page === 0,
+      on:{click:function(){ state.page--; render(); }}}));
+    box.appendChild(el('span', {className:'muted', text:'Page ' + (state.page + 1) + ' of ' + pages}));
+    box.appendChild(el('button', {className:'ghost sm', type:'button', text:'Next ›',
+      disabled: state.page >= pages - 1,
+      on:{click:function(){ state.page++; render(); }}}));
+  }
+}
+
+// After a bulk change: drop the rows that left this tab, clear the tick
+// boxes, and say what actually happened.
+function afterBulk(j, ids, done, value){
+  state.selected.clear();
+  if (j) {
+    var hit = {};
+    ids.forEach(function(id){ hit[id] = true; });
+
+    if (done === 'archive' || done === 'restore') {
+      // Either way they no longer belong on this tab.
+      state.rows = state.rows.filter(function(r){ return !hit[r.id]; });
+    } else if (done === 'status' || done === 'pipeline') {
+      // The server did it; carry it into the rows we are holding so the
+      // grid shows the new value without a reload.
+      state.rows.forEach(function(r){ if (hit[r.id]) r[done] = value; });
+      if (done === 'pipeline' && (view === 'repair' || view === 'tuning') && value !== view) {
+        state.rows = state.rows.filter(function(r){ return !hit[r.id]; });
+      }
+    }
+  }
+  render();
+  if (j) {
+    var note = document.getElementById('shown');
+    var was = note.textContent;
+    note.textContent = bulkSummary(j);
+    setTimeout(function(){ if (note.textContent === bulkSummary(j)) note.textContent = was; }, 2500);
+  }
 }
 
 function archiveAction(r, action){

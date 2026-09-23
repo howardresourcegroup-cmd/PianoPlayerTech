@@ -186,6 +186,21 @@ border:1px solid var(--border);border-radius:4px;padding:.12rem .4rem}
 font:inherit;font-size:.86rem;padding:.3rem .7rem;border-radius:999px;cursor:pointer}
 .chip:hover{border-color:var(--gold);color:var(--text)}
 .chip.on{background:var(--gold);border-color:var(--gold);color:var(--ground);font-weight:600}
+/* ---- bulk bar and pager ---- */
+.bulkbar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:0 0 .8rem;
+padding:.5rem .8rem;background:var(--surface);border:1px solid var(--gold);border-radius:8px}
+.bulkbar .count{font-weight:600;color:var(--gold)}
+.bulkbar select{background:var(--ground);color:var(--text);border:1px solid var(--border);
+border-radius:6px;padding:.35rem .5rem;font:inherit}
+.bulkbar .go.sm,.bulkbar .ghost.sm{padding:.35rem .8rem;font-size:.88rem}
+.bulkmsg{color:var(--muted);font-size:.86rem}
+.pager{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.7rem 0 0}
+.pager select{background:var(--ground);color:var(--text);border:1px solid var(--border);
+border-radius:6px;padding:.35rem .5rem;font:inherit}
+.pager .ghost.sm{padding:.3rem .7rem;font-size:.88rem}
+.pager button:disabled{opacity:.4;cursor:default}
+th.pickcol,td.pickcol{width:34px;min-width:34px;max-width:34px;text-align:center;padding:0 .2rem}
+td.pickcol input,th.pickcol input{margin:0;cursor:pointer}
 .fubadge{background:var(--bad);color:#fff;border-radius:999px;padding:.05rem .45rem;
 font-size:.75rem;font-weight:600;margin-left:.35rem}
 

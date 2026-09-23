@@ -50,6 +50,18 @@ export function fields(r){ try { return JSON.parse(r.fields || '{}') || {}; } ca
 
 export function showDlg(){ if (!dlg.open) dlg.showModal(); }
 
+// Rebuilding the grid costs about 40ms per hundred rows, which is fine once
+// and not fine on every keystroke. Waiting for a pause in typing keeps the
+// box responsive however many leads there are.
+export function debounce(fn, ms){
+  var t = 0;
+  return function(){
+    var args = arguments, self = this;
+    clearTimeout(t);
+    t = setTimeout(function(){ fn.apply(self, args); }, ms);
+  };
+}
+
 export function dlgHeader(title, sub){
   dlgbody.appendChild(el('div', {className:'hd'}, [
     el('div', null, [el('h2', {text:title}), sub ? el('div', {className:'muted', text:sub}) : null]),

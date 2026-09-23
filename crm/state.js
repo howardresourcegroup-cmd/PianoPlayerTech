@@ -20,8 +20,21 @@ export const state = {
   // Which column the grid is sorted by, and which way. null means the order
   // the server sent, which already puts new leads first.
   sortKey: null,
-  sortDir: 1
+  sortDir: 1,
+
+  // Lead ids ticked for a bulk action. A Set because the question asked of
+  // it, on every cell of every row, is "is this one selected".
+  selected: new Set(),
+
+  // Paging is over the filtered list, not the whole table: filtering to
+  // four rows should show one page of four, not page three of nothing.
+  page: 0,
+  pageSize: 100
 };
+
+// How many rows at once. 'All' exists because this table is usually small
+// and paging a 37-row list is theatre.
+export const PAGE_SIZES = [50, 100, 250, 0];
 
 export const REF_LABEL = { sent: 'Sent — waiting', booked: 'Booked', no_booking: "Didn't book" };
 export const INV_LABEL = { open: 'Unpaid', paid: 'Paid', void: 'Void', uncollectible: 'Uncollectible', draft: 'Draft' };

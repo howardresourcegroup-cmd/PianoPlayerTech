@@ -68,8 +68,10 @@ export function dashboard(view, rows, counts, ref, extra, nonce) {
       <a href="/leads?p=${view}&amp;export=csv">Export CSV</a>
     </div>
     <div class="quick" id="quick"></div>
+    <div class="bulkbar" id="bulkbar" hidden></div>
     <div class="gridwrap"><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
       <div class="empty" id="empty" hidden>Nothing here yet.</div></div>
+    <div class="pager" id="pager"></div>
     <dialog id="dlg"><div class="dlg" id="dlgbody"></div></dialog>
     <script type="application/json" id="data">${data}</script>`, null, nonce, '/crm/app.js');
 }
