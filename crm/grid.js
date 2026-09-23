@@ -8,7 +8,7 @@ import { D, view, state, INV_LABEL } from './state.js';
 import { el, head, body, shown, empty, fmt, fmtLong, tel, flash } from './dom.js';
 import { post } from './api.js';
 import { COLS } from './columns.js';
-import { passes } from './filters.js';
+import { passes, refreshMatcher } from './filters.js';
 import { bumpRef } from './stats.js';
 import { openLead, openRefer } from './record.js';
 import { invById, renderBanner } from './invoices.js';
@@ -136,6 +136,7 @@ function rowEl(r){
 
 export function render(){
   renderHead();
+  refreshMatcher();
   var list = state.rows.filter(passes);
   if (state.sortKey) {
     list.sort(function(a, b){

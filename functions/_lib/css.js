@@ -181,6 +181,11 @@ padding:.16rem .45rem;border-radius:4px;background:var(--raised);color:var(--sof
 .hist .tagp{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
 border:1px solid var(--border);border-radius:4px;padding:.12rem .4rem}
 .hist .amt{color:var(--gold);font-weight:600;white-space:nowrap}
+.quick{display:flex;gap:.4rem;flex-wrap:wrap;margin:0 0 .8rem}
+.chip{background:var(--surface);border:1px solid var(--border);color:var(--soft);
+font:inherit;font-size:.86rem;padding:.3rem .7rem;border-radius:999px;cursor:pointer}
+.chip:hover{border-color:var(--gold);color:var(--text)}
+.chip.on{background:var(--gold);border-color:var(--gold);color:var(--ground);font-weight:600}
 .fubadge{background:var(--bad);color:#fff;border-radius:999px;padding:.05rem .45rem;
 font-size:.75rem;font-weight:600;margin-left:.35rem}
 

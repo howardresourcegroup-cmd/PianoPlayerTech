@@ -10,7 +10,7 @@ import { D, view, REF_LABEL } from './state.js';
 export const COLS = [
   {k:'name', label:'Name', type:'name', w:240},
   {k:'phone', label:'Phone', type:'phone', w:170},
-  {k:'status', label:'Status', type:'select', opts:D.setStatuses, w:110}
+  {k:'status', label:'Status', type:'select', opts:D.setStatuses, labels:D.statusLabels, w:130}
 ];
 
 if (view === 'archive') {

@@ -37,7 +37,7 @@ dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); })
 if (view === 'invoices') {
   initInvoices();
 } else {
-  initFilters();
+  initFilters(render);
   q.addEventListener('input', render);
   sf.addEventListener('change', render);
   renderStats();

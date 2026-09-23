@@ -58,6 +58,37 @@ test('a customer cannot close the script tag', () => {
   assert.ok(html.includes('\\u003cscript'), 'the < should be escaped as \\u003c');
 });
 
+// The vocabulary now comes from the database, so the decoy fix has to hold
+// on that path too -- not just on the constant it used to filter.
+test('a database vocabulary still cannot offer referred', () => {
+  const vocab = [
+    { key: 'new', label: 'New', sort: 10, is_open: 1 },
+    { key: 'referred', label: 'Referred', sort: 50, is_open: 1 },
+    { key: 'booked', label: 'Booked', sort: 70, is_open: 1 },
+    { key: 'closed', label: 'Closed', sort: 110, is_open: 0 }
+  ];
+  const html = dashboard('tuning', [lead()], { repair: 0, tuning: 1 }, REF,
+    { ...EXTRA, statusList: vocab }, 'N');
+  const payload = JSON.parse(html.match(/id="data">([\s\S]*?)<\/script>/)[1]
+    .replace(/\\u003c/g, '<'));
+
+  assert.ok(payload.statuses.includes('referred'), 'still storable');
+  assert.ok(!payload.setStatuses.includes('referred'), 'must never be selectable');
+  assert.deepStrictEqual(payload.setStatuses, ['new', 'booked', 'closed']);
+  assert.strictEqual(payload.statusLabels.referred, 'Referred');
+  // is_open drives the "Not closed" filter.
+  assert.deepStrictEqual(payload.openStatuses, ['new', 'referred', 'booked']);
+});
+
+test('with no vocabulary the dashboard still works', () => {
+  const html = dashboard('tuning', [lead()], { repair: 0, tuning: 1 }, REF,
+    { ...EXTRA, statusList: [] }, 'N');
+  const payload = JSON.parse(html.match(/id="data">([\s\S]*?)<\/script>/)[1]
+    .replace(/\\u003c/g, '<'));
+  assert.ok(payload.statuses.length, 'fell back to the constant');
+  assert.ok(!payload.setStatuses.includes('referred'));
+});
+
 test('referred is storable but not selectable', () => {
   // Set by the refer flow, which also stamps referred_at. Choosing it by hand
   // used to set the status alone, losing the referral.

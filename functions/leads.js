@@ -31,12 +31,12 @@ import {
   accessMode, accessIdentity, emailAllowed, signedIn, sameOrigin
 } from './_lib/auth.js';
 import {
-  dashboard, VIEWS, SET_STATUSES, REFERRAL_STATUSES
+  dashboard, VIEWS, REFERRAL_STATUSES
 } from './_lib/grid.js';
 import {
   createInvoice, voidInvoice, syncInvoices, INVOICE_COLUMNS
 } from './_lib/stripe.js';
-import { NOT_ARCHIVED, purgeCutoff, purgeExpired } from './_lib/db.js';
+import { NOT_ARCHIVED, purgeCutoff, purgeExpired, loadStatuses } from './_lib/db.js';
 import {
   LOGGABLE_TYPES, SCHEDULED_TYPES, LIMITS as ACTIVITY_LIMITS, normStamp,
   logActivity, logQuietly, contactIdFor, loadRecord, setActivityDone,
@@ -207,6 +207,8 @@ export async function onRequestGet(context) {
 
   extra.wcReady = !!(env.WORLDCLASS_EMAIL && env.RESEND_API_KEY);
   extra.who = accessMode(env) ? who : '';
+  // The pipeline's own vocabulary, not a list hardcoded in the client.
+  extra.statusList = await loadStatuses(env);
 
   // Follow-ups you owe someone. A CRM that does not surface these is a
   // list of names. Best-effort: a dashboard that loads without the badge
@@ -362,7 +364,12 @@ export async function onRequestPost(context) {
       if (field === 'status' && value === 'referred') {
         return json({ error: 'Use the Refer button so the referral is recorded and can be billed.' }, 400);
       }
-      if (field === 'status' && !SET_STATUSES.includes(value)) return json({ error: 'bad status' }, 400);
+      if (field === 'status') {
+        // Validated against the database, so adding a status is a row rather
+        // than a deploy. 'referred' is excluded above, not here.
+        const known = (await loadStatuses(env)).some((x) => x.key === value);
+        if (!known) return json({ error: 'bad status' }, 400);
+      }
       if (field === 'pipeline' && !PIPELINES.includes(value)) return json({ error: 'bad pipeline' }, 400);
       if (field === 'referral_status' && !REFERRAL_STATUSES.includes(value)) return json({ error: 'bad referral status' }, 400);
       if (EDITABLE[field]) value = value.slice(0, EDITABLE[field]);

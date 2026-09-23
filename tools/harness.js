@@ -124,8 +124,15 @@ const mockRecord = {
 
 const data = JSON.stringify({
   view, rows,
-  statuses: ['new', 'called', 'referred', 'booked', 'closed'],
-  setStatuses: ['new', 'called', 'booked', 'closed'],
+  statuses: ['new', 'contacted', 'waiting', 'quoted', 'referred', 'scheduled',
+             'booked', 'completed', 'invoiced', 'paid', 'closed', 'lost'],
+  setStatuses: ['new', 'contacted', 'waiting', 'quoted', 'scheduled',
+                'booked', 'completed', 'invoiced', 'paid', 'closed', 'lost'],
+  statusLabels: { new: 'New', contacted: 'Contacted', waiting: 'Waiting on Customer',
+    quoted: 'Quote Sent', referred: 'Referred', scheduled: 'Scheduled', booked: 'Booked',
+    completed: 'Completed', invoiced: 'Invoice Sent', paid: 'Paid', closed: 'Closed', lost: 'Lost' },
+  openStatuses: ['new', 'contacted', 'waiting', 'quoted', 'referred', 'scheduled',
+                 'booked', 'invoiced'],
   refStatuses: ['sent', 'booked', 'no_booking'], fee: 25,
   ref: { sent: 1, booked: 0, lost: 0, paid: 0 },
   stripeReady: true, invoices: [], lastWcEmail: '', wcReady: true,
@@ -142,10 +149,11 @@ fs.writeFileSync(path.join(OUT, 'harness.html'), `<!doctype html><html lang="en"
 <div class="stats" id="stats"></div>
 <div class="banner" id="banner" hidden></div>
 <div class="tools" id="tools">
-  <input type="search" id="q" aria-label="Search">
+  <input type="search" id="q" placeholder="Search, or try city:marietta or is:unbilled" aria-label="Search">
   <select id="sf" aria-label="Filter"></select>
   <span class="muted" id="shown"></span>
 </div>
+<div class="quick" id="quick"></div>
 <div class="gridwrap"><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
   <div class="empty" id="empty" hidden>Nothing here yet.</div></div>
 <dialog id="dlg"><div class="dlg" id="dlgbody"></div></dialog>

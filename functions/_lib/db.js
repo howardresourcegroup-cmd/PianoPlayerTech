@@ -34,3 +34,27 @@ export async function purgeExpired(env, cutoff) {
   ).bind(cutoff).run();
   return (r.meta && r.meta.changes) || 0;
 }
+
+// The status vocabulary lives in the database so it can change without a
+// deploy. The hardcoded list stays as a fallback: a database that has not
+// had db/schema.sql applied yet must still show a working dashboard rather
+// than an empty Status dropdown.
+export const FALLBACK_STATUSES = [
+  { key: 'new', label: 'New', sort: 10, is_open: 1, is_won: 0 },
+  { key: 'contacted', label: 'Contacted', sort: 20, is_open: 1, is_won: 0 },
+  { key: 'referred', label: 'Referred', sort: 50, is_open: 1, is_won: 0 },
+  { key: 'booked', label: 'Booked', sort: 70, is_open: 1, is_won: 0 },
+  { key: 'closed', label: 'Closed', sort: 110, is_open: 0, is_won: 0 }
+];
+
+export async function loadStatuses(env) {
+  try {
+    const r = await env.DB.prepare(
+      'SELECT key, label, sort, is_open, is_won FROM statuses ORDER BY sort, key').all();
+    const rows = r.results || [];
+    return rows.length ? rows : FALLBACK_STATUSES;
+  } catch (err) {
+    console.error('status vocabulary unavailable, using the fallback', err && err.message);
+    return FALLBACK_STATUSES;
+  }
+}
