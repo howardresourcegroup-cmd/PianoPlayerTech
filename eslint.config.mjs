@@ -31,8 +31,9 @@ const BROWSER_GLOBALS = {
   innerWidth: 'readonly', innerHeight: 'readonly', scrollTo: 'readonly',
   removeEventListener: 'readonly', Blob: 'readonly', FileReader: 'readonly',
   matchMedia: 'readonly',
-  // Injected by the Google Analytics tag in the page, not by us.
-  gtag: 'readonly', dataLayer: 'readonly'
+  // Injected by tags in the page, not by us: the Google tag defines gtag
+  // and dataLayer, the Meta pixel snippet defines fbq.
+  gtag: 'readonly', dataLayer: 'readonly', fbq: 'writable'
 };
 
 const NODE_GLOBALS = {

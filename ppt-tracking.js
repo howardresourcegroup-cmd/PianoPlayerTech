@@ -1,18 +1,83 @@
-/* PianoPlayerTech — Google Ads conversion tracking
+/* PianoPlayerTech — conversion and analytics tracking
  *
- * Fires a conversion to Google Ads (tag AW-18254090927) on the two actions
- * that matter for this business: a lead form submission and a tap-to-call.
+ * Two actions matter for this business: a lead form submission and a
+ * tap-to-call. Both are reported to every platform that is configured --
+ * Google Ads, GA4, and the Meta pixel -- from one place, so they cannot
+ * drift apart and start disagreeing about how many leads there were.
  *
- * SETUP (one-time): in Google Ads -> Goals -> Conversions, create two
- * conversion actions and paste their labels below. A label looks like
- * "AW-18254090927/AbC-dEfGhIj". Until real labels are in place the guard
- * below makes this script a no-op, so it is safe to ship now.
+ * Every destination is optional. An unset or wrongly-shaped id makes that
+ * platform a no-op rather than an error, so this file is safe to ship
+ * before the accounts exist.
+ *
+ * SETUP:
+ *   Google Ads  already live. Labels below, from Goals -> Conversions.
+ *   GA4         paste the Measurement ID into PPT_ANALYTICS.ga4.
+ *               analytics.google.com -> Admin -> Data Streams. "G-XXXXXXXXXX".
+ *   Meta pixel  paste the Pixel ID into PPT_ANALYTICS.pixel.
+ *               business.facebook.com -> Events Manager. 15-16 digits.
+ *               Enabling this also needs connect.facebook.net added to
+ *               script-src in _headers, which is already there.
  */
 (function () {
   window.PPT_CONV = window.PPT_CONV || {
     lead: 'AW-18254090927/XVSRCPr89MQcEK-lnYBE', // "Submit lead form" conversion
     call: 'AW-18254090927/K0HlCPu8icUcEK-lnYBE'  // "Phone call clicks" conversion
   };
+
+  window.PPT_ANALYTICS = window.PPT_ANALYTICS || {
+    ga4: '',    // 'G-XXXXXXXXXX'
+    pixel: ''   // '123456789012345'
+  };
+
+  // Shape checks, not just emptiness. A half-typed id would otherwise
+  // configure a destination that silently never reports, which looks
+  // identical to having no traffic.
+  var GA4 = /^G-[A-Z0-9]{6,}$/i.test(window.PPT_ANALYTICS.ga4 || '') ? window.PPT_ANALYTICS.ga4 : '';
+  var PIXEL = /^\d{10,20}$/.test(String(window.PPT_ANALYTICS.pixel || '')) ? String(window.PPT_ANALYTICS.pixel) : '';
+
+  // ---- GA4
+  // gtag.js is already on the page for the Ads tag, and the library is the
+  // same whichever id loads it -- so GA4 is one more destination, not a
+  // second copy of the library.
+  if (GA4 && typeof gtag === 'function') gtag('config', GA4);
+
+  // ---- Meta pixel, loaded only when there is an id to load it for.
+  //
+  // The guard is around the loader alone, not around init: fbq may already
+  // exist because something else put it there, and the pixel still has to be
+  // told which id it reports to. Guarding both meant a pixel that loaded and
+  // then tracked nothing -- which looks exactly like having no visitors.
+  if (PIXEL) {
+   if (!window.fbq) {
+    (function (f, b, e, v, n, t, s) {
+      n = f.fbq = function () {
+        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+      };
+      if (!f._fbq) f._fbq = n;
+      n.push = n; n.loaded = true; n.version = '2.0'; n.queue = [];
+      t = b.createElement(e); t.async = true; t.src = v;
+      s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s);
+    })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+   }
+   window.fbq('init', PIXEL);
+   window.fbq('track', 'PageView');
+  }
+
+  // One call per action, fanned out to whatever is configured. Nothing here
+  // throws: an analytics failure must never affect a lead reaching the CRM.
+  function report(kind) {
+    try {
+      if (GA4 && typeof gtag === 'function') {
+        gtag('event', kind === 'lead' ? 'generate_lead' : 'phone_call', {
+          event_category: 'Contact',
+          event_label: location.pathname || '/'
+        });
+      }
+      if (PIXEL && typeof window.fbq === 'function') {
+        window.fbq('track', kind === 'lead' ? 'Lead' : 'Contact');
+      }
+    } catch (err) { /* analytics is never worth breaking a page for */ }
+  }
 
   function fire(sendTo) {
     if (typeof gtag !== 'function') return;
@@ -23,7 +88,7 @@
   // Tap-to-call — any tel: link, anywhere on the page.
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a[href^="tel:"]');
-    if (a) fire(window.PPT_CONV.call);
+    if (a) { fire(window.PPT_CONV.call); report('call'); }
   });
 
   // Lead capture -> Airtable (via the /api/lead Pages Function, which holds
@@ -63,6 +128,7 @@
     toAirtable(f);
     if (!f.hasAttribute('data-no-conversion')) {
       fire(window.PPT_CONV.lead);
+      report('lead');
     }
   }, true);
 })();
