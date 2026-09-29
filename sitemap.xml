@@ -96,6 +96,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://pianoplayertech.com/player-unit-mail-in-repair</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://pianoplayertech.com/player-diagnostic</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
