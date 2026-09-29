@@ -368,7 +368,20 @@
                     <textarea id="c-issue" name="issue" placeholder="Does it have a paper roll? Do the pedals move air? Does anything sound at all? Any detail helps."></textarea>
                     <button type="submit">Send Message &rarr;</button>
                 </form>
-                <p class="pp-note"><strong>Sending photos.</strong> The form takes text only. Send it, then email your photos of the nameplate and the roll mechanism to <a href="mailto:info@pianoplayertech.com?subject=Player%20piano%20photos%20for%20identification">info@pianoplayertech.com</a>. We match them to your message.</p>
+                <div class="pp-photos" id="photos">
+                    <h3>Send your photos</h3>
+                    <p>The nameplate and the roll mechanism are the two that tell us most. Send the message above first, then add your photos here.</p>
+                    <form class="pp-form" id="photo-form" action="/api/photos" method="POST" enctype="multipart/form-data" data-no-conversion data-no-airtable>
+                        <label for="p-email">Your email</label>
+                        <input type="email" id="p-email" name="email" placeholder="your@email.com" autocomplete="email" required>
+                        <label for="p-photos">Photos</label>
+                        <input type="file" id="p-photos" name="photos" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple required>
+                        <p class="pp-form__hint">Up to 5 photos, 5 MB each. JPEG, PNG, WebP or HEIC.</p>
+                        <button type="submit" id="photo-submit">Send photos &rarr;</button>
+                    </form>
+                    <p class="pp-photos__status" id="photo-status" role="status" aria-live="polite"></p>
+                    <p class="pp-form__hint">Rather use email? Send them to <a href="mailto:info@pianoplayertech.com?subject=Player%20piano%20photos%20for%20identification">info@pianoplayertech.com</a>.</p>
+                </div>
             </div>
         </div>
     </div>

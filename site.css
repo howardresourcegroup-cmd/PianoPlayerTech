@@ -958,6 +958,35 @@ a:hover > .pp-arrow, .pp-btn:hover .pp-arrow { transform: translateX(3px); }
 
 .pp-path__go--second { margin-top: 0.6rem; }
 
+/* ---------- photo upload ---------- */
+.pp-photos { margin-top: 2.25rem; padding-top: 2rem; border-top: 1px solid var(--_line); }
+.pp-photos > h3 {
+  margin: 0 0 0.4rem;
+  font-family: var(--pp-display);
+  font-weight: 400;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+  color: var(--_text);
+}
+.pp-photos > p { margin: 0 0 1.25rem; font-size: 0.98rem; color: var(--_muted); }
+.pp-form input[type='file'] { padding: 0.7rem 0.75rem; cursor: pointer; }
+.pp-form input[type='file']::file-selector-button {
+  margin-right: 0.9rem;
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--_text);
+  background: transparent;
+  border: 1px solid var(--_line-strong);
+  border-radius: var(--pp-radius);
+  cursor: pointer;
+}
+.pp-photos__status { min-height: 1.5em; margin: 1rem 0 0; font-weight: 600; }
+.pp-photos__status[data-state='ok'] { color: var(--pp-brass-hi); }
+.pp-photos__status[data-state='error'] { color: #f0a48a; }
+.pp-photos__status:empty { display: none; }
+
 /* ---------- quote (proof slot) ---------- */
 .pp-quote {
   margin: 0;

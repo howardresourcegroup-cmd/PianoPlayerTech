@@ -44,6 +44,15 @@
         "service_type",
         "system"
       ]
+    },
+    {
+      "id": "photo-form",
+      "action": "/api/photos",
+      "noConversion": true,
+      "fields": [
+        "email",
+        "photos"
+      ]
     }
   ],
   "player-repair.html": [

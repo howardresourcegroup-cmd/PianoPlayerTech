@@ -41,6 +41,51 @@
     }).observe(heroActions);
   }
 
+  // Photo upload. The limits are checked here so the customer hears about an
+  // oversized photo before waiting for it to upload; the server checks again.
+  var photoForm = document.getElementById('photo-form');
+  var photoStatus = document.getElementById('photo-status');
+  var photoSubmit = document.getElementById('photo-submit');
+  if (photoForm && photoStatus && photoSubmit && window.fetch && window.FormData) {
+    var EMAIL_INSTEAD = ' Please email them to info@pianoplayertech.com instead.';
+    var say = function (state, text) {
+      photoStatus.setAttribute('data-state', state);
+      photoStatus.textContent = text;
+    };
+    photoForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var files = photoForm.querySelector('input[type="file"]').files;
+      if (!files.length) return say('error', 'Please choose at least one photo.');
+      if (files.length > 5) return say('error', 'Please send up to 5 photos at a time.');
+      for (var i = 0; i < files.length; i++) {
+        if (files[i].size > 5 * 1024 * 1024) return say('error', 'Each photo must be under 5 MB.');
+      }
+      var label = photoSubmit.textContent;
+      photoSubmit.disabled = true;
+      photoSubmit.textContent = 'Sending\u2026';
+      say('', '');
+      fetch(photoForm.action, {
+        method: 'POST',
+        body: new window.FormData(photoForm),
+        headers: { Accept: 'application/json' }
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (res.ok && data.ok) {
+            photoForm.style.display = 'none';
+            say('ok', data.message || 'Photos received.');
+          } else {
+            say('error', data.message || ('We could not send those photos.' + EMAIL_INSTEAD));
+          }
+        });
+      }).catch(function () {
+        say('error', 'Could not connect.' + EMAIL_INSTEAD);
+      }).then(function () {
+        photoSubmit.disabled = false;
+        photoSubmit.textContent = label;
+      });
+    });
+  }
+
   // Cloudflare serves /tuning and /tuning.html as the same page, so compare
   // with the extension and any trailing slash removed.
   function clean(p) {
