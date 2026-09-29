@@ -11,8 +11,8 @@
  *
  * SETUP:
  *   Google Ads  already live. Labels below, from Goals -> Conversions.
- *   GA4         paste the Measurement ID into PPT_ANALYTICS.ga4.
- *               analytics.google.com -> Admin -> Data Streams. "G-XXXXXXXXXX".
+ *   GA4         live. The Measurement ID is in PPT_ANALYTICS.ga4, from
+ *               analytics.google.com -> Admin -> Data Streams.
  *   Meta pixel  paste the Pixel ID into PPT_ANALYTICS.pixel.
  *               business.facebook.com -> Events Manager. 15-16 digits.
  *               Enabling this also needs connect.facebook.net added to
@@ -25,7 +25,7 @@
   };
 
   window.PPT_ANALYTICS = window.PPT_ANALYTICS || {
-    ga4: '',    // 'G-XXXXXXXXXX'
+    ga4: 'G-QX5JVYR96H',
     pixel: ''   // '123456789012345'
   };
 
