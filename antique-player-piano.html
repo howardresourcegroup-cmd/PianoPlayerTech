@@ -111,293 +111,127 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --black:      #100c09;
-            --charcoal:   #2b221a;
-            --dark:       #241d16;
-            --gold:       #c9a84c;
-            --gold-light: #e4c97a;
-            --ivory:      #17120e;
-            --white:      #211a14;
-            --gray:       #a8998a;
-            --border:     #3a2f24;
-            --text:       #f0e6d8;
-            --muted:      #c2b3a2;
-        }
-        html { scroll-behavior: smooth; }
-        body { font-family: 'Inter', sans-serif; background: var(--ivory); color: var(--text); line-height: 1.7; }
-
-        /* NAV */
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(13,13,13,0.97); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 60px; }
-        .nav-logo { color: var(--text); text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.88rem; letter-spacing: 0.14em; text-transform: uppercase; }
-        .nav-links { display: flex; align-items: center; gap: 1.75rem; }
-        .nav-links a { color: rgba(240,230,216,0.7); text-decoration: none; font-size: 0.84rem; transition: color 0.2s; letter-spacing: 0.02em; }
-        .nav-links a:hover, .nav-links a.active { color: var(--text); }
-        .nav-cta { background: var(--gold); color: var(--black) !important; padding: 0.45rem 1rem; border-radius: 4px; font-weight: 600; transition: background 0.2s !important; }
-        .nav-cta:hover { background: var(--gold-light) !important; }
-        .nav-toggle { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
-        .nav-toggle span { display: block; width: 22px; height: 2px; background: var(--white); border-radius: 2px; transition: all 0.3s; }
-        .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: rgba(13,13,13,0.98); flex-direction: column; padding: 1rem 0; z-index: 99; border-top: 1px solid rgba(240,230,216,0.08); }
-        .mobile-nav.open { display: flex; }
-        .mobile-nav a { color: rgba(240,230,216,0.8); text-decoration: none; padding: 0.75rem 2rem; font-size: 0.9rem; border-bottom: 1px solid rgba(240,230,216,0.06); transition: color 0.2s; }
-        .mobile-nav a:last-child { border-bottom: none; }
-        .mobile-nav a:hover, .mobile-nav a.active { color: var(--gold); }
-        .mobile-nav .mobile-cta { background: var(--gold); color: var(--black) !important; margin: 0.75rem 1.5rem 0; border-radius: 4px; text-align: center; border-bottom: none !important; }
-        .mobile-nav .mobile-cta:hover { background: var(--gold-light) !important; }
-        @media (max-width: 1100px) {
-            .nav-links { display: none; }
-            .nav-toggle { display: flex; }
-        }
-
-        /* HERO */
-        .hero { min-height: 68vh; display: flex; align-items: center; justify-content: center; text-align: center; position: relative; overflow: hidden; padding: 8rem 1.5rem 4rem; background: linear-gradient(rgba(0,0,0,0.62), rgba(0,0,0,0.62)), url('Images/Restored%20Steinway%20B%20Series/539181654_1171946764950962_8603927953976914257_n.jpg') center/cover no-repeat; }
-        .hero-eyebrow { font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
-        .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2.4rem, 6vw, 4rem); color: var(--text); line-height: 1.15; margin-bottom: 1.25rem; }
-        .hero h1 span { color: var(--gold); }
-        .hero-desc { font-size: 1.05rem; color: rgba(240,230,216,0.6); max-width: 520px; margin: 0 auto 2.25rem; font-weight: 300; }
-        .hero-badges { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-bottom: 2rem; }
-        .hero-badge { background: rgba(240,230,216,0.1); border: 1px solid rgba(240,230,216,0.2); color: rgba(240,230,216,0.85); padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.78rem; font-family: 'Inter', sans-serif; letter-spacing: 0.04em; }
-        .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-        .btn-primary { background: var(--gold); color: var(--black); padding: 0.9rem 2rem; border-radius: 4px; font-weight: 600; font-size: 0.93rem; text-decoration: none; letter-spacing: 0.03em; transition: background 0.2s, transform 0.15s; display: inline-block; }
-        .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
-        .btn-secondary { background: transparent; color: var(--text); padding: 0.9rem 2rem; border-radius: 4px; font-weight: 500; font-size: 0.93rem; text-decoration: none; border: 1.5px solid rgba(240,230,216,0.35); transition: border-color 0.2s; display: inline-block; }
-        .btn-secondary:hover { border-color: var(--text); }
-
-        /* SECTIONS */
-        section { padding: 5rem 1.5rem; }
-        .section-inner { max-width: 1060px; margin: 0 auto; }
-        .section-label { font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
-        .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(1.85rem, 3.5vw, 2.7rem); color: var(--text); line-height: 1.2; margin-bottom: 0.9rem; }
-        .section-subtitle { font-size: 1rem; color: var(--gray); max-width: 560px; font-weight: 300; line-height: 1.75; }
-
-        /* SYSTEMS */
-        #systems { background: var(--white); }
-        .systems-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1.25rem; margin-top: 2.5rem; }
-        .system-card { background: var(--ivory); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
-        .system-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--text); margin-bottom: 0.6rem; }
-        .system-card p { font-size: 0.85rem; color: var(--gray); line-height: 1.65; }
-        .system-tag { display: inline-block; font-size: 0.7rem; font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
-
-        /* PROBLEMS */
-        #problems { background: var(--ivory); }
-        .problems-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; margin-top: 2.5rem; }
-        .problem-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; display: flex; gap: 1.1rem; }
-        .problem-number { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--border); line-height: 1; flex-shrink: 0; }
-        .problem-card h3 { font-size: 0.92rem; font-weight: 600; color: var(--text); margin-bottom: 0.35rem; }
-        .problem-card p { font-size: 0.83rem; color: var(--gray); line-height: 1.6; }
-
-        /* HOW IT WORKS */
-        #how { background: var(--white); }
-        .how-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0; margin-top: 2.5rem; position: relative; }
-        .how-step { padding: 1.75rem; position: relative; }
-        .how-step::after { content: ''; position: absolute; right: 0; top: 20%; bottom: 20%; width: 1px; background: var(--border); }
-        .how-step:last-child::after { display: none; }
-        .how-step-num { width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--gold); color: var(--black); font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
-        .how-step h3 { font-size: 0.95rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
-        .how-step p { font-size: 0.84rem; color: var(--gray); line-height: 1.65; }
-        @media (max-width: 600px) { .how-step::after { display: none; } }
-
-        /* PRICING */
-        #pricing { background: var(--charcoal); }
-        #pricing .section-label { color: var(--gold-light); }
-        #pricing .section-title { color: var(--text); }
-        #pricing .section-subtitle { color: rgba(240,230,216,0.55); }
-        .pricing-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-top: 2.5rem; }
-        .price-card { background: rgba(240,230,216,0.05); border: 1px solid rgba(240,230,216,0.1); border-radius: 8px; padding: 1.75rem; }
-        .price-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.15rem; color: var(--text); margin-bottom: 0.35rem; }
-        .price-card .amount { font-size: 2rem; font-weight: 700; color: var(--gold); font-family: 'Inter', sans-serif; line-height: 1.1; margin-bottom: 0.25rem; }
-        .price-card .amount span { font-size: 0.9rem; font-weight: 400; color: rgba(240,230,216,0.45); }
-        .price-card p { font-size: 0.83rem; color: rgba(240,230,216,0.5); line-height: 1.65; margin-top: 0.6rem; }
-        .price-note { margin-top: 1.5rem; padding: 1.25rem; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.25); border-radius: 6px; color: rgba(240,230,216,0.7); font-size: 0.85rem; line-height: 1.7; }
-
-        /* FAQ */
-        #faq { background: var(--ivory); }
-        .faq-list { margin-top: 2rem; max-width: 720px; }
-        details { border-bottom: 1px solid var(--border); }
-        summary { padding: 1.1rem 0; font-size: 0.95rem; font-weight: 500; color: var(--text); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
-        summary::after { content: '+'; color: var(--gold); font-size: 1.2rem; font-weight: 300; flex-shrink: 0; margin-left: 1rem; }
-        details[open] summary::after { content: '−'; }
-        .faq-body { padding: 0 0 1.25rem; font-size: 0.9rem; color: var(--gray); line-height: 1.75; }
-
-        /* CONTACT */
-        #contact { background: var(--white); }
-        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2rem; }
-        @media (max-width: 720px) { .contact-grid { grid-template-columns: 1fr; } }
-        .contact-info p { font-size: 0.9rem; color: var(--gray); line-height: 1.75; margin-bottom: 1.5rem; }
-        .contact-detail { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.1rem; }
-        .contact-detail-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.1rem; }
-        .contact-detail h4 { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-bottom: 0.2rem; }
-        .contact-detail p, .contact-detail a { font-size: 0.9rem; color: var(--gray); text-decoration: none; }
-        .contact-detail a:hover { color: var(--gold); }
-        .call-cta { display: inline-flex; align-items: center; gap: 0.6rem; background: var(--gold); color: var(--black); padding: 0.85rem 1.75rem; border-radius: 4px; font-weight: 600; font-size: 0.93rem; text-decoration: none; margin-top: 1.5rem; transition: background 0.2s; }
-        .call-cta:hover { background: var(--gold-light); }
-        .diagnosis-cta { display: inline-flex; align-items: center; gap: 0.6rem; background: transparent; color: var(--text); padding: 0.85rem 1.75rem; border-radius: 4px; font-weight: 500; font-size: 0.93rem; text-decoration: none; margin-top: 0.75rem; border: 1.5px solid var(--border); transition: border-color 0.2s, color 0.2s; }
-        .diagnosis-cta:hover { border-color: var(--gold); color: var(--gold); }
-        .contact-form-wrap h3 { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--text); margin-bottom: 1.25rem; }
-        .contact-form-wrap form { display: flex; flex-direction: column; gap: 0.75rem; }
-        .contact-form-wrap label { font-size: 0.8rem; font-weight: 600; color: var(--text); letter-spacing: 0.04em; }
-        .contact-form-wrap input, .contact-form-wrap textarea, .contact-form-wrap select { padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.88rem; background: var(--ivory); color: var(--text); transition: border-color 0.2s; }
-        .contact-form-wrap input:focus, .contact-form-wrap textarea:focus, .contact-form-wrap select:focus { outline: none; border-color: var(--gold); }
-        .contact-form-wrap textarea { min-height: 110px; resize: vertical; }
-        .contact-form-wrap button { background: var(--gold); color: var(--black); padding: 0.85rem; border: none; border-radius: 4px; font-weight: 600; font-size: 0.93rem; cursor: pointer; transition: background 0.2s; margin-top: 0.25rem; }
-        .contact-form-wrap button:hover { background: var(--gold-light); }
-
-        /* FOOTER */
-        footer { background: var(--charcoal); padding: 2rem 1.5rem; text-align: center; font-size: 0.8rem; color: rgba(240,230,216,0.3); line-height: 2; }
-        footer span { color: var(--gold); }
-        footer a { color: rgba(240,230,216,0.45); text-decoration: none; transition: color 0.2s; }
-        footer a:hover { color: var(--gold); }
-    
-        /* ---- Dark Natural theme corrections ---- */
-        body { background: var(--ivory); color: var(--text); }
-        input, textarea, select {
-            background: var(--dark); color: var(--text); border-color: var(--border);
-        }
-        input::placeholder, textarea::placeholder { color: #8d8073; }
-        input:focus, textarea:focus, select:focus { border-color: var(--gold); outline: none; }
-        select option { background: var(--dark); color: var(--text); }
-        details { border: 1px solid var(--border); }
-        hr { border-color: var(--border); }
-        ::selection { background: var(--gold); color: #17120e; }
-</style>
-    <link rel="stylesheet" href="/site.css">
+<link rel="stylesheet" href="/site.css">
 </head>
-<body>
+<body class="pp-has-actionbar">
 
-<nav>
-    <a href="/" class="nav-logo">PianoPlayerTech</a>
-    <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/player-repair.html" class="active">Player Repair</a>
-        <a href="/antique-player-piano.html">Restoration</a>
-        <a href="/tuning.html">Tuning</a>
-        <a href="#contact">Contact</a>
-        <a href="tel:4707589572" class="nav-cta">Call Now</a>
+<a class="pp-skip" href="#main">Skip to content</a>
+
+<header class="pp-header">
+    <div class="pp-header__inner">
+        <a class="pp-logo" href="/">PianoPlayer<span>Tech</span></a>
+        <button class="pp-nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="pp-nav"><span></span></button>
+        <nav class="pp-nav" id="pp-nav" aria-label="Main">
+            <a href="/antique-player-piano.html">Restoration</a>
+            <a href="/player-repair.html">Player Repair</a>
+            <a href="/player-unit-mail-in-repair.html">Mail-In Repair</a>
+            <a href="/tuning.html">Tuning</a>
+            <a class="pp-nav-phone" href="tel:4707589572">(470) 758-9572</a>
+            <a class="pp-btn pp-btn--primary pp-btn--small" href="#contact">Identify my piano</a>
+        </nav>
     </div>
-    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
-        <span></span><span></span><span></span>
-    </button>
-</nav>
+</header>
 
-<div class="mobile-nav" id="mobileNav">
-    <a href="/">Home</a>
-    <a href="/player-repair.html" class="active">Player Repair</a>
-    <a href="/antique-player-piano.html">Restoration</a>
-    <a href="/tuning.html">Tuning</a>
-    <a href="#contact">Contact</a>
-    <a href="tel:4707589572" class="mobile-cta">Call (470) 758-9572</a>
-</div>
+<main id="main">
 
-<!-- HERO -->
-<section class="hero" style="background: linear-gradient(rgba(0,0,0,0.66), rgba(0,0,0,0.66)), url('Images/piano-strings-og.jpg') center/cover no-repeat;">
-    <div>
-        <p class="hero-eyebrow">Pneumatic Player Piano Restoration &mdash; Serving the Southeast</p>
-        <h1>Antique <span>Player Piano</span> Repair</h1>
-        <p class="hero-desc">Ampico, Duo-Art, Welte-Mignon, Aeolian, Gulbransen, Nordiska and nickelodeon instruments. Not sure what you have? Start below &mdash; we will help you identify it.</p>
-        <div class="hero-badges">
-            <span class="hero-badge">Repairs &amp; full restorations</span>
-            <span class="hero-badge">Written quote before any work</span>
-            <span class="hero-badge">We travel to you across the Southeast</span>
-            <span class="hero-badge">Pneumatic &amp; electronic systems</span>
+<section class="pp-hero" style="--pp-hero-img:url('/Images/piano-strings-og.jpg')">
+    <div class="pp-wrap pp-hero__inner">
+        <p class="pp-hero__eyebrow">Pneumatic player pianos &middot; Serving the Southeast</p>
+        <h1 class="pp-hero__title">Antique Player Piano Repair <em>&amp; Restoration</em></h1>
+        <p class="pp-hero__lede">Ampico, Duo-Art, Welte-Mignon, Aeolian, Gulbransen, Nordiska and nickelodeon instruments. Not sure what you have? Send photos and we will identify it, free.</p>
+        <div class="pp-hero__actions">
+            <a class="pp-btn pp-btn--primary" href="#contact">Send photos for a free identification <span class="pp-arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="pp-btn pp-btn--ghost" href="tel:4707589572">Call (470) 758-9572</a>
         </div>
-        <div class="hero-buttons">
-            <a href="#identify" class="btn-primary">Identify My Piano</a>
-            <a href="tel:4707589572" class="btn-secondary">Call (470) 758-9572</a>
-        </div>
+        <ul class="pp-facts">
+            <li><strong>Six states</strong><span>We travel to you across the Southeast</span></li>
+            <li><strong>Written quote</strong><span>Before any work begins</span></li>
+            <li><strong>$8,000&ndash;$15,000</strong><span>Typical labor, full restoration</span></li>
+        </ul>
     </div>
 </section>
 
-<!-- IDENTIFY -->
-<section id="identify">
-    <div class="section-inner">
-        <p class="section-label">Start Here</p>
-        <h2 class="section-title">What Kind of Player Piano Do You Have?</h2>
-        <p class="section-subtitle" style="max-width: 760px;">Most people who call us have inherited an instrument and do not yet know what it is. There is one question that splits the whole field: <strong style="color:var(--gold);">is there a paper roll behind a panel above the keys?</strong> If yes, you have a pneumatic player &mdash; it runs on suction, not electricity, and it is almost certainly worth saving.</p>
-        <div class="systems-grid">
-            <div class="system-card">
-                <div class="system-tag">Pneumatic</div>
+<section class="pp-section pp-section--paper" id="identify">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">Start Here</p>
+        <h2 class="pp-title">What Kind of Player Piano Do You Have?</h2>
+        <p class="pp-lede">Most people who call us have inherited an instrument and do not yet know what it is. There is one question that splits the whole field: <strong>is there a paper roll behind a panel above the keys?</strong> If yes, you have a pneumatic player &mdash; it runs on suction, not electricity, and it is almost certainly worth saving.</p>
+        <div class="pp-grid">
+            <div class="pp-card">
+                <div class="pp-tag">Pneumatic</div>
                 <h3>Standard Player Piano</h3>
                 <p>A paper roll, a vacuum system, and (on many) two foot pedals you pump. The player plays whatever the roll says at whatever volume you pedal. The most common thing we are called out to.</p>
             </div>
-            <div class="system-card">
-                <div class="system-tag">Reproducing</div>
+            <div class="pp-card">
+                <div class="pp-tag">Reproducing</div>
                 <h3>Ampico</h3>
                 <p>American Piano Company's reproducing system. Encodes the original pianist's dynamics, so it recreates a performance rather than just the notes. Found in Chickering, Knabe, Mason &amp; Hamlin and others.</p>
             </div>
-            <div class="system-card">
-                <div class="system-tag">Reproducing</div>
+            <div class="pp-card">
+                <div class="pp-tag">Reproducing</div>
                 <h3>Duo-Art</h3>
                 <p>Aeolian's reproducing system, and the main rival to Ampico. Fitted to Steinway, Weber and Steck instruments among others. Worth identifying before anyone opens it up &mdash; these are the valuable ones.</p>
             </div>
-            <div class="system-card">
-                <div class="system-tag">Reproducing</div>
+            <div class="pp-card">
+                <div class="pp-tag">Reproducing</div>
                 <h3>Welte-Mignon</h3>
                 <p>The German original, and the system that started reproducing pianos. Rarer in the States and mechanically distinct from Ampico and Duo-Art, so it needs someone who knows the difference.</p>
             </div>
-            <div class="system-card">
-                <div class="system-tag">Piano Makers</div>
+            <div class="pp-card">
+                <div class="pp-tag">Piano Makers</div>
                 <h3>Aeolian, Gulbransen &amp; Nordiska</h3>
                 <p>These names are on the fallboard, not the mechanism. Gulbransen built the famous "easy to pedal" players; Aeolian built both pianos and the Duo-Art system. The nameplate and the mechanism are often two different companies.</p>
             </div>
-            <div class="system-card">
-                <div class="system-tag">Coin-Op</div>
+            <div class="pp-card">
+                <div class="pp-tag">Coin-Op</div>
                 <h3>Nickelodeons &amp; Orchestrions</h3>
                 <p>Same pneumatic principles with added ranks, percussion, and a coin mechanism. More moving parts, same leak-hunting approach.</p>
             </div>
         </div>
-        <p class="section-subtitle" style="max-width:760px;margin-top:2rem;">Have a modern electronic system instead &mdash; a screen, an app, or a box under the keybed? That is a different animal: see <a href="/disklavier-repair.html" style="color:var(--gold);">Disklavier</a>, <a href="/pianodisc-repair.html" style="color:var(--gold);">PianoDisc</a>, <a href="/qrs-repair.html" style="color:var(--gold);">QRS</a> or <a href="/spirio-repair.html" style="color:var(--gold);">Spirio</a>.</p>
-        <div style="margin-top:2rem;">
-            <a href="#contact" class="btn-primary">Send Us a Photo &mdash; We&rsquo;ll Identify It</a>
+        <p class="pp-lede">Have a modern electronic system instead &mdash; a screen, an app, or a box under the keybed? That is a different animal: see <a href="/disklavier-repair.html">Disklavier</a>, <a href="/pianodisc-repair.html">PianoDisc</a>, <a href="/qrs-repair.html">QRS</a> or <a href="/spirio-repair.html">Spirio</a>.</p>
+        <div>
+            <a href="#contact" class="pp-btn pp-btn--primary">Send Us a Photo &mdash; We&rsquo;ll Identify It</a>
         </div>
     </div>
 </section>
 
-<!-- COMMON PROBLEMS -->
-<section id="problems">
-    <div class="section-inner">
-        <p class="section-label">Common Issues</p>
-        <h2 class="section-title">Why Antique Players Stop Playing</h2>
-        <p class="section-subtitle">Nine times out of ten the piano is fine and the pneumatic system has aged out. All of the below are repairable.</p>
-        <div class="problems-grid">
-            <div class="problem-card">
-                <div class="problem-number">01</div>
+<section class="pp-section" id="problems">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">Common Issues</p>
+        <h2 class="pp-title">Why Antique Players Stop Playing</h2>
+        <p class="pp-lede">Nine times out of ten the piano is fine and the pneumatic system has aged out. All of the below are repairable.</p>
+        <div class="pp-grid">
+            <div class="pp-card">
                 <div>
                     <h3>Perished Tubing and Leaking Bellows</h3>
                     <p>The single most common failure. Original rubber tubing and bellows cloth harden, crack, and leak after several decades. A pneumatic system that cannot hold suction cannot play &mdash; and every other symptom usually traces back here.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">02</div>
+            <div class="pp-card">
                 <div>
                     <h3>Dead Notes While Others Play</h3>
                     <p>Individual pouches or valves have failed rather than the whole system. The player works, but a handful of notes never sound. Tedious to trace, straightforward to fix.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">03</div>
+            <div class="pp-card">
                 <div>
                     <h3>Roll Will Not Track or Advance</h3>
                     <p>Tracking mechanisms drift out of alignment and take-up spools slip. The roll wanders, tears at the edges, or stops feeding entirely. Usually adjustment rather than replacement.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">04</div>
+            <div class="pp-card">
                 <div>
                     <h3>Pedals Pump but Nothing Happens</h3>
                     <p>You are moving air and it is escaping before it reaches the notes. Points to a major leak in the exhausters, the reservoir, or the main supply &mdash; and it is the symptom people most often assume is fatal. It usually is not.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">05</div>
+            <div class="pp-card">
                 <div>
                     <h3>Electric Vacuum Motor Dead or Screaming</h3>
                     <p>On instruments fitted with a suction box, motors seize, bearings dry out, and switches fail. Repairable or replaceable without touching the pneumatics.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">06</div>
+            <div class="pp-card">
                 <div>
                     <h3>It Plays, but the Piano Sounds Awful</h3>
                     <p>The player is doing its job and the piano underneath needs tuning, regulation, or hammer work. Easy to mistake for a player fault &mdash; and much cheaper to fix.</p>
@@ -407,25 +241,21 @@
     </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section id="how">
-    <div class="section-inner">
-        <p class="section-label">The Process</p>
-        <h2 class="section-title">How It Works</h2>
-        <p class="section-subtitle">No guesswork. Every job starts the same way.</p>
-        <div class="how-steps">
-            <div class="how-step">
-                <div class="how-step-num">1</div>
+<section class="pp-section pp-section--raised" id="how">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">The Process</p>
+        <h2 class="pp-title">How It Works</h2>
+        <p class="pp-lede">No guesswork. Every job starts the same way.</p>
+        <div class="pp-steps">
+            <div class="pp-step">
                 <h3>Tell us what you have</h3>
                 <p>Call, or send a photo of the nameplate and the roll mechanism through the form. We will tell you what system it is before anyone comes out.</p>
             </div>
-            <div class="how-step">
-                <div class="how-step-num">2</div>
+            <div class="pp-step">
                 <h3>Assessment and written quote</h3>
                 <p>We assess the instrument, tell you what has failed and whether it needs a repair or a full restoration, and put the price in writing.</p>
             </div>
-            <div class="how-step">
-                <div class="how-step-num">3</div>
+            <div class="pp-step">
                 <h3>You decide</h3>
                 <p>Written quote, no pressure. Nothing is worked on until you approve it. For the work itself, we travel to you across the Southeast.</p>
             </div>
@@ -433,33 +263,47 @@
     </div>
 </section>
 
-<!-- SCOPE -->
-<section id="pricing">
-    <div class="section-inner">
-        <p class="section-label">What We Take On</p>
-        <h2 class="section-title">Repairs and Full Restorations</h2>
-        <p class="section-subtitle" style="max-width:740px;">We get antique players working reliably again &mdash; leak tracing, tubing, pouches, valves, tracking, motors, and the acoustic piano underneath. Some instruments need a focused repair and some need a full restoration. We will tell you plainly which one yours is.</p>
-        <div class="pricing-cards">
-            <div class="price-card">
+<section class="pp-section pp-section--paper" id="pricing">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">What We Take On</p>
+        <h2 class="pp-title">Repairs and Full Restorations</h2>
+        <p class="pp-lede">We get antique players working reliably again &mdash; leak tracing, tubing, pouches, valves, tracking, motors, and the acoustic piano underneath. Some instruments need a focused repair and some need a full restoration. We will tell you plainly which one yours is.</p>
+        <div class="pp-prices">
+            <div class="pp-price">
                 <h3>Repairs</h3>
-                <div class="amount">Quoted <span>per job</span></div>
+                <div class="pp-price__amount">Quoted <span>per job</span></div>
                 <p>Tubing, dead notes, tracking and motor work. Contact us and we will talk through the options for your instrument.</p>
             </div>
-            <div class="price-card">
+            <div class="pp-price">
                 <h3>Full Restoration</h3>
-                <div class="amount">$8,000&ndash;$15,000 <span>typical labor</span></div>
+                <div class="pp-price__amount">$8,000&ndash;$15,000 <span>typical labor</span></div>
                 <p>Quoted per instrument after assessment, depending on the system and its condition. Written quote before any work begins.</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- FAQ -->
-<section id="faq">
-    <div class="section-inner">
-        <p class="section-label">FAQ</p>
-        <h2 class="section-title">Antique Player Piano Questions</h2>
-        <div class="faq-list">
+<section class="pp-section" id="area">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">Where we travel</p>
+        <h2 class="pp-title">Six states, and we come to the piano</h2>
+        <p class="pp-lede">A player piano is not something you ship. For pneumatic work we travel to the instrument, anywhere in these states.</p>
+        <ul class="pp-areas pp-areas--spaced">
+            <li>Georgia</li>
+            <li>Florida</li>
+            <li>Alabama</li>
+            <li>South Carolina</li>
+            <li>North Carolina</li>
+            <li>Tennessee</li>
+        </ul>
+    </div>
+</section>
+
+<section class="pp-section pp-section--raised" id="faq">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">FAQ</p>
+        <h2 class="pp-title">Antique Player Piano Questions</h2>
+        <div class="pp-faq">
             <details>
                 <summary>How do I tell what kind of player piano I have?</summary>
                 <div class="faq-body">Look for a paper roll behind a hinged panel above the keys. If there is one, it is a pneumatic player driven by suction, not electricity. A nameplate on the fallboard or inside the lid usually names the piano maker (Aeolian, Gulbransen, Nordiska), while the player mechanism itself may be a different brand entirely &mdash; Ampico, Duo-Art, or Welte-Mignon. Send us a photo of the nameplate and the roll mechanism and we will tell you what you have.</div>
@@ -488,31 +332,27 @@
     </div>
 </section>
 
-<!-- CONTACT -->
-<section id="contact">
-    <div class="section-inner">
-        <div class="contact-grid">
-            <div class="contact-info">
-                <p class="section-label">Get Started</p>
-                <h2 class="section-title">Send a Photo &mdash; We&rsquo;ll Tell You What It Is</h2>
+<section class="pp-section" id="contact">
+    <div class="pp-wrap">
+        <div class="pp-contact">
+            <div class="pp-contact__info">
+                <p class="pp-eyebrow">Get Started</p>
+                <h2 class="pp-title">Send a Photo &mdash; We&rsquo;ll Tell You What It Is</h2>
                 <p>The fastest way to find out what you have is to show us. Send a photo of the nameplate and the roll mechanism and we will identify the system, tell you whether it is worth reviving, and quote the next step. No charge for that.</p>
-                <div class="contact-detail">
-                    <div class="contact-detail-icon">&mdash;</div>
+                <div class="pp-contact__item">
                     <div><h4>Phone</h4><a href="tel:4707589572">(470) 758-9572</a></div>
                 </div>
-                <div class="contact-detail">
-                    <div class="contact-detail-icon">&mdash;</div>
+                <div class="pp-contact__item">
                     <div><h4>Email</h4><a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a></div>
                 </div>
-                <div class="contact-detail">
-                    <div class="contact-detail-icon">&mdash;</div>
+                <div class="pp-contact__item">
                     <div><h4>Service Area</h4><p>Georgia, Florida, Alabama, South Carolina, North Carolina &amp; Tennessee &mdash; we travel to you</p></div>
                 </div>
-                <a href="tel:4707589572" class="call-cta">Call (470) 758-9572</a>
+                <a href="tel:4707589572" class="pp-btn pp-btn--primary">Call (470) 758-9572</a>
             </div>
-            <div class="contact-form-wrap">
+            <div class="pp-form-panel">
                 <h3>What Have You Got?</h3>
-                <form action="https://formspree.io/f/xeebglab" method="POST">
+                <form class="pp-form" action="https://formspree.io/f/xeebglab" method="POST">
                     <input type="hidden" name="_next" value="https://pianoplayertech.com/thank-you">
                     <input type="hidden" name="_subject" value="Antique Player Piano Inquiry — PianoPlayerTech">
                     <input type="hidden" name="service_type" value="Player Repair">
@@ -528,43 +368,88 @@
                     <textarea id="c-issue" name="issue" placeholder="Does it have a paper roll? Do the pedals move air? Does anything sound at all? Any detail helps."></textarea>
                     <button type="submit">Send Message &rarr;</button>
                 </form>
+                <p class="pp-note"><strong>Sending photos.</strong> The form takes text only. Send it, then email your photos of the nameplate and the roll mechanism to <a href="mailto:info@pianoplayertech.com?subject=Player%20piano%20photos%20for%20identification">info@pianoplayertech.com</a>. We match them to your message.</p>
             </div>
         </div>
     </div>
 </section>
 
-<footer>
-    <p>
-        &copy; 2026 <span>PianoPlayerTech</span> &nbsp;|&nbsp; Atlanta &amp; North Georgia Player Piano Repair &amp; Tuning<br>
-        <a href="tel:4707589572">(470) 758-9572</a> &nbsp;&middot;&nbsp;
-        <a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a> &nbsp;&middot;&nbsp;
-        <a href="/player-repair.html">All player piano services</a> &nbsp;&middot;&nbsp;
-        <a href="/antique-player-piano.html">Antique Player Pianos</a> &nbsp;&middot;&nbsp;
-        <a href="/for-technicians.html">For Technicians</a> &nbsp;&middot;&nbsp;
-        <a href="/player-diagnostic.html">Diagnose My Player System</a> &nbsp;&middot;&nbsp;
-        <a href="/piano-repair.html">Piano Repair</a> &nbsp;&middot;&nbsp; <a href="/piano-tuning-cost.html">Piano Tuning Cost</a> &nbsp;&middot;&nbsp; <a href="/piano-cleaning.html">Piano Cleaning</a> &nbsp;&middot;&nbsp; <a href="/piano-teachers.html">For Piano Teachers</a> &nbsp;&middot;&nbsp; <a href="/review">Leave a Review</a> &nbsp;&middot;&nbsp;
-        <a href="/privacy-policy">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="/terms-of-service">Terms of Service</a> &nbsp;&middot;&nbsp;
-        <a href="https://howardresourcegroup.com/websites.html" target="_blank" rel="noopener">Website by Howard Resource Group</a>
-    </p>
+<!-- PROOF SLOT: case study
+     Fill in and uncomment when there is a finished job to show, with the
+     owner's permission and the business's own photos.
+<section class="pp-section pp-section--paper" id="work">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">Recent work</p>
+        <h2 class="pp-title">[Instrument, year, town]</h2>
+        <p class="pp-lede">[What had failed, what was done, how long it took.]</p>
+    </div>
+</section>
+-->
+<!-- PROOF SLOT: review
+<section class="pp-section" id="reviews">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">In their words</p>
+        <blockquote class="pp-quote">[The customer's words, unedited]<cite>[Name, town]</cite></blockquote>
+    </div>
+</section>
+-->
+
+</main>
+
+<footer class="pp-footer">
+    <div class="pp-wrap">
+        <div class="pp-footer__cols">
+            <div class="pp-footer__about">
+                <a class="pp-logo" href="/">PianoPlayer<span>Tech</span></a>
+                <p>Player piano repair and restoration. Pneumatic work across the Southeast, electronic systems in-home across metro Atlanta and North Georgia, and mail-in repair from anywhere in the US.</p>
+                <p><a href="tel:4707589572">(470) 758-9572</a><br><a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a></p>
+            </div>
+            <div>
+                <h2>Services</h2>
+                <ul>
+                    <li><a href="/antique-player-piano.html">Antique Player Pianos</a></li>
+                    <li><a href="/player-repair.html">All player piano services</a></li>
+                    <li><a href="/player-unit-mail-in-repair.html">Mail-In Unit Repair</a></li>
+                    <li><a href="/tuning.html">Piano Tuning</a></li>
+                    <li><a href="/piano-repair.html">Piano Repair</a></li>
+                    <li><a href="/piano-cleaning.html">Piano Cleaning</a></li>
+                </ul>
+            </div>
+            <div>
+                <h2>Player systems</h2>
+                <ul>
+                    <li><a href="/disklavier-repair.html">Yamaha Disklavier</a></li>
+                    <li><a href="/pianodisc-repair.html">PianoDisc</a></li>
+                    <li><a href="/qrs-repair.html">QRS Pianomation</a></li>
+                    <li><a href="/spirio-repair.html">Steinway Spirio</a></li>
+                    <li><a href="/player-diagnostic.html">Diagnose My Player System</a></li>
+                </ul>
+            </div>
+            <div>
+                <h2>More</h2>
+                <ul>
+                    <li><a href="/for-technicians.html">For Technicians</a></li>
+                    <li><a href="/piano-teachers.html">For Piano Teachers</a></li>
+                    <li><a href="/piano-tuning-cost.html">Piano Tuning Cost</a></li>
+                    <li><a href="/review">Leave a Review</a></li>
+                    <li><a href="/privacy-policy">Privacy Policy</a></li>
+                    <li><a href="/terms-of-service">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="pp-footer__base">
+            <span>&copy; 2026 PianoPlayerTech</span>
+            <a href="https://howardresourcegroup.com/websites.html" target="_blank" rel="noopener">Website by Howard Resource Group</a>
+        </div>
+    </div>
 </footer>
 
-<script>
-var btn = document.getElementById('navToggle');
-var nav = document.getElementById('mobileNav');
-if (btn && nav) {
-    btn.addEventListener('click', function() {
-        var open = nav.classList.toggle('open');
-        btn.setAttribute('aria-expanded', open);
-    });
-    document.addEventListener('click', function(e) {
-        if (!btn.contains(e.target) && !nav.contains(e.target)) {
-            nav.classList.remove('open');
-            btn.setAttribute('aria-expanded', false);
-        }
-    });
-}
-</script>
+<div class="pp-actionbar">
+    <a class="pp-btn pp-btn--primary" href="#contact">Send photos, free ID</a>
+    <a class="pp-btn pp-btn--ghost" href="tel:4707589572" aria-label="Call (470) 758-9572">Call</a>
+</div>
 
+    <script src="/site.js" defer></script>
     <script src="/ppt-tracking.js"></script>
 </body>
 </html>

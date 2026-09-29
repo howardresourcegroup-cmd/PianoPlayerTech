@@ -53,160 +53,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --black:      #100c09;
-            --charcoal:   #2b221a;
-            --dark:       #241d16;
-            --gold:       #c9a84c;
-            --gold-light: #e4c97a;
-            --ivory:      #17120e;
-            --white:      #211a14;
-            --gray:       #a8998a;
-            --border:     #3a2f24;
-            --text:       #f0e6d8;
-            --muted:      #c2b3a2;
-        }
-        html { scroll-behavior: smooth; }
-        body { font-family: 'Inter', sans-serif; background: var(--ivory); color: var(--text); line-height: 1.7; }
-
-        /* NAV */
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(13,13,13,0.97); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 60px; }
-        .nav-logo { color: var(--text); text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.88rem; letter-spacing: 0.14em; text-transform: uppercase; }
-        .nav-links { display: flex; align-items: center; gap: 1.75rem; }
-        .nav-links a { color: rgba(240,230,216,0.7); text-decoration: none; font-size: 0.84rem; transition: color 0.2s; letter-spacing: 0.02em; }
-        .nav-links a:hover, .nav-links a.active { color: var(--text); }
-        .nav-cta { background: var(--gold); color: var(--black) !important; padding: 0.45rem 1rem; border-radius: 4px; font-weight: 600; transition: background 0.2s !important; }
-        .nav-cta:hover { background: var(--gold-light) !important; }
-        .nav-toggle { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
-        .nav-toggle span { display: block; width: 22px; height: 2px; background: var(--white); border-radius: 2px; transition: all 0.3s; }
-        .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: rgba(13,13,13,0.98); flex-direction: column; padding: 1rem 0; z-index: 99; border-top: 1px solid rgba(240,230,216,0.08); }
-        .mobile-nav.open { display: flex; }
-        .mobile-nav a { color: rgba(240,230,216,0.8); text-decoration: none; padding: 0.75rem 2rem; font-size: 0.9rem; border-bottom: 1px solid rgba(240,230,216,0.06); transition: color 0.2s; }
-        .mobile-nav a:last-child { border-bottom: none; }
-        .mobile-nav a:hover, .mobile-nav a.active { color: var(--gold); }
-        .mobile-nav .mobile-cta { background: var(--gold); color: var(--black) !important; margin: 0.75rem 1.5rem 0; border-radius: 4px; text-align: center; border-bottom: none !important; }
-        .mobile-nav .mobile-cta:hover { background: var(--gold-light) !important; }
-        @media (max-width: 1100px) {
-            .nav-links { display: none; }
-            .nav-toggle { display: flex; }
-        }
-
-        /* HERO */
-        .hero { min-height: 68vh; display: flex; align-items: center; justify-content: center; text-align: center; position: relative; overflow: hidden; padding: 8rem 1.5rem 4rem; background: linear-gradient(rgba(0,0,0,0.62), rgba(0,0,0,0.62)), url('Images/Restored%20Steinway%20B%20Series/539181654_1171946764950962_8603927953976914257_n.jpg') center/cover no-repeat; }
-        .hero-eyebrow { font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
-        .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2.4rem, 6vw, 4rem); color: var(--text); line-height: 1.15; margin-bottom: 1.25rem; }
-        .hero h1 span { color: var(--gold); }
-        .hero-desc { font-size: 1.05rem; color: rgba(240,230,216,0.6); max-width: 520px; margin: 0 auto 2.25rem; font-weight: 300; }
-        .hero-badges { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-bottom: 2rem; }
-        .hero-badge { background: rgba(240,230,216,0.1); border: 1px solid rgba(240,230,216,0.2); color: rgba(240,230,216,0.85); padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.78rem; font-family: 'Inter', sans-serif; letter-spacing: 0.04em; }
-        .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-        .btn-primary { background: var(--gold); color: var(--black); padding: 0.9rem 2rem; border-radius: 4px; font-weight: 600; font-size: 0.93rem; text-decoration: none; letter-spacing: 0.03em; transition: background 0.2s, transform 0.15s; display: inline-block; }
-        .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
-        .btn-secondary { background: transparent; color: var(--text); padding: 0.9rem 2rem; border-radius: 4px; font-weight: 500; font-size: 0.93rem; text-decoration: none; border: 1.5px solid rgba(240,230,216,0.35); transition: border-color 0.2s; display: inline-block; }
-        .btn-secondary:hover { border-color: var(--text); }
-
-        /* SECTIONS */
-        section { padding: 5rem 1.5rem; }
-        .section-inner { max-width: 1060px; margin: 0 auto; }
-        .section-label { font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
-        .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(1.85rem, 3.5vw, 2.7rem); color: var(--text); line-height: 1.2; margin-bottom: 0.9rem; }
-        .section-subtitle { font-size: 1rem; color: var(--gray); max-width: 560px; font-weight: 300; line-height: 1.75; }
-
-        /* SYSTEMS */
-        #systems { background: var(--white); }
-        .systems-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1.25rem; margin-top: 2.5rem; }
-        .system-card { background: var(--ivory); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
-        .system-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--text); margin-bottom: 0.6rem; }
-        .system-card p { font-size: 0.85rem; color: var(--gray); line-height: 1.65; }
-        .system-link { display: inline-block; margin-top: 0.75rem; font-size: 0.82rem; font-weight: 600; color: var(--gold); text-decoration: none; }
-        .system-link:hover { color: var(--text); }
-        .system-tag { display: inline-block; font-size: 0.7rem; font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
-
-        /* PROBLEMS */
-        #problems { background: var(--ivory); }
-        .problems-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; margin-top: 2.5rem; }
-        .problem-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; display: flex; gap: 1.1rem; }
-        .problem-number { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--border); line-height: 1; flex-shrink: 0; }
-        .problem-card h3 { font-size: 0.92rem; font-weight: 600; color: var(--text); margin-bottom: 0.35rem; }
-        .problem-card p { font-size: 0.83rem; color: var(--gray); line-height: 1.6; }
-
-        /* HOW IT WORKS */
-        #how { background: var(--white); }
-        .how-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0; margin-top: 2.5rem; position: relative; }
-        .how-step { padding: 1.75rem; position: relative; }
-        .how-step::after { content: ''; position: absolute; right: 0; top: 20%; bottom: 20%; width: 1px; background: var(--border); }
-        .how-step:last-child::after { display: none; }
-        .how-step-num { width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--gold); color: var(--black); font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
-        .how-step h3 { font-size: 0.95rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
-        .how-step p { font-size: 0.84rem; color: var(--gray); line-height: 1.65; }
-        @media (max-width: 600px) { .how-step::after { display: none; } }
-
-        /* PRICING */
-        #pricing { background: var(--charcoal); }
-        #pricing .section-label { color: var(--gold-light); }
-        #pricing .section-title { color: var(--text); }
-        #pricing .section-subtitle { color: rgba(240,230,216,0.55); }
-        .pricing-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-top: 2.5rem; }
-        .price-card { background: rgba(240,230,216,0.05); border: 1px solid rgba(240,230,216,0.1); border-radius: 8px; padding: 1.75rem; }
-        .price-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.15rem; color: var(--text); margin-bottom: 0.35rem; }
-        .price-card .amount { font-size: 2rem; font-weight: 700; color: var(--gold); font-family: 'Inter', sans-serif; line-height: 1.1; margin-bottom: 0.25rem; }
-        .price-card .amount span { font-size: 0.9rem; font-weight: 400; color: rgba(240,230,216,0.45); }
-        .price-card p { font-size: 0.83rem; color: rgba(240,230,216,0.5); line-height: 1.65; margin-top: 0.6rem; }
-        .price-note { margin-top: 1.5rem; padding: 1.25rem; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.25); border-radius: 6px; color: rgba(240,230,216,0.7); font-size: 0.85rem; line-height: 1.7; }
-
-        /* FAQ */
-        #faq { background: var(--ivory); }
-        .faq-list { margin-top: 2rem; max-width: 720px; }
-        details { border-bottom: 1px solid var(--border); }
-        summary { padding: 1.1rem 0; font-size: 0.95rem; font-weight: 500; color: var(--text); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
-        summary::after { content: '+'; color: var(--gold); font-size: 1.2rem; font-weight: 300; flex-shrink: 0; margin-left: 1rem; }
-        details[open] summary::after { content: '−'; }
-        .faq-body { padding: 0 0 1.25rem; font-size: 0.9rem; color: var(--gray); line-height: 1.75; }
-
-        /* CONTACT */
-        #contact { background: var(--white); }
-        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2rem; }
-        @media (max-width: 720px) { .contact-grid { grid-template-columns: 1fr; } }
-        .contact-info p { font-size: 0.9rem; color: var(--gray); line-height: 1.75; margin-bottom: 1.5rem; }
-        .contact-detail { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.1rem; }
-        .contact-detail-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.1rem; }
-        .contact-detail h4 { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-bottom: 0.2rem; }
-        .contact-detail p, .contact-detail a { font-size: 0.9rem; color: var(--gray); text-decoration: none; }
-        .contact-detail a:hover { color: var(--gold); }
-        .call-cta { display: inline-flex; align-items: center; gap: 0.6rem; background: var(--gold); color: var(--black); padding: 0.85rem 1.75rem; border-radius: 4px; font-weight: 600; font-size: 0.93rem; text-decoration: none; margin-top: 1.5rem; transition: background 0.2s; }
-        .call-cta:hover { background: var(--gold-light); }
-        .diagnosis-cta { display: inline-flex; align-items: center; gap: 0.6rem; background: transparent; color: var(--text); padding: 0.85rem 1.75rem; border-radius: 4px; font-weight: 500; font-size: 0.93rem; text-decoration: none; margin-top: 0.75rem; border: 1.5px solid var(--border); transition: border-color 0.2s, color 0.2s; }
-        .diagnosis-cta:hover { border-color: var(--gold); color: var(--gold); }
-        .contact-form-wrap h3 { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--text); margin-bottom: 1.25rem; }
-        .contact-form-wrap form { display: flex; flex-direction: column; gap: 0.75rem; }
-        .contact-form-wrap label { font-size: 0.8rem; font-weight: 600; color: var(--text); letter-spacing: 0.04em; }
-        .contact-form-wrap input, .contact-form-wrap textarea, .contact-form-wrap select { padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.88rem; background: var(--ivory); color: var(--text); transition: border-color 0.2s; }
-        .contact-form-wrap input:focus, .contact-form-wrap textarea:focus, .contact-form-wrap select:focus { outline: none; border-color: var(--gold); }
-        .contact-form-wrap textarea { min-height: 110px; resize: vertical; }
-        .contact-form-wrap button { background: var(--gold); color: var(--black); padding: 0.85rem; border: none; border-radius: 4px; font-weight: 600; font-size: 0.93rem; cursor: pointer; transition: background 0.2s; margin-top: 0.25rem; }
-        .contact-form-wrap button:hover { background: var(--gold-light); }
-
-        /* FOOTER */
-        footer { background: var(--charcoal); padding: 2rem 1.5rem; text-align: center; font-size: 0.8rem; color: rgba(240,230,216,0.3); line-height: 2; }
-        footer span { color: var(--gold); }
-        footer a { color: rgba(240,230,216,0.45); text-decoration: none; transition: color 0.2s; }
-        footer a:hover { color: var(--gold); }
-    
-        /* ---- Dark Natural theme corrections ---- */
-        body { background: var(--ivory); color: var(--text); }
-        input, textarea, select {
-            background: var(--dark); color: var(--text); border-color: var(--border);
-        }
-        input::placeholder, textarea::placeholder { color: #8d8073; }
-        input:focus, textarea:focus, select:focus { border-color: var(--gold); outline: none; }
-        select option { background: var(--dark); color: var(--text); }
-        details { border: 1px solid var(--border); }
-        hr { border-color: var(--border); }
-        ::selection { background: var(--gold); color: #17120e; }
-</style>
-    <script type="application/ld+json">
+<script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
@@ -222,95 +69,87 @@
     </script>
     <link rel="stylesheet" href="/site.css">
 </head>
-<body>
+<body class="pp-has-actionbar">
 
-<nav>
-    <a href="/" class="nav-logo">PianoPlayerTech</a>
-    <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/player-repair.html" class="active">Player Repair</a>
-        <a href="/antique-player-piano.html">Restoration</a>
-        <a href="/tuning.html">Tuning</a>
-        <a href="#contact">Contact</a>
-        <a href="tel:4707589572" class="nav-cta">Call Now</a>
+<a class="pp-skip" href="#main">Skip to content</a>
+
+<header class="pp-header">
+    <div class="pp-header__inner">
+        <a class="pp-logo" href="/">PianoPlayer<span>Tech</span></a>
+        <button class="pp-nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="pp-nav"><span></span></button>
+        <nav class="pp-nav" id="pp-nav" aria-label="Main">
+            <a href="/antique-player-piano.html">Restoration</a>
+            <a href="/player-repair.html">Player Repair</a>
+            <a href="/player-unit-mail-in-repair.html">Mail-In Repair</a>
+            <a href="/tuning.html">Tuning</a>
+            <a class="pp-nav-phone" href="tel:4707589572">(470) 758-9572</a>
+            <a class="pp-btn pp-btn--primary pp-btn--small" href="#contact">Book a diagnosis</a>
+        </nav>
     </div>
-    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
-        <span></span><span></span><span></span>
-    </button>
-</nav>
+</header>
 
-<div class="mobile-nav" id="mobileNav">
-    <a href="/">Home</a>
-    <a href="/player-repair.html" class="active">Player Repair</a>
-    <a href="/antique-player-piano.html">Restoration</a>
-    <a href="/tuning.html">Tuning</a>
-    <a href="#contact">Contact</a>
-    <a href="tel:4707589572" class="mobile-cta">Call (470) 758-9572</a>
-</div>
+<main id="main">
 
-<!-- HERO -->
-<section class="hero">
-    <div>
-        <p class="hero-eyebrow">North Georgia Player Piano Repair &amp; Service</p>
-        <h1>Player Piano <span>Repair &amp; Service</span></h1>
-        <p class="hero-desc">Yamaha Disklavier, PianoDisc, QRS Pianomation, Steinway Spirio, and all electric player systems. In-home diagnosis and repair throughout North Georgia. Outside North Georgia? We take <a href="/player-unit-mail-in-repair.html" style="color:var(--gold);">mail-in repair</a> from anywhere in the US.</p>
-        <div class="hero-badges">
-            <span class="hero-badge">$100 flat-rate diagnosis</span>
-            <span class="hero-badge">$125/hr repair labor</span>
-            <span class="hero-badge">In-home service — we come to you</span>
-            <span class="hero-badge">All makes &amp; brands</span>
+<section class="pp-hero" style="--pp-hero-img:url('/Images/Restored%20Steinway%20B%20Series/539181654_1171946764950962_8603927953976914257_n.jpg')">
+    <div class="pp-wrap pp-hero__inner">
+        <p class="pp-hero__eyebrow">Electronic player systems &middot; Metro Atlanta &amp; North Georgia</p>
+        <h1 class="pp-hero__title">Player Piano <em>Repair &amp; Service</em></h1>
+        <p class="pp-hero__lede">Yamaha Disklavier, PianoDisc, QRS Pianomation, Steinway Spirio, and all electric player systems. In-home diagnosis and repair throughout North Georgia.</p>
+        <div class="pp-hero__actions">
+            <a class="pp-btn pp-btn--primary" href="#contact">Book the $100 diagnosis <span class="pp-arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="pp-btn pp-btn--ghost" href="/player-unit-mail-in-repair.html">Outside the area? Mail-in repair</a>
         </div>
-        <div class="hero-buttons">
-            <a href="#contact" class="btn-primary">Book a Player System Diagnosis</a>
-            <a href="#contact" class="btn-secondary">Contact Us First</a>
-        </div>
+        <ul class="pp-facts">
+            <li><strong>$100</strong><span>Flat-rate in-home diagnosis</span></li>
+            <li><strong>$125 an hour</strong><span>Repair labor, parts at cost</span></li>
+            <li><strong>No diagnosis, no charge</strong><span>If we can&rsquo;t find the fault, you don&rsquo;t pay</span></li>
+        </ul>
     </div>
 </section>
 
-<!-- SYSTEMS WE SERVICE -->
-<section id="systems">
-    <div class="section-inner">
-        <p class="section-label">What We Work On</p>
-        <h2 class="section-title">Systems We Service</h2>
-        <p class="section-subtitle">We specialize in modern electric player systems — the kind most piano technicians don't touch.</p>
-        <div class="systems-grid">
-            <div class="system-card">
-                <div class="system-tag">Yamaha</div>
+<section class="pp-section pp-section--paper" id="systems">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">What We Work On</p>
+        <h2 class="pp-title">Systems We Service</h2>
+        <p class="pp-lede">We specialize in modern electric player systems — the kind most piano technicians don't touch.</p>
+        <div class="pp-grid">
+            <div class="pp-card">
+                <div class="pp-tag">Yamaha</div>
                 <h3>Disklavier</h3>
                 <p>Mark II through current ENSPIRE models. Power supply failures, floppy/CD drive replacement, solenoid calibration, control unit repair, and MIDI connectivity.</p>
-                <a href="/disklavier-repair.html" class="system-link">Disklavier repair details &rarr;</a>
+                <a href="/disklavier-repair.html" class="pp-link">Disklavier repair details &rarr;</a>
             </div>
-            <div class="system-card">
-                <div class="system-tag">PianoDisc</div>
+            <div class="pp-card">
+                <div class="pp-tag">PianoDisc</div>
                 <h3>PianoDisc / PDS Systems</h3>
                 <p>Keydriver boards, power supplies, USB and streaming connectivity, speaker systems, and full system upgrades for older installations.</p>
-                <a href="/pianodisc-repair.html" class="system-link">PianoDisc repair details &rarr;</a>
+                <a href="/pianodisc-repair.html" class="pp-link">PianoDisc repair details &rarr;</a>
             </div>
-            <div class="system-card">
-                <div class="system-tag">QRS Music</div>
+            <div class="pp-card">
+                <div class="pp-tag">QRS Music</div>
                 <h3>QRS Pianomation</h3>
                 <p>CD2000 and current Pianomation systems. Red ER light / power supply failure, CD drive replacement, solenoid driver issues, and firmware updates.</p>
-                <a href="/qrs-repair.html" class="system-link">QRS repair details &rarr;</a>
+                <a href="/qrs-repair.html" class="pp-link">QRS repair details &rarr;</a>
             </div>
-            <div class="system-card">
-                <div class="system-tag">Steinway</div>
+            <div class="pp-card">
+                <div class="pp-tag">Steinway</div>
                 <h3>Spirio &amp; Spirio | r</h3>
                 <p>WiFi and iPad connectivity, regulation and calibration, solenoid wear diagnosis, and component-level repair. Spirio requires more frequent service than most owners expect.</p>
-                <a href="/spirio-repair.html" class="system-link">Spirio service details &rarr;</a>
+                <a href="/spirio-repair.html" class="pp-link">Spirio service details &rarr;</a>
             </div>
-            <div class="system-card">
-                <div class="system-tag">Pneumatic</div>
+            <div class="pp-card">
+                <div class="pp-tag">Pneumatic</div>
                 <h3>Antique &amp; Roll-Operated Players</h3>
                 <p>Ampico, Duo-Art, Welte-Mignon, Aeolian, Gulbransen and nickelodeon instruments. Perished tubing, leaking bellows, dead notes, and roll tracking &mdash; the pre-electronic side of player pianos.</p>
-                <a href="/antique-player-piano.html" class="system-link">Antique player details &rarr;</a>
+                <a href="/antique-player-piano.html" class="pp-link">Antique player details &rarr;</a>
             </div>
-            <div class="system-card">
-                <div class="system-tag">All Makes</div>
+            <div class="pp-card">
+                <div class="pp-tag">All Makes</div>
                 <h3>Other Player Systems</h3>
                 <p>Bösendorfer CEUS, Fazioli, Wayne Stahnke systems, and older pneumatic player pianos. If it plays itself, we can diagnose it.</p>
             </div>
-            <div class="system-card">
-                <div class="system-tag">Acoustic</div>
+            <div class="pp-card">
+                <div class="pp-tag">Acoustic</div>
                 <h3>Acoustic Piano Side</h3>
                 <p>Regulation, voicing, and general mechanical repairs to the acoustic portion of any player grand or upright — handled alongside system work or as a standalone visit.</p>
             </div>
@@ -318,64 +157,55 @@
     </div>
 </section>
 
-<!-- COMMON PROBLEMS -->
-<section id="problems">
-    <div class="section-inner">
-        <p class="section-label">Common Issues</p>
-        <h2 class="section-title">Does Your System Have One of These Problems?</h2>
-        <p class="section-subtitle">Electric player systems each have their own failure patterns. These are the issues we diagnose most often.</p>
-        <div class="problems-grid">
-            <div class="problem-card">
-                <div class="problem-number">01</div>
+<section class="pp-section" id="problems">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">Common Issues</p>
+        <h2 class="pp-title">Does Your System Have One of These Problems?</h2>
+        <p class="pp-lede">Electric player systems each have their own failure patterns. These are the issues we diagnose most often.</p>
+        <div class="pp-grid">
+            <div class="pp-card">
                 <div>
                     <h3>System Won't Power On</h3>
                     <p>The most common failure in older Disklaviers and QRS units. Power supply capacitors fail with age — symptoms are a clicking sound on startup, a blank or flashing display, or nothing at all. Repairable without replacing the whole unit.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">02</div>
+            <div class="pp-card">
                 <div>
                     <h3>Keys Don't Move During Playback</h3>
                     <p>The system powers on and appears to play, but the keys stay still. Usually a failed solenoid driver board, a disconnected wiring harness, or a blown fuse on the keydriver — not the control unit.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">03</div>
+            <div class="pp-card">
                 <div>
                     <h3>Notes Too Loud, Too Soft, or Silent</h3>
                     <p>Solenoid calibration drifts over time, especially in heavily used systems. Individual solenoids wear unevenly — one note hammers while its neighbor barely whispers. Recalibration restores even playback.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">04</div>
+            <div class="pp-card">
                 <div>
                     <h3>Note Sticks On After Playback Stops</h3>
                     <p>A solenoid is staying energized — either a stuck relay on the driver board or a mechanically bound solenoid plunger. Left unaddressed it can burn out the solenoid coil.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">05</div>
+            <div class="pp-card">
                 <div>
                     <h3>Won't Read Media — Disk, CD, or USB Error</h3>
                     <p>Common in Disklavier Mark II (floppy) and QRS CD2000 units. The drive mechanism fails before the electronics do. Modern replacement drives and USB adapters are available for most models.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">06</div>
+            <div class="pp-card">
                 <div>
                     <h3>App or WiFi Won't Connect</h3>
                     <p>Spirio, PianoDisc iQ, and newer Disklaviers depend on a stable WiFi connection and up-to-date firmware. Connectivity failures are often a software issue — not a hardware fault.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">07</div>
+            <div class="pp-card">
                 <div>
                     <h3>System Shuts Down or Overheats</h3>
                     <p>Spirio pianos used heavily fall out of regulation — the system works harder to compensate, overheats, and shuts itself off to prevent damage. Regular calibration prevents this.</p>
                 </div>
             </div>
-            <div class="problem-card">
-                <div class="problem-number">08</div>
+            <div class="pp-card">
                 <div>
                     <h3>Control Unit Unresponsive or Frozen</h3>
                     <p>Older QRS and PianoDisc controllers can lock up after a power interruption or software glitch. A full reset or firmware update resolves most cases without replacing any parts.</p>
@@ -385,30 +215,25 @@
     </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section id="how">
-    <div class="section-inner">
-        <p class="section-label">The Process</p>
-        <h2 class="section-title">How Player Piano Repair Works</h2>
-        <p class="section-subtitle">No guesswork, no sight-unseen quotes. Every job starts the same way.</p>
-        <div class="how-steps">
-            <div class="how-step">
-                <div class="how-step-num">1</div>
+<section class="pp-section pp-section--raised" id="how">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">The Process</p>
+        <h2 class="pp-title">How Player Piano Repair Works</h2>
+        <p class="pp-lede">No guesswork, no sight-unseen quotes. Every job starts the same way.</p>
+        <div class="pp-steps">
+            <div class="pp-step">
                 <h3>Contact us or book a diagnosis</h3>
                 <p>Call to talk through what your system is doing, or go ahead and book the $100 flat-rate diagnosis to get on the schedule. Either way works.</p>
             </div>
-            <div class="how-step">
-                <div class="how-step-num">2</div>
+            <div class="pp-step">
                 <h3>In-home assessment</h3>
                 <p>We come to you. Our technician assesses the system on-site — no moving the piano, no hauling it anywhere. At the end of the visit you get a full written estimate.</p>
             </div>
-            <div class="how-step">
-                <div class="how-step-num">3</div>
+            <div class="pp-step">
                 <h3>Approve the repair</h3>
                 <p>Review the estimate, ask questions, and decide. No work starts without your sign-off. If you decide not to proceed, the $100 diagnosis fee stands.</p>
             </div>
-            <div class="how-step">
-                <div class="how-step-num">4</div>
+            <div class="pp-step">
                 <h3>Repair or no charge</h3>
                 <p>If we can't diagnose the problem, you don't pay anything. If we can diagnose it and fix it, we schedule the repair at $125/hr with written progress updates.</p>
             </div>
@@ -416,41 +241,39 @@
     </div>
 </section>
 
-<!-- PRICING -->
-<section id="pricing">
-    <div class="section-inner">
-        <p class="section-label">Rates</p>
-        <h2 class="section-title">Straightforward Pricing</h2>
-        <p class="section-subtitle">No surprise charges. You'll always know the cost before any work begins.</p>
-        <div class="pricing-cards">
-            <div class="price-card">
+<section class="pp-section pp-section--paper" id="pricing">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">Rates</p>
+        <h2 class="pp-title">Straightforward Pricing</h2>
+        <p class="pp-lede">No surprise charges. You'll always know the cost before any work begins.</p>
+        <div class="pp-prices">
+            <div class="pp-price">
                 <h3>In-Home Diagnosis</h3>
-                <div class="amount">$100 <span>flat rate</span></div>
+                <div class="pp-price__amount">$100 <span>flat rate</span></div>
                 <p>Full assessment of your player system, on-site. Includes a written explanation of the problem and a repair estimate. Paid after the diagnosis — or rolled into the repair if you go ahead.</p>
             </div>
-            <div class="price-card">
+            <div class="pp-price">
                 <h3>Repair Labor</h3>
-                <div class="amount">$125 <span>/ hour</span></div>
+                <div class="pp-price__amount">$125 <span>/ hour</span></div>
                 <p>Billed only after you approve the written estimate. Simple repairs may take 1–2 hours. Complex failures across multiple components can take more — you'll know the range before we start.</p>
             </div>
-            <div class="price-card">
+            <div class="pp-price">
                 <h3>Can't Diagnose It?</h3>
-                <div class="amount" style="font-size:1.4rem;padding-top:0.3rem;">No Charge</div>
+                <div class="pp-price__amount">No Charge</div>
                 <p>If we come out and genuinely can't identify the problem, the diagnosis fee is waived. If we diagnose it and you choose not to repair, the $100 stands.</p>
             </div>
         </div>
-        <div class="price-note">
+        <div class="pp-note">
             <strong>Parts are billed at cost</strong> — driver boards, solenoids, power supply components, and media drives are sourced and billed separately from labor. You'll see parts costs in the written estimate before we order anything.
         </div>
     </div>
 </section>
 
-<!-- FAQ -->
-<section id="faq">
-    <div class="section-inner">
-        <p class="section-label">FAQ</p>
-        <h2 class="section-title">Player Piano Repair Questions</h2>
-        <div class="faq-list">
+<section class="pp-section" id="faq">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">FAQ</p>
+        <h2 class="pp-title">Player Piano Repair Questions</h2>
+        <div class="pp-faq">
             <details>
                 <summary>How much does it cost to repair a player piano system?</summary>
                 <div class="faq-body">Every system is different, so we don't quote costs sight-unseen. The in-home diagnosis is $100 flat — at the end you'll know exactly what's wrong and what repair will cost. Repair labor is $125/hour with a written estimate before we start. A power supply replacement or driver board repair might run 1–3 hours. Multi-component failures take more. Parts are billed at cost on top of labor.</div>
@@ -479,37 +302,32 @@
     </div>
 </section>
 
-<!-- CONTACT -->
-<section id="contact">
-    <div class="section-inner">
-        <div class="contact-grid">
-            <div class="contact-info">
-                <p class="section-label">Get Started</p>
-                <h2 class="section-title">Tell Us About Your System</h2>
+<section class="pp-section pp-section--raised" id="contact">
+    <div class="pp-wrap">
+        <div class="pp-contact">
+            <div class="pp-contact__info">
+                <p class="pp-eyebrow">Get Started</p>
+                <h2 class="pp-title">Tell Us About Your System</h2>
                 <p>Fill out the form with your system make, model, and what it's doing. Someone will call you within the next 30 minutes to an hour to verify your details and set up a time. The $100 diagnosis is paid after the visit — or rolled into the repair — and any repair work is billed after it's done.</p>
-                <div class="contact-detail">
-                    <div class="contact-detail-icon">—</div>
+                <div class="pp-contact__item">
                     <div><h4>Phone</h4><a href="tel:4707589572">(470) 758-9572</a></div>
                 </div>
-                <div class="contact-detail">
-                    <div class="contact-detail-icon">—</div>
+                <div class="pp-contact__item">
                     <div><h4>Email</h4><a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a></div>
                 </div>
-                <div class="contact-detail">
-                    <div class="contact-detail-icon">—</div>
-                    <div><h4>Service Area</h4><p>Metro Atlanta &amp; all of North Georgia — we come to you. Everywhere else in the US — <a href="/player-unit-mail-in-repair.html" style="color:var(--gold);">mail-in repair</a>.</p></div>
+                <div class="pp-contact__item">
+                    <div><h4>Service Area</h4><p>Metro Atlanta &amp; all of North Georgia — we come to you. Everywhere else in the US — <a href="/player-unit-mail-in-repair.html">mail-in repair</a>.</p></div>
                 </div>
-                <div class="contact-detail">
-                    <div class="contact-detail-icon">—</div>
+                <div class="pp-contact__item">
                     <div><h4>Response Time</h4><p>We'll call to verify within 30 minutes to an hour</p></div>
                 </div>
-                <a href="tel:4707589572" class="diagnosis-cta" style="margin-top:1.5rem;">Prefer to call? (470) 758-9572</a>
-                <p class="repair-call-note" style="margin-top:0.75rem;font-size:0.85rem;opacity:0.75;line-height:1.5;">Player piano repair is scheduled by phone &mdash; give us a call.</p>
+                <a href="tel:4707589572" class="pp-btn pp-btn--ghost">Prefer to call? (470) 758-9572</a>
+                <p class="pp-form__hint">Player piano repair is scheduled by phone &mdash; give us a call.</p>
             </div>
-            <div class="contact-form-wrap">
+            <div class="pp-form-panel">
                 <h3>Book Your Diagnosis</h3>
-                <p style="font-size:0.85rem;color:var(--gray);margin-bottom:1rem;line-height:1.65;">Tell us about your system and we'll call within 30 min–1 hr to verify and schedule. The $100 diagnosis is paid after the visit (or rolled into the repair), and any repair work is billed after it's done.</p>
-                <form id="diagnosis-intake">
+                <p>Tell us about your system and we'll call within 30 min–1 hr to verify and schedule. The $100 diagnosis is paid after the visit (or rolled into the repair), and any repair work is billed after it's done.</p>
+                <form class="pp-form" id="diagnosis-intake">
                     <input type="hidden" name="_subject" value="Player Piano Diagnosis Booking — PianoPlayerTech">
                     <input type="hidden" name="service_type" value="Player Piano Diagnosis — $100">
                     <label for="c-name">Name</label>
@@ -526,40 +344,88 @@
                     <textarea id="c-issue" name="issue" placeholder="Describe the problem — what happens when you turn it on, what's missing, any error lights or sounds. The more detail, the better." required></textarea>
                     <button type="submit" id="intake-submit">Request My Diagnosis →</button>
                 </form>
-                <p id="intake-status" style="display:none;margin-top:0.75rem;font-size:0.85rem;color:var(--gray);"></p>
+                <p id="intake-status" style="display:none"></p>
             </div>
         </div>
     </div>
 </section>
 
-<footer>
-    <p>
-        &copy; 2026 <span>PianoPlayerTech</span> &nbsp;|&nbsp; North Georgia Player Piano Repair &amp; Tuning<br>
-        <a href="tel:4707589572">(470) 758-9572</a> &nbsp;&middot;&nbsp;
-        <a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a> &nbsp;&middot;&nbsp;
-        <a href="/">pianoplayertech.com</a> &nbsp;&middot;&nbsp;
-        <a href="/piano-repair.html">Piano Repair</a> &nbsp;&middot;&nbsp; <a href="/piano-tuning-cost.html">Piano Tuning Cost</a> &nbsp;&middot;&nbsp; <a href="/piano-cleaning.html">Piano Cleaning</a> &nbsp;&middot;&nbsp; <a href="/piano-teachers.html">For Piano Teachers</a> &nbsp;&middot;&nbsp; <a href="/review">Leave a Review</a> &nbsp;&middot;&nbsp;
-        <a href="/privacy-policy">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="/terms-of-service">Terms of Service</a> &nbsp;&middot;&nbsp;
-        <a href="https://howardresourcegroup.com/websites.html" target="_blank" rel="noopener">Website by Howard Resource Group</a>
-    </p>
+<!-- PROOF SLOT: case study
+     Fill in and uncomment when there is a finished job to show, with the
+     owner's permission and the business's own photos.
+<section class="pp-section pp-section--paper" id="work">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">Recent work</p>
+        <h2 class="pp-title">[Instrument, year, town]</h2>
+        <p class="pp-lede">[What had failed, what was done, how long it took.]</p>
+    </div>
+</section>
+-->
+<!-- PROOF SLOT: review
+<section class="pp-section" id="reviews">
+    <div class="pp-wrap">
+        <p class="pp-eyebrow">In their words</p>
+        <blockquote class="pp-quote">[The customer's words, unedited]<cite>[Name, town]</cite></blockquote>
+    </div>
+</section>
+-->
+
+</main>
+
+<footer class="pp-footer">
+    <div class="pp-wrap">
+        <div class="pp-footer__cols">
+            <div class="pp-footer__about">
+                <a class="pp-logo" href="/">PianoPlayer<span>Tech</span></a>
+                <p>Player piano repair and restoration. Pneumatic work across the Southeast, electronic systems in-home across metro Atlanta and North Georgia, and mail-in repair from anywhere in the US.</p>
+                <p><a href="tel:4707589572">(470) 758-9572</a><br><a href="mailto:info@pianoplayertech.com">info@pianoplayertech.com</a></p>
+            </div>
+            <div>
+                <h2>Services</h2>
+                <ul>
+                    <li><a href="/antique-player-piano.html">Antique Player Pianos</a></li>
+                    <li><a href="/player-repair.html">All player piano services</a></li>
+                    <li><a href="/player-unit-mail-in-repair.html">Mail-In Unit Repair</a></li>
+                    <li><a href="/tuning.html">Piano Tuning</a></li>
+                    <li><a href="/piano-repair.html">Piano Repair</a></li>
+                    <li><a href="/piano-cleaning.html">Piano Cleaning</a></li>
+                </ul>
+            </div>
+            <div>
+                <h2>Player systems</h2>
+                <ul>
+                    <li><a href="/disklavier-repair.html">Yamaha Disklavier</a></li>
+                    <li><a href="/pianodisc-repair.html">PianoDisc</a></li>
+                    <li><a href="/qrs-repair.html">QRS Pianomation</a></li>
+                    <li><a href="/spirio-repair.html">Steinway Spirio</a></li>
+                    <li><a href="/player-diagnostic.html">Diagnose My Player System</a></li>
+                </ul>
+            </div>
+            <div>
+                <h2>More</h2>
+                <ul>
+                    <li><a href="/for-technicians.html">For Technicians</a></li>
+                    <li><a href="/piano-teachers.html">For Piano Teachers</a></li>
+                    <li><a href="/piano-tuning-cost.html">Piano Tuning Cost</a></li>
+                    <li><a href="/review">Leave a Review</a></li>
+                    <li><a href="/privacy-policy">Privacy Policy</a></li>
+                    <li><a href="/terms-of-service">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="pp-footer__base">
+            <span>&copy; 2026 PianoPlayerTech</span>
+            <a href="https://howardresourcegroup.com/websites.html" target="_blank" rel="noopener">Website by Howard Resource Group</a>
+        </div>
+    </div>
 </footer>
 
-<script>
-var btn = document.getElementById('navToggle');
-var nav = document.getElementById('mobileNav');
-if (btn && nav) {
-    btn.addEventListener('click', function() {
-        var open = nav.classList.toggle('open');
-        btn.setAttribute('aria-expanded', open);
-    });
-    document.addEventListener('click', function(e) {
-        if (!btn.contains(e.target) && !nav.contains(e.target)) {
-            nav.classList.remove('open');
-            btn.setAttribute('aria-expanded', false);
-        }
-    });
-}
+<div class="pp-actionbar">
+    <a class="pp-btn pp-btn--primary" href="#contact">Book the $100 diagnosis</a>
+    <a class="pp-btn pp-btn--ghost" href="tel:4707589572" aria-label="Call (470) 758-9572">Call</a>
+</div>
 
+<script>
 var intakeForm = document.getElementById('diagnosis-intake');
 var intakeStatus = document.getElementById('intake-status');
 var intakeSubmit = document.getElementById('intake-submit');
@@ -592,6 +458,7 @@ if (intakeForm) {
 }
 </script>
 
+    <script src="/site.js" defer></script>
     <script src="/ppt-tracking.js"></script>
 </body>
 </html>

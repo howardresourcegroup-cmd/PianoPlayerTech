@@ -31,6 +31,16 @@
     });
   }
 
+  // On a phone the action bar repeats the hero's buttons. Keep it out of the
+  // way until those have scrolled off, then bring it in.
+  var bar = document.querySelector('.pp-actionbar');
+  var heroActions = document.querySelector('.pp-hero__actions');
+  if (bar && heroActions && window.IntersectionObserver) {
+    new window.IntersectionObserver(function (entries) {
+      bar.classList.toggle('is-hidden', entries[0].isIntersecting);
+    }).observe(heroActions);
+  }
+
   // Cloudflare serves /tuning and /tuning.html as the same page, so compare
   // with the extension and any trailing slash removed.
   function clean(p) {
