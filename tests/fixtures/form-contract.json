@@ -107,5 +107,23 @@
         "service_type"
       ]
     }
+  ],
+  "disklavier-power-supply-repair.html": [
+    {
+      "id": "",
+      "action": "https://formspree.io/f/xeebglab",
+      "noConversion": false,
+      "fields": [
+        "_next",
+        "_subject",
+        "email",
+        "issue",
+        "location",
+        "name",
+        "phone",
+        "service_type",
+        "system"
+      ]
+    }
   ]
 }

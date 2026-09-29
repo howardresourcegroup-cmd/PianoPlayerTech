@@ -20,7 +20,8 @@ const REBUILT = [
   'antique-player-piano.html',
   'player-repair.html',
   'player-unit-mail-in-repair.html',
-  'tuning.html'
+  'tuning.html',
+  'disklavier-power-supply-repair.html'
 ];
 
 const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
