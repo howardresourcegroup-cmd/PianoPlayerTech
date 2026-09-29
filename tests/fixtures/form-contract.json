@@ -1,0 +1,102 @@
+{
+  "index.html": [
+    {
+      "id": "apply-form",
+      "action": "https://formspree.io/f/xeebglab",
+      "noConversion": true,
+      "fields": [
+        "_subject",
+        "email",
+        "experience",
+        "form_type",
+        "location",
+        "message",
+        "name",
+        "phone"
+      ]
+    },
+    {
+      "id": "",
+      "action": "https://formspree.io/f/xeebglab",
+      "noConversion": false,
+      "fields": [
+        "_next",
+        "email",
+        "message",
+        "name",
+        "phone",
+        "piano"
+      ]
+    }
+  ],
+  "antique-player-piano.html": [
+    {
+      "id": "",
+      "action": "https://formspree.io/f/xeebglab",
+      "noConversion": false,
+      "fields": [
+        "_next",
+        "_subject",
+        "email",
+        "issue",
+        "name",
+        "phone",
+        "service_type",
+        "system"
+      ]
+    }
+  ],
+  "player-repair.html": [
+    {
+      "id": "diagnosis-intake",
+      "action": "",
+      "noConversion": false,
+      "fields": [
+        "_subject",
+        "city",
+        "email",
+        "issue",
+        "name",
+        "phone",
+        "service_type",
+        "system"
+      ]
+    }
+  ],
+  "player-unit-mail-in-repair.html": [
+    {
+      "id": "",
+      "action": "https://formspree.io/f/xeebglab",
+      "noConversion": false,
+      "fields": [
+        "_next",
+        "_subject",
+        "email",
+        "issue",
+        "location",
+        "name",
+        "phone",
+        "service_type",
+        "system"
+      ]
+    }
+  ],
+  "tuning.html": [
+    {
+      "id": "tuning-booking-form",
+      "action": "",
+      "noConversion": false,
+      "fields": [
+        "_subject",
+        "address",
+        "email",
+        "name",
+        "notes",
+        "phone",
+        "pianos",
+        "preferred_dates",
+        "service_type"
+      ]
+    }
+  ]
+}
