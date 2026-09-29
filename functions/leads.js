@@ -50,6 +50,11 @@ import {
   logActivity, logQuietly, contactIdFor, loadRecord, setActivityDone,
   deleteActivity, openFollowups
 } from './_lib/activity.js';
+import {
+  KINDS as OUTREACH_KINDS, LABEL as OUTREACH_LABEL, DAILY_CAP as OUTREACH_CAP,
+  runOutreach, loadQueue, loadConfig as loadOutreachConfig, saveConfig as saveOutreachConfig,
+  sendOne, skipOne, sendTest, waitingCount
+} from './_lib/outreach.js';
 
 const PIPELINES = ['repair', 'tuning'];
 
@@ -179,7 +184,7 @@ export async function onRequestGet(context) {
     extra.lastWcEmail = (last && last.email) || '';
 
     const where = view === 'archive' ? 'WHERE archived_at IS NOT NULL'
-      : view === 'all' || view === 'invoices' ? `WHERE ${NOT_ARCHIVED}`
+      : view === 'all' || view === 'invoices' || view === 'emails' ? `WHERE ${NOT_ARCHIVED}`
       : view === 'referrals' ? `WHERE referred_at IS NOT NULL AND ${NOT_ARCHIVED}`
       : `WHERE pipeline = ? AND ${NOT_ARCHIVED}`;
     const order = view === 'archive' ? 'ORDER BY archived_at DESC'
@@ -244,6 +249,40 @@ export async function onRequestGet(context) {
     console.error('follow-up lookup failed', err && err.message);
     extra.followups = { overdue: 0, upcoming: 0, rows: [] };
   }
+
+  // Automated emails. Opening the dashboard is what wakes them up: there is
+  // no timer. On the Emails tab the queue has to be current, so the run is
+  // awaited; everywhere else it happens behind the response. Either way a
+  // failure here must never cost the dashboard.
+  const nowIso = new Date().toISOString();
+  if (view === 'emails') {
+    try {
+      await runOutreach(env, url.origin, nowIso);
+      extra.outreach = {
+        ...(await loadQueue(env)),
+        config: await loadOutreachConfig(env),
+        kinds: OUTREACH_KINDS, labels: OUTREACH_LABEL, cap: OUTREACH_CAP,
+        canSend: !!env.RESEND_API_KEY,
+        testTo: env.LEAD_NOTIFY_EMAIL || 'info@pianoplayertech.com'
+      };
+    } catch (err) {
+      console.error('emails tab failed', err && err.message);
+      context.waitUntil(alertError(env, 'automated emails', err, { action: 'load emails tab' }));
+      extra.outreach = { error: /no such table/i.test(String(err && err.message))
+        ? 'The email tables have not been added to this database yet. Apply db/2026-09-29-automated-emails.sql.'
+        : 'Could not load the emails. Try again in a moment.' };
+    }
+  } else {
+    context.waitUntil(
+      runOutreach(env, url.origin, nowIso).catch((err) => {
+        console.error('automated emails failed', err && err.message);
+        // Before the tables exist this is expected, not an incident.
+        if (/no such table/i.test(String(err && err.message))) return null;
+        return alertError(env, 'automated emails', err, { action: 'run on dashboard load' });
+      })
+    );
+  }
+  try { counts.emails = await waitingCount(env); } catch { counts.emails = 0; }
 
   return new Response(dashboard(view, rows, counts, ref, extra, nonce), { headers });
 }
@@ -332,6 +371,32 @@ export async function onRequestPost(context) {
       console.error('calendar action failed', body.action, err && err.message);
       report('calendar setting', err, body.action);
       return json({ error: 'Could not change the calendar feed — try again.' }, 500);
+    }
+  }
+
+  // Automated emails act on a queue row, not a lead, so they run first too.
+  if (['outreachSend', 'outreachSkip', 'outreachConfig', 'outreachTest'].includes(body.action)) {
+    const now = new Date().toISOString();
+    const origin = new URL(request.url).origin;
+    try {
+      if (body.action === 'outreachConfig') {
+        return json({ ok: true, config: await saveOutreachConfig(env, body.config, now) });
+      }
+      if (body.action === 'outreachTest') {
+        const out = await sendTest(env, origin, String(body.kind || ''),
+          env.LEAD_NOTIFY_EMAIL || 'info@pianoplayertech.com');
+        return out.ok ? json(out) : json({ error: out.error }, 400);
+      }
+      const id = parseInt(body.id, 10);
+      if (!Number.isInteger(id) || id < 1) return json({ error: 'bad request' }, 400);
+      const out = body.action === 'outreachSkip'
+        ? await skipOne(env, id, actor, now)
+        : await sendOne(env, origin, id, actor, now, { subject: body.subject, body: body.body });
+      return out.ok ? json({ ok: true }) : json({ error: out.error }, 400);
+    } catch (err) {
+      console.error('email action failed', body.action, err && err.message);
+      report('automated emails', err, body.action);
+      return json({ error: 'That did not go through. Try again.' }, 500);
     }
   }
 

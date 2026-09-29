@@ -18,6 +18,7 @@
 //   grid.js      the leads table
 //   record.js    the lead record and the referral form
 //   invoices.js  Stripe invoicing and the Invoices tab
+//   outreach.js  the Emails tab: the queue of drafted emails, and their settings
 //
 // Nothing above touches the page while it is being imported. Every module
 // exports functions; this file decides when they run. That is what keeps
@@ -32,6 +33,7 @@ import { initInvoices } from './invoices.js';
 import { renderUpcoming } from './upcoming.js';
 import { state } from './state.js';
 import { openLead } from './record.js';
+import { initOutreach } from './outreach.js';
 
 // Clicking the backdrop closes the dialog. A click inside it has a different
 // target, so this does not fire on the form.
@@ -39,6 +41,8 @@ dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); })
 
 if (view === 'invoices') {
   initInvoices();
+} else if (view === 'emails') {
+  initOutreach();
 } else {
   initFilters(render);
   // A chip or a dropdown is one decision, so it redraws at once. Typing is

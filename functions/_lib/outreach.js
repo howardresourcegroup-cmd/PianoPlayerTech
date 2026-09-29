@@ -507,6 +507,45 @@ export async function runOutreach(env, origin, nowIso) {
   return { made, sent };
 }
 
+/**
+ * Send one kind's wording to ourselves, filled in for a made-up customer.
+ * Goes through the same rendering as the real thing, footer and all, so what
+ * arrives is what a customer would see.
+ */
+export async function sendTest(env, origin, kind, to) {
+  if (!KINDS.includes(kind)) return { ok: false, error: 'Unknown email.' };
+  const config = await loadConfig(env);
+  if (!config.address) {
+    return { ok: false, error: 'Add your mailing address in Settings before sending. The law requires one in every email.' };
+  }
+  if (!env.RESEND_API_KEY) return { ok: false, error: 'Email is not set up on the server.' };
+  const dest = normEmail(to);
+  if (!dest) return { ok: false, error: 'There is no address to send the test to.' };
+  const sample = { name: 'Dana Example', system: kind === 'tuning_reminder' ? '' : 'Disklavier Mark III',
+    pipeline: kind === 'tuning_reminder' ? 'tuning' : 'repair' };
+  const tpl = config.kinds[kind];
+  const row = { email: dest, subject: '[Test] ' + fill(tpl.subject, sample, config), body: fill(tpl.body, sample, config) };
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(await renderEmail(env, origin, row, config))
+    });
+    if (!r.ok) return { ok: false, error: `The email service refused it (${r.status}).` };
+  } catch (err) {
+    console.error('outreach test threw', err && err.message);
+    return { ok: false, error: 'Could not reach the email service.' };
+  }
+  return { ok: true, to: dest };
+}
+
+/** How many are waiting. For the badge on the tab. */
+export async function waitingCount(env) {
+  const r = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM outreach WHERE status IN ('draft', 'failed')`).first();
+  return (r && r.n) || 0;
+}
+
 /** What the Emails tab shows. */
 export async function loadQueue(env) {
   const cols = 'o.id, o.created_at, o.lead_id, o.kind, o.cycle, o.email, o.subject, o.body, o.status, ' +

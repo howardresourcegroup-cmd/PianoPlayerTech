@@ -367,4 +367,33 @@ font-size:.75rem;font-weight:600;margin-left:.35rem}
   .hist .what{flex:1 0 100%}
   .compose .go{margin-left:0;flex:1}
 }
+
+/* ---- Emails tab ---- */
+.outreach{display:grid;gap:1.4rem;max-width:860px}
+.outreach h2{font-size:1.05rem;margin:0 0 .2rem}
+.outreach .lede{color:var(--muted);font-size:.9rem;margin:0 0 .9rem}
+.outreach .notice{border:1px solid var(--gold);border-radius:8px;padding:.8rem 1rem;font-size:.9rem}
+.oq{display:grid;gap:.6rem}
+.oq .who{display:flex;flex-wrap:wrap;gap:.3rem .8rem;align-items:baseline}
+.oq .who strong{font-size:.98rem}
+.oq .kind{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.outreach label{display:block;font-size:.78rem;font-weight:600;margin:0 0 .25rem}
+.outreach input[type=text],.outreach input[type=number],.outreach textarea,.outreach select{
+  width:100%;box-sizing:border-box;padding:.55rem .65rem;border:1px solid var(--border);border-radius:7px;
+  background:var(--raised);color:inherit;font:inherit;font-size:.9rem}
+.outreach textarea{min-height:9rem;resize:vertical;line-height:1.5}
+.outreach textarea.short{min-height:4rem}
+.outreach .row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.outreach .row .go,.outreach .row .ghost{flex:none}
+.outreach .ghost{padding:.55rem 1rem}
+.outreach .msg{font-size:.85rem;min-height:1.2em}
+.outreach .msg.ok{color:var(--gold)}
+.outreach .msg.bad{color:var(--bad)}
+.outreach .pair2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.outreach .log{list-style:none;margin:0;padding:0;font-size:.88rem}
+.outreach .log li{display:flex;flex-wrap:wrap;gap:.2rem .8rem;padding:.5rem 0;border-top:1px solid var(--border)}
+.outreach .log .st{font-weight:600;min-width:4.5rem}
+.outreach fieldset{border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin:0;display:grid;gap:.7rem}
+.outreach legend{font-weight:600;padding:0 .4rem}
+@media(max-width:560px){.outreach .pair2{grid-template-columns:1fr}}
 `;

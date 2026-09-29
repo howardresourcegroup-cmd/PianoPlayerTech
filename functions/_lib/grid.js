@@ -9,7 +9,7 @@ import { escape_, page } from './html.js';
 import { REFERRAL_FEE, PURGE_DAYS } from './db.js';
 
 export const VIEWS = { repair: 'Repair & Pneumatic', tuning: 'Tuning',
-  referrals: 'Referrals', all: 'All', invoices: 'Invoices', archive: 'Archive' };
+  referrals: 'Referrals', all: 'All', invoices: 'Invoices', emails: 'Emails', archive: 'Archive' };
 
 export const STATUSES = ['new', 'called', 'referred', 'booked', 'closed'];
 
