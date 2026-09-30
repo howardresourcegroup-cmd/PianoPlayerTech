@@ -133,7 +133,9 @@ color:var(--text);font:inherit;font-weight:500;cursor:pointer;text-decoration:no
 .warn{color:var(--bad);font-size:.85rem}
 .banner{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;background:var(--surface);
 border:1px solid var(--gold);border-radius:8px;padding:.6rem .8rem;margin-bottom:.8rem}
-.tools .go{padding:.45rem .9rem;margin-left:auto}
+.tools .go{padding:.45rem .9rem}
+.tools .linkbtn{color:var(--gold);font-size:.88rem;text-decoration:none}
+.tools .linkbtn:hover{text-decoration:underline}
 .refer select{width:100%;background:var(--ground);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem .65rem;font:inherit}
 .refer .two{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
 @media (max-width:600px){.refer .two{grid-template-columns:1fr}}

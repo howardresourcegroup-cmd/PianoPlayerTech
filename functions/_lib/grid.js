@@ -68,7 +68,7 @@ export function dashboard(view, rows, counts, ref, extra, nonce) {
       <span class="muted" id="shown"></span>
       <a href="/leads?p=${view}&amp;export=csv">Export all</a>
       <button class="linkbtn" type="button" id="exportfiltered" hidden></button>
-      <button class="go" type="button" id="newlead">New lead</button>
+      <button class="linkbtn" type="button" id="newlead">New lead</button>
     </div>
     <div class="quick" id="quick"></div>
     <div class="views" id="views"></div>
