@@ -30,8 +30,8 @@ const QUICK = view === 'referrals'
   : view === 'archive'
   ? [['', 'All'], ['has:email', 'Has an email'], ['is:referred', 'Was referred']]
   : [['', 'All'], ['is:open', 'Live work'], ['is:new', 'New'],
-     ['is:referred', 'Referred'], ['is:unbilled', 'Not billed yet'],
-     ['-has:phone', 'No phone number']];
+     ['is:referred', 'Referred'], ['is:trade', 'Business & dealers'],
+     ['is:unbilled', 'Not billed yet'], ['-has:phone', 'No phone number']];
 
 export function initFilters(onChange){
   FILTERS.forEach(function(f){ sf.appendChild(el('option', {value:f[0], text:f[1]})); });

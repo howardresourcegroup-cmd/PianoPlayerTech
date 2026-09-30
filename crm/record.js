@@ -3,7 +3,7 @@
 // Opened from the grid's Open button, or straight into the referral form
 // from its Refer button.
 
-import { D, REF_LABEL } from './state.js';
+import { D, REF_LABEL, TYPE_LABEL } from './state.js';
 import { el, dlg, dlgbody, fmt, fmtLong, tel, money, fields, showDlg, dlgHeader } from './dom.js';
 import { post } from './api.js';
 import { bumpRef } from './stats.js';
@@ -29,7 +29,7 @@ export function openRefer(r){
 export function openLead(r, tab){
   dlgbody.textContent = '';
   var f = fields(r);
-  var meta = [r.service, r.system, r.city].filter(Boolean).join(' · ');
+  var meta = [TYPE_LABEL[r.customer_type], r.service, r.system, r.city].filter(Boolean).join(' · ');
 
   dlgbody.appendChild(el('div', {className:'hd'}, [
     el('div', null, [

@@ -447,3 +447,39 @@ test('our own email on the timeline does not count as a conversation', async () 
   addActivity(env, l.id, 'email', ago(1), { outreach: 'review_request', outreach_id: 1 });
   assert.strictEqual(await draftDue(env, NOW), 1);
 });
+
+// ------------------------------------------------------------------ needs contact
+test('a lead marked Needs Contact gets a "tried to reach you" draft after the delay', () => {
+  const l = { id: 1, email: 'dana@example.com', status: 'needs_contact', pipeline: 'repair', updated_at: ago(10) };
+  const due = dueFor(l, { statusAt: { needs_contact: ago(3) }, lastTouchAt: '' }, cfg(), NOW);
+  assert.deepStrictEqual(due.map((d) => d.kind), ['needs_contact']);
+});
+
+test('marked Needs Contact yesterday is not due yet', () => {
+  const l = { id: 1, email: 'dana@example.com', status: 'needs_contact', pipeline: 'repair', updated_at: ago(10) };
+  assert.deepStrictEqual(dueFor(l, { statusAt: { needs_contact: ago(1) }, lastTouchAt: '' }, cfg(), NOW), []);
+});
+
+test('a conversation since they were marked Needs Contact cancels the email', () => {
+  const l = { id: 1, email: 'dana@example.com', status: 'needs_contact', pipeline: 'repair', updated_at: ago(10) };
+  assert.deepStrictEqual(dueFor(l, { statusAt: { needs_contact: ago(3) }, lastTouchAt: ago(2) }, cfg(), NOW), []);
+});
+
+test('each time a lead falls back to Needs Contact is its own cycle, so a second episode can be written to', () => {
+  const l = { id: 1, email: 'dana@example.com', status: 'needs_contact', pipeline: 'repair', updated_at: ago(100) };
+  const first = dueFor(l, { statusAt: { needs_contact: ago(60) }, lastTouchAt: '' }, cfg(), ago(57));
+  const second = dueFor(l, { statusAt: { needs_contact: ago(3) }, lastTouchAt: '' }, cfg(), NOW);
+  assert.strictEqual(first.length, 1);
+  assert.strictEqual(second.length, 1);
+  assert.notStrictEqual(first[0].cycle, second[0].cycle);
+});
+
+test('Needs Contact leads are picked up by the drafting loop', async () => {
+  const env = freshEnv();
+  const l = addLead(env, { status: 'needs_contact' });
+  became(env, l.id, 'needs_contact', ago(3));
+  assert.strictEqual(await draftDue(env, NOW), 1);
+  const r = rows(env);
+  assert.strictEqual(r[0].kind, 'needs_contact');
+  assert.match(r[0].body, /reach you/i);
+});

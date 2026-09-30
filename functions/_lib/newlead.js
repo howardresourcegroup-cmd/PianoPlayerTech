@@ -9,6 +9,7 @@ import { logQuietly } from './activity.js';
 
 export const PIPELINES = ['repair', 'tuning'];
 export const CAME_IN_BY = ['phone', 'text', 'email', 'in_person', 'other'];
+export const CUSTOMER_TYPES = ['homeowner', 'business', 'dealer'];
 
 // Same limits as the dashboard's edit path in functions/leads.js.
 const CAPS = {
@@ -32,20 +33,22 @@ export async function createLead(env, body, actor, nowIso) {
     return { error: 'Give at least a name, phone or email so they can be reached.', status: 400 };
   }
   const cameInBy = CAME_IN_BY.includes(b.came_in_by) ? b.came_in_by : null;
+  const customerType = CUSTOMER_TYPES.includes(b.customer_type) ? b.customer_type : null;
 
   // Everything typed, so nothing is lost even if a column is dropped later.
   const fields = {};
   for (const k of Object.keys(lead)) if (lead[k] != null) fields[k] = lead[k];
   if (cameInBy) fields.came_in_by = cameInBy;
+  if (customerType) fields.customer_type = customerType;
 
   const res = await env.DB.prepare(
     `INSERT INTO leads
        (created_at, updated_at, pipeline, status, name, email, phone, service, system, city, address,
-        message, notes, source, lead_source, fields)
-     VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'dashboard', ?, ?)`
+        message, notes, source, lead_source, customer_type, fields)
+     VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'dashboard', ?, ?, ?)`
   ).bind(
     nowIso, nowIso, b.pipeline, lead.name, lead.email, lead.phone, lead.service, lead.system,
-    lead.city, lead.address, lead.message, lead.notes, cameInBy, JSON.stringify(fields)
+    lead.city, lead.address, lead.message, lead.notes, cameInBy, customerType, JSON.stringify(fields)
   ).run();
   const id = res.meta && res.meta.last_row_id;
   const row = await env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(id).first();

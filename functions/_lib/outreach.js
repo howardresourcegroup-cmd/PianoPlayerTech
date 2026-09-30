@@ -3,6 +3,7 @@
 //   quote_checkin    a quote went out and nothing came back
 //   review_request   a job finished
 //   tuning_reminder  a tuning is due again
+//   needs_contact    the owner has been trying to reach them
 //
 // The dashboard already calls a task you owe someone a "follow-up", so this
 // is "outreach" in code and "Emails" on screen, to keep the two apart.
@@ -14,12 +15,13 @@
 import { getSetting, setSetting, newToken } from './settings.js';
 import { logQuietly } from './activity.js';
 
-export const KINDS = ['quote_checkin', 'review_request', 'tuning_reminder'];
+export const KINDS = ['quote_checkin', 'review_request', 'tuning_reminder', 'needs_contact'];
 export const MODES = ['off', 'ask', 'auto'];
 export const LABEL = {
   quote_checkin: 'Quote check-in',
   review_request: 'Review request',
-  tuning_reminder: 'Tuning reminder'
+  tuning_reminder: 'Tuning reminder',
+  needs_contact: 'Tried to reach you'
 };
 
 export const CONFIG_KEY = 'outreach_config';
@@ -33,10 +35,10 @@ const DAY = 86400000;
 // How long after its trigger a lead can still be emailed. Without this,
 // switching the feature on would write to every customer in the archive of
 // the business's memory. Past the window the moment has gone; say nothing.
-const WINDOW_DAYS = { quote_checkin: 30, review_request: 30, tuning_reminder: 60 };
+const WINDOW_DAYS = { quote_checkin: 30, review_request: 30, tuning_reminder: 60, needs_contact: 30 };
 
 // Days for the first two, months for the reminder.
-const DELAY_RANGE = { quote_checkin: [1, 30], review_request: [0, 30], tuning_reminder: [6, 24] };
+const DELAY_RANGE = { quote_checkin: [1, 30], review_request: [0, 30], tuning_reminder: [6, 24], needs_contact: [1, 30] };
 
 const DONE = ['completed', 'invoiced', 'paid'];
 
@@ -90,6 +92,19 @@ export const DEFAULT_CONFIG = {
         'https://pianoplayertech.com/tuning#contact',
         '',
         'Or reply to this email and we will set it up.',
+        '',
+        '{sender}'
+      ].join('\n')
+    },
+    needs_contact: {
+      mode: 'ask', delay: 2,
+      subject: 'Trying to reach you about your {instrument}',
+      body: [
+        'Hi {first_name},',
+        '',
+        'I have been trying to reach you about your {instrument} and have not managed to catch you.',
+        '',
+        'If now is a bad time, reply with a good one. Or call (470) 758-9572 and we will pick it up from there.',
         '',
         '{sender}'
       ].join('\n')
@@ -215,6 +230,19 @@ export function dueFor(lead, facts, config, nowIso) {
       if (k >= 1 && inWindow(addMonths(anchor, t.delay * k), 'tuning_reminder')) {
         out.push({ kind: 'tuning_reminder', cycle: String(k) });
       }
+    }
+  }
+  const n = config.kinds.needs_contact;
+  if (n.mode !== 'off' && lead.status === 'needs_contact') {
+    const at = since(['needs_contact']);
+    const touched = ms(facts && facts.lastTouchAt);
+    // They answered. Chasing someone who has just spoken to you is worse
+    // than never having written.
+    const spoken = Number.isFinite(touched) && touched > at;
+    if (!spoken && inWindow(at + n.delay * DAY, 'needs_contact')) {
+      // Keyed by the day they fell into the status, so a second spell of
+      // being unreachable months later gets its own email.
+      out.push({ kind: 'needs_contact', cycle: new Date(at).toISOString().slice(0, 10) });
     }
   }
   return out;
@@ -368,7 +396,7 @@ export async function draftDue(env, nowIso) {
   const leads = (await env.DB.prepare(
     `SELECT ${LEAD_COLS} FROM leads
       WHERE archived_at IS NULL AND email IS NOT NULL AND email != ''
-        AND (status IN ('quoted', 'completed', 'invoiced', 'paid') OR pipeline = 'tuning')
+        AND (status IN ('quoted', 'completed', 'invoiced', 'paid', 'needs_contact') OR pipeline = 'tuning')
       LIMIT 2000`).all()).results || [];
   if (!leads.length) return 0;
 

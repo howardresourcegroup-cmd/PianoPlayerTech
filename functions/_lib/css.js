@@ -287,6 +287,7 @@ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pillv:hover{border-color:var(--border);background:var(--raised)}
 .pillv.is-newpill{background:rgba(212,178,90,.16);color:var(--gold);font-weight:600}
 .pillv.is-won{color:var(--ok)}
+.pillv.is-due{color:var(--bad);font-weight:600}
 .pillv.is-done{color:var(--muted)}
 .pillv.empty{color:var(--border)}
 .pillv:disabled{cursor:default;color:var(--border)}

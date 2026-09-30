@@ -25,7 +25,7 @@ export const FIELDS = {
   address: 'address', addr: 'address', system: 'system', piano: 'system',
   service: 'service', message: 'message', msg: 'message',
   note: 'notes', notes: 'notes', status: 'status', pipeline: 'pipeline',
-  id: 'id', source: 'source'
+  id: 'id', source: 'source', type: 'customer_type'
 };
 
 // What a bare word is compared against.
@@ -54,6 +54,8 @@ function within(iso, from, to){
  * a question no single column can.
  */
 export const IS = {
+  // A business or a dealer: the trade side of the book, priced and chased differently.
+  trade: (r) => r.customer_type === 'business' || r.customer_type === 'dealer',
   new: (r) => r.status === 'new',
   open: (r) => r.status !== 'closed' && r.status !== 'lost' && r.status !== 'paid',
   closed: (r) => r.status === 'closed' || r.status === 'lost',
@@ -192,6 +194,7 @@ export const SEARCH_HINTS = [
   ['"pitch raise"', 'a phrase'],
   ['is:unbilled', 'booked, not paid, not invoiced'],
   ['is:open', 'still live work'],
+  ['is:trade', 'a business or a dealer'],
   ['has:email', 'the field is filled in'],
   ['-closed', 'exclude']
 ];

@@ -5,7 +5,7 @@
 // in grid.js. Adding a column here is enough; adding a new `type` needs a
 // branch there too.
 
-import { D, view, REF_LABEL } from './state.js';
+import { D, view, REF_LABEL, TYPE_LABEL } from './state.js';
 
 export const COLS = [
   {k:'id', label:'', type:'pick', w:34},
@@ -52,5 +52,8 @@ if (view === 'archive') {
       {k:'referral_paid_at', label:'$' + D.fee + ' paid', type:'paid', w:80}
     );
   }
-  COLS.push({k:'pipeline', label:'Pipeline', type:'select', opts:['repair','tuning'], w:100});
+  COLS.push(
+    {k:'customer_type', label:'Type', type:'select', opts:['homeowner','business','dealer'], labels:TYPE_LABEL, blank:true, w:110},
+    {k:'pipeline', label:'Pipeline', type:'select', opts:['repair','tuning'], w:100}
+  );
 }

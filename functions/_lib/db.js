@@ -41,7 +41,7 @@ export async function purgeExpired(env, cutoff) {
 // than an empty Status dropdown.
 export const FALLBACK_STATUSES = [
   { key: 'new', label: 'New', sort: 10, is_open: 1, is_won: 0 },
-  { key: 'contacted', label: 'Contacted', sort: 20, is_open: 1, is_won: 0 },
+  { key: 'needs_contact', label: 'Needs Contact', sort: 15, is_open: 1, is_won: 0 },
   { key: 'referred', label: 'Referred', sort: 50, is_open: 1, is_won: 0 },
   { key: 'booked', label: 'Booked', sort: 70, is_open: 1, is_won: 0 },
   { key: 'closed', label: 'Closed', sort: 110, is_open: 0, is_won: 0 }

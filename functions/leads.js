@@ -45,7 +45,8 @@ import { BULK_OPS, parseIds, applyBulk } from './_lib/bulk.js';
 import { listViews, saveView, deleteView } from './_lib/views.js';
 import { getCalendarToken, rotateCalendarToken, disableCalendar } from './_lib/settings.js';
 import { alertError } from './_lib/alert.js';
-import { createLead } from './_lib/newlead.js';
+import { createLead, CUSTOMER_TYPES } from './_lib/newlead.js';
+import { onStatusChange as needsContactHook } from './_lib/needscontact.js';
 import {
   LOGGABLE_TYPES, SCHEDULED_TYPES, LIMITS as ACTIVITY_LIMITS, normStamp,
   logActivity, logQuietly, contactIdFor, loadRecord, setActivityDone,
@@ -66,7 +67,7 @@ const PIPELINES = ['repair', 'tuning'];
 // an enum checked below, and a string names a kind.
 const EDITABLE = {
   name: 200, phone: 50, email: 200, address: 300, city: 100,
-  system: 200, service: 200, notes: 4000, status: 0, pipeline: 0, referral_status: 0,
+  system: 200, service: 200, notes: 4000, status: 0, pipeline: 0, referral_status: 0, customer_type: 0,
   // The browser sends local wall-clock time. It is parsed and stored as the
   // normalised UTC instant, never as the text that arrived -- a string no
   // query can compare is worse than no value.
@@ -83,7 +84,7 @@ const FIELD_LABEL = {
 
 const COLUMNS = [
   'id', 'created_at', 'updated_at', 'pipeline', 'status', 'name', 'phone', 'email',
-  'address', 'city', 'system', 'service', 'message', 'notes', 'source',
+  'address', 'city', 'system', 'service', 'message', 'notes', 'source', 'customer_type',
   'referred_at', 'referral_status', 'referral_paid_at', 'referral_invoice_id',
   'scheduled_at', 'scheduled_mins', 'archived_at', 'fields'
 ];
@@ -570,6 +571,7 @@ export async function onRequestPost(context) {
         if (!known) return json({ error: 'bad status' }, 400);
       }
       if (field === 'pipeline' && !PIPELINES.includes(value)) return json({ error: 'bad pipeline' }, 400);
+      if (field === 'customer_type' && value && !CUSTOMER_TYPES.includes(value)) return json({ error: 'bad customer type' }, 400);
       if (field === 'referral_status' && !REFERRAL_STATUSES.includes(value)) return json({ error: 'bad referral status' }, 400);
       if (typeof EDITABLE[field] === 'number' && EDITABLE[field]) value = value.slice(0, EDITABLE[field]);
 
@@ -585,6 +587,12 @@ export async function onRequestPost(context) {
       // `field` is safe to interpolate: it matched a key of EDITABLE above.
       await env.DB.prepare(`UPDATE leads SET ${field} = ?, updated_at = ?${extra} WHERE id = ?`)
         .bind(value, now, id).run();
+
+      // Needs Contact carries a reminder with it. Best-effort, like the log.
+      if (field === 'status' && prev) {
+        await needsContactHook(env, id, prev.v, value, actor, now)
+          .catch((err) => console.error('needs-contact reminder failed', err && err.message));
+      }
 
       // The save has already happened; a failed log must not undo it.
       if (prev && String(prev.v == null ? '' : prev.v) !== value) {

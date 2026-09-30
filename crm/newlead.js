@@ -30,6 +30,9 @@ export function newLeadDialog(){
   pipeline.value = view === 'tuning' ? 'tuning' : 'repair';
   var cameInBy = el('select');
   CAME_IN_BY.forEach(function(o){ cameInBy.appendChild(el('option', {value:o[0], text:o[1]})); });
+  var custType = el('select');
+  [['', 'Not sure'], ['homeowner', 'Homeowner'], ['business', 'Business'], ['dealer', 'Dealer']]
+    .forEach(function(o){ custType.appendChild(el('option', {value:o[0], text:o[1]})); });
 
   var name = el('input', {type:'text', placeholder:'Who called', autocomplete:'off'});
   var phone = el('input', {type:'text', placeholder:'(470) 555-0100'});
@@ -44,7 +47,7 @@ export function newLeadDialog(){
   var btn = el('button', {className:'go full', type:'button', text:'Add lead'});
 
   box.appendChild(el('div', {className:'two'}, [field('Pipeline', pipeline), field('Came in by', cameInBy)]));
-  box.appendChild(field('Name', name));
+  box.appendChild(el('div', {className:'two'}, [field('Name', name), field('Customer type', custType)]));
   box.appendChild(el('div', {className:'two'}, [field('Phone', phone), field('Email', email)]));
   box.appendChild(el('div', {className:'two'}, [field('Address', address), field('City', city)]));
   box.appendChild(field('Piano or player system', system));
@@ -62,7 +65,7 @@ export function newLeadDialog(){
       name.focus(); return;
     }
     btn.disabled = true; btn.textContent = 'Saving…';
-    post({action:'create', pipeline: pipeline.value, came_in_by: cameInBy.value,
+    post({action:'create', pipeline: pipeline.value, came_in_by: cameInBy.value, customer_type: custType.value,
       name: name.value, phone: phone.value, email: email.value, address: address.value,
       city: city.value, system: system.value, service: service.value,
       message: message.value, notes: notes.value})

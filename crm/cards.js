@@ -13,7 +13,7 @@
 //
 // Editing still works: tapping a field opens the same editor the table uses.
 
-import { D, view, state } from './state.js';
+import { D, view, state, TYPE_LABEL } from './state.js';
 import { el, fmt, fmtWhen, fmtLong, tel } from './dom.js';
 import { editableChoice } from './edit.js';
 import { placeOf, jobOf, isPastDue } from './fields.js';
@@ -53,6 +53,7 @@ const label = (k) => (D.statusLabels && D.statusLabels[k]) || k;
 
 function statusTone(v){
   if (v === 'new') return 'is-newpill';
+  if (v === 'needs_contact') return 'is-due';
   if (v === 'paid' || v === 'completed') return 'is-won';
   if (v === 'lost' || v === 'closed') return 'is-done';
   return '';
@@ -93,6 +94,10 @@ export function cardFor(r, handlers){
 
   // ---- what the job is
   var what = jobOf(r);
+  // A dealer or a business is priced and chased differently, so it says so.
+  if (r.customer_type === 'business' || r.customer_type === 'dealer') {
+    what = (TYPE_LABEL[r.customer_type] || r.customer_type) + (what ? ' · ' + what : '');
+  }
   if (what) card.appendChild(el('div', {className:'cl-what', text:what}));
 
   // A submitted address usually already contains the city, so appending it

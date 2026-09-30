@@ -38,3 +38,4 @@ export const PAGE_SIZES = [50, 100, 250, 0];
 
 export const REF_LABEL = { sent: 'Sent — waiting', booked: 'Booked', no_booking: "Didn't book" };
 export const INV_LABEL = { open: 'Unpaid', paid: 'Paid', void: 'Void', uncollectible: 'Uncollectible', draft: 'Draft' };
+export const TYPE_LABEL = { homeowner: 'Homeowner', business: 'Business', dealer: 'Dealer' };

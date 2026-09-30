@@ -127,3 +127,12 @@ test('whitespace-only fields are stored as nothing', async () => {
   assert.equal(row.email, null);
   assert.equal(row.city, null);
 });
+
+test('a dealer or business is recorded as such; anything else is left blank', async () => {
+  const env = freshEnv();
+  await createLead(env, { pipeline: 'repair', name: 'Steinway Gallery', customer_type: 'dealer' }, 'o', NOW);
+  await createLead(env, { pipeline: 'repair', name: 'Someone', customer_type: 'robot' }, 'o', NOW);
+  const [a, b] = leads(env);
+  assert.equal(a.customer_type, 'dealer');
+  assert.equal(b.customer_type, null);
+});

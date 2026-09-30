@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS leads (
   -- 'tuning' | 'repair'. The two buckets the business actually works from.
   pipeline    TEXT NOT NULL,
 
-  -- 'new' | 'called' | 'booked' | 'closed'. Drives the dashboard columns.
+  -- A key from the statuses table. Drives the dashboard columns.
   status      TEXT NOT NULL DEFAULT 'new',
 
   name        TEXT,
@@ -72,6 +72,8 @@ CREATE TABLE IF NOT EXISTS leads (
   tech_pct       INTEGER,  -- contractor's cut, percent of the sale
   state          TEXT,
   zip            TEXT,
+  -- 'homeowner' | 'business' | 'dealer'. NULL means nobody has said.
+  customer_type  TEXT,
 
   -- When the job is booked for, and how long it runs. Feeds the calendar.
   scheduled_at   TEXT,     -- ISO-8601 UTC
@@ -246,18 +248,20 @@ CREATE TABLE IF NOT EXISTS statuses (
 );
 
 INSERT OR IGNORE INTO statuses (key, label, sort, is_open, is_won) VALUES
-  ('new',         'New',                 10, 1, 0),
-  ('contacted',   'Contacted',           20, 1, 0),
-  ('waiting',     'Waiting on Customer', 30, 1, 0),
-  ('quoted',      'Quote Sent',          40, 1, 0),
-  ('referred',    'Referred',            50, 1, 0),
-  ('scheduled',   'Scheduled',           60, 1, 0),
-  ('booked',      'Booked',              70, 1, 0),
-  ('completed',   'Completed',           80, 0, 1),
-  ('invoiced',    'Invoice Sent',        90, 1, 1),
-  ('paid',        'Paid',               100, 0, 1),
-  ('closed',      'Closed',             110, 0, 0),
-  ('lost',        'Lost',               120, 0, 0);
+  ('new',            'New',                  10, 1, 0),
+  ('needs_contact',  'Needs Contact',        15, 1, 0),  -- you owe them a call
+  ('waiting',        'Waiting on Customer',  30, 1, 0),  -- they owe you a reply
+  ('diag_scheduled', 'Diagnostic Scheduled', 35, 1, 0),
+  ('diagnosis',      'Diagnosis',            38, 1, 0),  -- looked at; quote being worked out
+  ('quoted',         'Quote Sent',           40, 1, 0),
+  ('referred',       'Referred',             50, 1, 0),
+  ('booked',         'Booked',               70, 1, 0),  -- repair approved and on the calendar
+  ('in_repair',      'In Repair',            75, 1, 1),
+  ('completed',      'Completed',            80, 0, 1),
+  ('invoiced',       'Invoice Sent',         90, 1, 1),
+  ('paid',           'Paid',                100, 0, 1),
+  ('closed',         'Closed',              110, 0, 0),
+  ('lost',           'Lost',                120, 0, 0);
 
 -- ------------------------------------------------------------------- views
 -- A saved view: filters, sort order and visible columns. owner NULL means

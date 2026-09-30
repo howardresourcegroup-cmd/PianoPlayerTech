@@ -92,6 +92,7 @@ function cellSelect(r, c, td){
 // work lost. Everything else stays neutral so the exceptions stand out.
 function statusTone(v){
   if (v === 'new') return 'is-newpill';
+  if (v === 'needs_contact') return 'is-due';
   if (v === 'paid' || v === 'completed') return 'is-won';
   if (v === 'lost' || v === 'closed') return 'is-done';
   return '';
