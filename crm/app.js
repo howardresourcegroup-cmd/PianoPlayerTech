@@ -19,6 +19,7 @@
 //   record.js    the lead record and the referral form
 //   invoices.js  Stripe invoicing and the Invoices tab
 //   outreach.js  the Emails tab: the queue of drafted emails, and their settings
+//   newlead.js   the New lead form, for a phone call or a walk-in
 //
 // Nothing above touches the page while it is being imported. Every module
 // exports functions; this file decides when they run. That is what keeps
@@ -34,6 +35,7 @@ import { renderUpcoming } from './upcoming.js';
 import { state } from './state.js';
 import { openLead } from './record.js';
 import { initOutreach } from './outreach.js';
+import { initNewLead } from './newlead.js';
 
 // Clicking the backdrop closes the dialog. A click inside it has a different
 // target, so this does not fire on the form.
@@ -51,6 +53,7 @@ if (view === 'invoices') {
   sf.addEventListener('change', render);
   renderStats();
   render();
+  initNewLead();
   // The follow-ups the server has been counting all along. Opening one is
   // only offered when the lead is on this tab -- the panel lists them all.
   renderUpcoming(function(leadId, probe){

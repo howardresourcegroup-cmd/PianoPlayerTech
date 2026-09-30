@@ -45,6 +45,7 @@ import { BULK_OPS, parseIds, applyBulk } from './_lib/bulk.js';
 import { listViews, saveView, deleteView } from './_lib/views.js';
 import { getCalendarToken, rotateCalendarToken, disableCalendar } from './_lib/settings.js';
 import { alertError } from './_lib/alert.js';
+import { createLead } from './_lib/newlead.js';
 import {
   LOGGABLE_TYPES, SCHEDULED_TYPES, LIMITS as ACTIVITY_LIMITS, normStamp,
   logActivity, logQuietly, contactIdFor, loadRecord, setActivityDone,
@@ -371,6 +372,19 @@ export async function onRequestPost(context) {
       console.error('calendar action failed', body.action, err && err.message);
       report('calendar setting', err, body.action);
       return json({ error: 'Could not change the calendar feed — try again.' }, 500);
+    }
+  }
+
+  // A lead typed in by hand has no id yet, so it runs before the id checks.
+  if (body.action === 'create') {
+    const now = new Date().toISOString();
+    try {
+      const out = await createLead(env, body, actor, now);
+      return out.ok ? json(out) : json({ error: out.error }, out.status || 400);
+    } catch (err) {
+      console.error('create lead failed', err && err.message);
+      report('new lead', err, 'create');
+      return json({ error: 'That did not save. Try again.' }, 500);
     }
   }
 
