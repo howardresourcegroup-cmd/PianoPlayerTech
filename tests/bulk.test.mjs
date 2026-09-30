@@ -168,3 +168,12 @@ test('a skipped lead gets no history entry', async () => {
 test('the operation list is what the route validates against', () => {
   assert.deepStrictEqual(BULK_OPS, ['status', 'pipeline', 'archive', 'restore']);
 });
+
+test('a bulk move into Needs Contact leaves each lead a reminder, and a move out clears it', async () => {
+  const env = freshEnv();
+  await applyBulk(env, [1, 2], { op: 'status', value: 'needs_contact', actor: 'e@x.com' }, T0);
+  const open = () => sqlite(env._file, "SELECT lead_id FROM activities WHERE due_at IS NOT NULL AND completed_at IS NULL ORDER BY lead_id");
+  assert.deepStrictEqual(open().map((a) => a.lead_id), [1, 2]);
+  await applyBulk(env, [1], { op: 'status', value: 'waiting', actor: 'e@x.com' }, '2026-09-23T12:00:00.000Z');
+  assert.deepStrictEqual(open().map((a) => a.lead_id), [2]);
+});

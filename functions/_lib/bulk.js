@@ -16,6 +16,7 @@
 // The reply says how many actually changed, which is not always how many
 // were asked for.
 
+import { onStatusChange as needsContactHook } from './needscontact.js';
 import { logQuietly } from './activity.js';
 
 // High enough for "select all on this page", low enough that a runaway
@@ -95,6 +96,11 @@ export async function applyBulk(env, ids, opts, now) {
   // One line of history per lead, so a bulk change is not an unexplained
   // jump in the record view. Best-effort, like every other automatic log.
   for (const r of live) {
+    // Needs Contact carries a reminder with it, in bulk as on one lead.
+    if (op === 'status') {
+      await needsContactHook(env, r.id, r.status, value, actor, now)
+        .catch((err) => console.error('needs-contact reminder failed', err && err.message));
+    }
     const subject = op === 'archive' ? 'Archived'
       : op === 'restore' ? 'Restored from archive'
       : `${op === 'status' ? 'Status' : 'Pipeline'} → ${value}`;
