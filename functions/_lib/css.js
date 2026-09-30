@@ -100,7 +100,7 @@ tr.done td{opacity:.55}
 td.ok{animation:ok 1s}
 td.bad{background:#4a2218}
 @keyframes ok{from{background:#2c3a26}to{background:transparent}}
-.empty{text-align:center;color:var(--muted);padding:3rem 1rem}
+#empty{text-align:center;color:var(--muted);padding:3rem 1rem}
 dialog{border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);
 padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
 dialog::backdrop{background:rgba(0,0,0,.6)}
@@ -401,4 +401,122 @@ font-size:.75rem;font-weight:600;margin-left:.35rem}
 .outreach fieldset{border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin:0;display:grid;gap:.7rem}
 .outreach legend{font-weight:600;padding:0 .4rem}
 @media(max-width:560px){.outreach .pair2{grid-template-columns:1fr}}
+
+/* ================= polish, and the phone shell =================
+   Later rules win, so this layer sits at the end and adjusts what is
+   above rather than restating it. */
+:root{--r-sm:6px;--r:10px;--r-lg:14px;--shadow:0 10px 30px rgba(0,0,0,.35);
+  --gold-soft:rgba(212,178,90,.14);color-scheme:dark}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+body{overscroll-behavior-y:none}
+button,a,input,select,textarea{transition:background-color .15s ease,border-color .15s ease,
+  color .15s ease,box-shadow .15s ease,opacity .15s ease}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:var(--r-sm)}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:0}
+.go,.ghost,.cl-btn,.chip,.tab,.upbtn,.rtab{-webkit-user-select:none;user-select:none}
+.go:active:not(:disabled),.ghost:active,.cl-btn:active,.chip:active{transform:translateY(1px)}
+.go{border-radius:var(--r-sm);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.go:hover:not(:disabled){filter:brightness(1.06)}
+.ghost:hover{background:var(--surface)}
+.tab{border-radius:var(--r);transition:border-color .15s,color .15s,background .15s}
+.tab:hover{border-color:var(--muted);color:var(--text)}
+.tab.on{box-shadow:inset 0 -2px 0 var(--gold)}
+.card{border-radius:var(--r-lg)}
+.stats{border-radius:var(--r)}
+.tools input,.tools select{border-radius:var(--r-sm)}
+.tools input:focus,.tools select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+.tools input::placeholder{color:var(--muted)}
+#empty{padding:3.5rem 1rem;font-size:.95rem}
+#empty::before{content:'';display:block;width:44px;height:44px;margin:0 auto .7rem;border-radius:50%;
+  border:1px dashed var(--border)}
+dialog{border-radius:var(--r-lg);box-shadow:var(--shadow)}
+dialog[open]{display:flex;flex-direction:column}
+.dlg{flex:1;min-height:0}
+.dlg .hd h2{font-size:1.15rem;letter-spacing:-.01em}
+.x{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;margin:-6px -8px 0 0}
+.x:hover{background:var(--raised);color:var(--text)}
+.refer input[type=text],.refer input[type=email],.refer input[type=number],.refer textarea,.refer select,
+.compose textarea,.compose select,.outreach input[type=text],.outreach textarea,.outreach select{border-radius:var(--r-sm)}
+.refer input:focus,.refer textarea:focus,.refer select:focus,.compose textarea:focus,
+.outreach input:focus,.outreach textarea:focus,.outreach select:focus{outline:none;
+  border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+.outreach .oq .row{border-top:1px solid var(--border);padding-top:.8rem;margin-top:.2rem}
+.card.oq{border-radius:var(--r-lg)}
+/* sign-in */
+.login{max-width:360px;margin:14vh auto 0;padding:1.6rem 1.5rem 1.5rem}
+.login .brand{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:0 0 .3rem}
+.login h1{font-size:1.5rem;letter-spacing:-.01em}
+.login p.muted{margin:.2rem 0 .9rem}
+.login input[type=password]{font-size:16px;padding:.8rem .9rem;border-radius:var(--r-sm)}
+.login input[type=password]:focus{box-shadow:0 0 0 3px var(--gold-soft)}
+.login .go{padding:.75rem 1rem;font-size:1rem}
+/* phone cards: a clear hierarchy, and the whole card opens the lead */
+.card-lead{border-radius:var(--r-lg);padding:.85rem .95rem;gap:.35rem;cursor:pointer}
+.card-lead:active{background:var(--raised)}
+.cl-pick{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;
+  margin:-.6rem 0 -.6rem -.8rem;flex:0 0 auto;cursor:pointer}
+.cl-pick input{width:22px;height:22px;margin:0;accent-color:var(--gold);cursor:pointer}
+.cl-name{font-size:1.05rem;font-weight:650;letter-spacing:-.005em}
+.cl-when{border-top:1px solid var(--border);padding-top:.5rem;margin-top:.2rem}
+.cl-acts{margin-top:.35rem}
+.cl-btn{border-radius:var(--r-sm)}
+.cl-tel{margin-top:.1rem}
+
+@media(max-width:760px){
+  /* !important because the dialog forms set font:inherit with more specificity */
+  input,select,textarea{font-size:16px!important}
+  .wrap{padding-top:.6rem;padding-bottom:max(6rem,calc(env(safe-area-inset-bottom) + 5rem))}
+  .top{margin-bottom:.4rem}
+  .top form{display:flex;align-items:center}
+  .linkbtn{min-height:44px;display:inline-flex;align-items:center}
+  /* one scrolling strip of tabs, pinned so a tap on any of them is always
+     one thumb away, however far down the list you are */
+  .tabs{position:sticky;top:0;z-index:6;flex-wrap:nowrap;overflow-x:auto;gap:.35rem;
+    margin:0 calc(-1 * max(16px,env(safe-area-inset-left))) .7rem;
+    padding:.45rem max(16px,env(safe-area-inset-left)) .55rem;
+    background:var(--ground);box-shadow:0 1px 0 var(--border);
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;scroll-snap-align:start;min-height:40px;display:inline-flex;align-items:center;white-space:nowrap}
+  @media(display-mode:standalone){.tabs{top:0;padding-top:max(.45rem,env(safe-area-inset-top))}}
+  .stats{padding:.5rem .6rem}
+  .stat{white-space:nowrap}
+  .tools{gap:.45rem}
+  .tools input{flex:1 0 100%;min-height:44px}
+  .tools select{min-height:44px;flex:1 1 auto}
+  .tools .linkbtn,.tools a{min-height:44px;display:inline-flex;align-items:center;padding:0 .2rem}
+  .upbtn{min-height:40px}
+  .quick{gap:.35rem}
+  .chip{min-height:36px;display:inline-flex;align-items:center}
+  .cards{gap:.7rem}
+  /* the one thing you do standing up that is not a call: add the lead */
+  #newlead{position:fixed;right:max(16px,env(safe-area-inset-right));
+    bottom:max(18px,calc(env(safe-area-inset-bottom) + 12px));z-index:30;
+    background:var(--gold);color:var(--ground);font-weight:700;font-size:.95rem;text-decoration:none;
+    padding:0 1.15rem 0 .95rem;min-height:52px;border-radius:999px;
+    box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.2)}
+  #newlead::before{content:'+';font-size:1.35rem;font-weight:600;line-height:1;margin:-2px .45rem 0 0}
+  #newlead:hover{text-decoration:none;filter:brightness(1.05)}
+  #newlead:active{transform:translateY(1px)}
+  /* dialogs become bottom sheets */
+  dialog{width:100vw;max-width:none;margin:auto 0 0;max-height:calc(100dvh - 28px);
+    border-radius:18px 18px 0 0;border-bottom:0;box-shadow:0 -12px 40px rgba(0,0,0,.5)}
+  dialog[open]{animation:sheet .26s cubic-bezier(.2,.8,.2,1)}
+  dialog::before{content:'';display:block;flex:none;width:36px;height:4px;border-radius:2px;
+    background:var(--border);margin:.55rem auto 0}
+  .dlg{padding:0 1rem calc(1rem + env(safe-area-inset-bottom))}
+  .dlg .hd{position:sticky;top:0;z-index:3;background:var(--surface);padding:.7rem 0 .55rem;margin:0}
+  .dlg .hd h2{font-size:1.2rem}
+  .x{margin:-2px -6px 0 0;width:40px;height:40px}
+  .rtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .rtabs::-webkit-scrollbar{display:none}
+  .rtab{min-height:44px;flex:0 0 auto;display:inline-flex;align-items:center}
+  .refer .go.full,.compose .go,.pair .ghost{min-height:48px;font-size:1rem}
+  .refer > .go.full{position:sticky;bottom:calc(-1rem - env(safe-area-inset-bottom));z-index:2;
+    box-shadow:0 -14px 18px -6px var(--surface),0 1px 0 rgba(0,0,0,.25)}
+  .outreach .row .go,.outreach .row .ghost{min-height:44px}
+  @keyframes sheet{from{transform:translateY(28px);opacity:.5}to{transform:none;opacity:1}}
+  @media(prefers-reduced-motion:reduce){dialog[open]{animation:none}}
+}
 `;

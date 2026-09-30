@@ -813,9 +813,10 @@ function parseFields(raw) {
 
 function loginPage(bad) {
   return page('Leads', `
-    <div class="card narrow" style="max-width:340px">
+    <div class="card login">
+      <p class="brand">PianoPlayerTech</p>
       <h1>Leads</h1>
-      <p class="muted">PianoPlayerTech</p>
+      <p class="muted">Sign in to open the dashboard.</p>
       <form method="post">
         <input type="hidden" name="action" value="login">
         <input type="password" name="password" placeholder="Password" autofocus required

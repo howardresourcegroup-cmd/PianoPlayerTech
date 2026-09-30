@@ -1175,3 +1175,10 @@ h1 {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
   .pp-btn--primary:hover, .pp-path:hover { transform: none; }
 }
+
+/* Phones: a field under 16px makes iOS zoom the page on focus, and a footer
+   link needs more than a line of text to hit. */
+@media (max-width: 760px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='hidden']), select, textarea { font-size: max(1rem, 16px); }
+  .pp-footer a { display: inline-block; padding: 0.3rem 0; }
+}

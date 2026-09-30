@@ -15,7 +15,7 @@
 
 import { D, view, state } from './state.js';
 import { el, fmt, fmtWhen, fmtLong, tel } from './dom.js';
-import { editableChoice, BLANK } from './edit.js';
+import { editableChoice } from './edit.js';
 import { placeOf, jobOf, isPastDue } from './fields.js';
 import { onModeChange, isPhoneWidth, PHONE_MAX } from './layout.js';
 export { PHONE_MAX };
@@ -74,7 +74,8 @@ export function cardFor(r, handlers){
   var head = el('div', {className:'cl-head'});
   var pick = el('input', {type:'checkbox', checked:selected, 'aria-label':'Select ' + (r.name || 'this lead')});
   pick.addEventListener('change', function(){ handlers.onToggle(r, pick.checked, card); });
-  head.appendChild(pick);
+  // A 20px box is a miss half the time. The label around it is the target.
+  head.appendChild(el('label', {className:'cl-pick'}, [pick]));
 
   head.appendChild(el('button', {className:'cl-name', type:'button', text: r.name || '(no name)',
     'aria-label':'Open ' + (r.name || 'this lead'),
@@ -145,7 +146,13 @@ export function cardFor(r, handlers){
   // The phone number itself, quiet, because the buttons above are how you
   // use it -- but you still sometimes need to read it out.
   if (r.phone) card.appendChild(el('div', {className:'cl-tel', text:r.phone}));
-  else card.appendChild(el('div', {className:'cl-tel empty', text:'No phone number ' + BLANK}));
+
+  // Anywhere on the card that is not a control opens the lead. The buttons
+  // stay for the things you do without opening it.
+  card.addEventListener('click', function(e){
+    if (e.target.closest('a,button,input,select,textarea,label,.cellv')) return;
+    handlers.onOpen(r);
+  });
 
   return card;
 }

@@ -41,6 +41,11 @@ import { initNewLead } from './newlead.js';
 // target, so this does not fire on the form.
 dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); });
 
+// On a phone the tabs are one scrolling strip. Whatever tab this is, it
+// should be visible without a swipe.
+var onTab = document.querySelector('.tab.on');
+if (onTab && onTab.scrollIntoView) onTab.scrollIntoView({block:'nearest', inline:'center'});
+
 if (view === 'invoices') {
   initInvoices();
 } else if (view === 'emails') {
