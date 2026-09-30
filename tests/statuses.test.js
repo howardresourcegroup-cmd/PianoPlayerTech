@@ -30,9 +30,9 @@ test('a fresh database has the agreed statuses in the agreed order, and a custom
 });
 
 test('the migration takes the old vocabulary to the new one without losing a lead', () => {
-  // The schema as it was before this change, from git, so the test keeps
-  // proving the migration works on what production actually has.
-  const old = execFileSync('git', ['show', 'ec16f25:db/schema.sql'], { cwd: ROOT, encoding: 'utf8' });
+  // The schema as it was before this change, kept as a fixture rather than
+  // read from git: CI checks out one commit deep and has no history to show.
+  const old = fs.readFileSync(path.join(ROOT, 'tests/fixtures/schema-before-2026-09-30.sql'), 'utf8');
   const db = dbFrom(old);
   run(db, `INSERT INTO leads (id, created_at, pipeline, status) VALUES
     (1,'2026-01-01','repair','scheduled'), (2,'2026-01-01','repair','contacted'), (3,'2026-01-01','tuning','closed')`);
