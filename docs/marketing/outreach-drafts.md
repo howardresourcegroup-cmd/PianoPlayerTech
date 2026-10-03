@@ -17,6 +17,7 @@ Directories and Google compare these across the web. Use them exactly.
 | Phone | (470) 758-9572 |
 | Email | info@pianoplayertech.com |
 | Website | https://pianoplayertech.com |
+| Address | 2851 Highway 9 South, Dawsonville, GA 30534 |
 
 ## Services and where each is offered
 
@@ -24,7 +25,7 @@ Directories and Google compare these across the web. Use them exactly.
 |---|---|---|
 | Pneumatic player piano repair and restoration | Georgia, Florida, Alabama, South Carolina, North Carolina, Tennessee. We travel to the piano. | Quoted in writing. A full restoration typically runs $8,000 to $15,000 in labor. |
 | Electronic player system repair, in-home | Metro Atlanta and North Georgia | $100 flat diagnosis, due at the visit. Repair at $125 an hour, quoted in writing. |
-| Electronic player unit repair, by mail | Anywhere in the US | Quoted per unit after a bench test. If it cannot be repaired, the customer pays return shipping only. |
+| Electronic player unit repair, by mail | Anywhere in the US | Around $1,250 a unit, though it varies. Quoted in writing after a bench test. Typically back in 3 to 4 weeks. If it cannot be repaired, the customer pays return shipping only. Units ship to 2851 Highway 9 South, Dawsonville, GA 30534. |
 | Piano tuning, through World Class Piano Tuners | All of Georgia | $200 for a standard tuning. Billed upfront by invoice or card. |
 
 Systems: Yamaha Disklavier, PianoDisc, QRS Pianomation, Steinway Spirio.
@@ -97,6 +98,7 @@ Two ways it can work:
 - You keep the customer. Pull the power supply or driver board, ship it to us,
   and reinstall it when it comes back. We bench-test it and quote in writing
   before any work. If we cannot repair it, you pay return shipping only.
+  Most units come in around $1,250 and are back in three to four weeks.
 - You refer the customer. In metro Atlanta and North Georgia we come to the
   piano. For pneumatic players we travel across the Southeast.
 
