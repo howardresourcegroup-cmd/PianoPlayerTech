@@ -25,3 +25,5 @@ node_modules/
 # Named prospects and outreach drafts. docs/ is served publicly, so these stay local.
 docs/marketing/trade-prospects.md
 docs/marketing/trade-outreach.html
+docs/marketing/trade-call-list.csv
+docs/marketing/trade-call-list.html
