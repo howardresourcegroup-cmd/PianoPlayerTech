@@ -19,3 +19,17 @@ test('form fields are at least 16px on phones, so iOS does not zoom on focus', (
   assert.ok(/input[^{]*,\s*select[^{]*,\s*textarea[^{]*\{[^}]*font-size:\s*16px/.test(phone),
     'expected a phone rule setting input, select and textarea to 16px');
 });
+
+test('the sheet body has an auto flex basis, because Safari collapses flex:1 inside an auto-height column', () => {
+  // On an iPhone the lead dialog opened as a header with nothing usable
+  // under it: the body had flex:1 (basis 0%) in a column flex box whose
+  // height is automatic, which Safari resolves to zero height.
+  assert.ok(!/\.dlg\{flex:1;/.test(CSS), 'found .dlg{flex:1; which Safari collapses');
+  assert.ok(/\.dlg\{flex:1 1 auto;/.test(CSS), 'expected .dlg{flex:1 1 auto;');
+});
+
+test('the phone sheet has a 100vh fallback before the 100dvh height, for older iOS', () => {
+  const i = CSS.indexOf('max-height:calc(100vh - 28px)');
+  const j = CSS.indexOf('max-height:calc(100dvh - 28px)');
+  assert.ok(i >= 0 && j > i, 'expected a 100vh max-height declared before the 100dvh one');
+});

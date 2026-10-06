@@ -432,7 +432,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:0
   border:1px dashed var(--border)}
 dialog{border-radius:var(--r-lg);box-shadow:var(--shadow)}
 dialog[open]{display:flex;flex-direction:column}
-.dlg{flex:1;min-height:0}
+.dlg{flex:1 1 auto;min-height:0}
 .dlg .hd h2{font-size:1.15rem;letter-spacing:-.01em}
 .x{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;
   border-radius:50%;margin:-6px -8px 0 0}
@@ -501,7 +501,7 @@ dialog[open]{display:flex;flex-direction:column}
   #newlead:hover{text-decoration:none;filter:brightness(1.05)}
   #newlead:active{transform:translateY(1px)}
   /* dialogs become bottom sheets */
-  dialog{width:100vw;max-width:none;margin:auto 0 0;max-height:calc(100dvh - 28px);
+  dialog{width:100vw;max-width:none;margin:auto 0 0;max-height:calc(100vh - 28px);max-height:calc(100dvh - 28px);
     border-radius:18px 18px 0 0;border-bottom:0;box-shadow:0 -12px 40px rgba(0,0,0,.5)}
   dialog[open]{animation:sheet .26s cubic-bezier(.2,.8,.2,1)}
   dialog::before{content:'';display:block;flex:none;width:36px;height:4px;border-radius:2px;
