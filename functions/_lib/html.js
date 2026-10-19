@@ -15,7 +15,7 @@ export function privateHeaders(nonce, type = 'text/html; charset=utf-8') {
     'Content-Type': type,
     'Cache-Control': 'no-store, private',
     'X-Robots-Tag': 'noindex, nofollow, noarchive',
-    'Referrer-Policy': 'no-referrer',
+    'Referrer-Policy': 'same-origin', // same-origin so sameOrigin()'s Referer fallback works; still sends nothing to other sites
     'X-Content-Type-Options': 'nosniff',
     // script-src allows 'self' as well as the nonce: the dashboard's client
     // application is served from /crm/ as a real module, which a nonce cannot
