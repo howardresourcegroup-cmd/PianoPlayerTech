@@ -5,7 +5,7 @@
 // overdue and does not say so is just a list. This is that badge, plus the
 // panel behind it and the calendar subscription.
 
-import { D, view } from './state.js';
+import { D, view, can } from './state.js';
 import { el, fmtWhen, dlgbody, showDlg, dlgHeader } from './dom.js';
 import { post } from './api.js';
 
@@ -64,7 +64,8 @@ function panel(f, openLeadById){
     dlgbody.appendChild(ul);
   }
 
-  dlgbody.appendChild(calendarBox());
+  // The feed is a setting, and its address a credential: owner only.
+  if (can('settings.write')) dlgbody.appendChild(calendarBox());
   showDlg();
 }
 

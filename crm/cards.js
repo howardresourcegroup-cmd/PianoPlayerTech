@@ -13,7 +13,7 @@
 //
 // Editing still works: tapping a field opens the same editor the table uses.
 
-import { D, view, state, TYPE_LABEL } from './state.js';
+import { D, view, state, TYPE_LABEL, can } from './state.js';
 import { el, fmt, fmtWhen, fmtLong, tel } from './dom.js';
 import { editableChoice } from './edit.js';
 import { placeOf, jobOf, isPastDue } from './fields.js';
@@ -88,6 +88,8 @@ export function cardFor(r, handlers){
     options: (D.setStatuses || []).map(function(k){ return { value:k, label:label(k) }; }),
     allLabels: D.statusLabels,
     tone: statusTone,
+    disabled: !can('leads.update'),
+    disabledReason: 'Your role can look, not change',
     save: function(v){ handlers.onSave(r, 'status', v, card); }
   }));
   card.appendChild(head);
@@ -142,7 +144,7 @@ export function cardFor(r, handlers){
   }
   acts.appendChild(el('button', {className:'cl-btn', type:'button', text:'Open',
     on:{click:function(){ handlers.onOpen(r); }}}));
-  if (view !== 'archive' && !r.referred_at && r.pipeline === 'tuning') {
+  if (view !== 'archive' && !r.referred_at && r.pipeline === 'tuning' && can('leads.refer')) {
     acts.appendChild(el('button', {className:'cl-btn refer', type:'button', text:'Refer →',
       on:{click:function(){ handlers.onRefer(r); }}}));
   }

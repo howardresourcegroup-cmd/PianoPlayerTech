@@ -4,7 +4,7 @@
 // red. There is no save button and no dirty state, because a half-edited
 // lead that looks saved is worse than a slow one.
 
-import { D, view, state, INV_LABEL, PAGE_SIZES } from './state.js';
+import { D, view, state, INV_LABEL, PAGE_SIZES, can, canBulk } from './state.js';
 import { el, head, body, shown, empty, fmt, fmtLong, fmtWhen, tel, flash } from './dom.js';
 import { post } from './api.js';
 import { COLS } from './columns.js';
@@ -44,6 +44,7 @@ function renderHead(){
   head.textContent = '';
   COLS.forEach(function(c, i){
     if (c.type === 'pick') {
+      if (!canBulk()) { head.appendChild(el('th', {className:'sticky pickcol'})); return; }
       var all = visible.length > 0 && visible.every(function(r){ return state.selected.has(r.id); });
       var some = !all && visible.some(function(r){ return state.selected.has(r.id); });
       var box = el('input', {type:'checkbox', checked:all,
@@ -104,8 +105,15 @@ function cell(r, c, i){
   td.style.minWidth = w + 'px';
   td.style.maxWidth = (widths[colKey(c, i)] ? w : w + 80) + 'px';
   var v = r[c.k] == null ? '' : r[c.k];
+  // A role that cannot change leads sees the same cells, read-only.
+  var ro = !can('leads.update');
+  function roCell(t){
+    t = t == null ? '' : String(t);
+    return el('div', {className:'ro' + (t ? '' : ' empty'), text:t || BLANK, title:t});
+  }
 
   function text(opts){
+    if (ro) return roCell(v);
     return editableText(Object.assign({
       value: v, label: c.label,
       save: function(next){ save(r, c.k, next, td); }
@@ -113,6 +121,8 @@ function cell(r, c, i){
   }
 
   if (c.type === 'pick') {
+    td.className = 'sticky pickcol';
+    if (!canBulk()) return td;
     var box = el('input', {type:'checkbox', checked:state.selected.has(r.id), 'aria-label':'Select this lead'});
     box.addEventListener('change', function(){
       if (box.checked) state.selected.add(r.id); else state.selected.delete(r.id);
@@ -131,7 +141,7 @@ function cell(r, c, i){
       title:'Open this lead', on:{click:function(){ openLead(r); }}});
     var pencil = el('button', {className:'inlineedit', type:'button', text:'✎',
       title:'Rename', 'aria-label':'Rename this lead'});
-    var holder = el('div', {className:'namecell'}, [name, pencil]);
+    var holder = el('div', {className:'namecell'}, ro ? [name] : [name, pencil]);
     pencil.addEventListener('click', function(){
       holder.textContent = '';
       var inp = el('input', {value:String(v), 'aria-label':'Name'});
@@ -169,7 +179,7 @@ function cell(r, c, i){
     // Read as a date, edit as a picker. An unscheduled lead shows a dash,
     // not mm/dd/yyyy -- most leads have no date and that noise was on
     // every one of them.
-    td.appendChild(editableWhen(r, td));
+    td.appendChild(ro ? roCell(r.scheduled_at ? fmtWhen(r.scheduled_at) : '') : editableWhen(r, td));
     return td;
   }
 
@@ -183,17 +193,17 @@ function cell(r, c, i){
 
   if (c.type === 'archiveacts') {
     td.appendChild(el('div', {className:'cellacts'}, [
-      el('button', {className:'ghost sm', type:'button', text:'Restore',
-        on:{click:function(){ archiveAction(r, 'restore'); }}}),
-      el('button', {className:'danger', type:'button', text:'Delete now',
-        on:{click:function(){ archiveAction(r, 'purge'); }}})
-    ]));
+      can('leads.archive') ? el('button', {className:'ghost sm', type:'button', text:'Restore',
+        on:{click:function(){ archiveAction(r, 'restore'); }}}) : null,
+      can('leads.delete') ? el('button', {className:'danger', type:'button', text:'Delete now',
+        on:{click:function(){ archiveAction(r, 'purge'); }}}) : null
+    ].filter(Boolean)));
     return td;
   }
 
   if (c.type === 'refer') {
-    if (r.referred_at) td.appendChild(cellSelect(r, c, td));
-    else if (r.pipeline === 'tuning') {
+    if (r.referred_at) td.appendChild(ro ? roCell((c.labels && c.labels[v]) || v) : cellSelect(r, c, td));
+    else if (r.pipeline === 'tuning' && can('leads.refer')) {
       td.appendChild(el('button', {className:'refergo', type:'button', text:'Refer →',
         title:'Send this lead to World Class',
         on:{click:function(){ openRefer(r); }}}));
@@ -202,12 +212,16 @@ function cell(r, c, i){
     return td;
   }
 
-  if (c.type === 'select') { td.appendChild(cellSelect(r, c, td)); return td; }
+  if (c.type === 'select') {
+    td.appendChild(ro ? roCell(c.k === 'status' ? (D.statusLabels[v] || v) : ((c.labels && c.labels[v]) || v))
+      : cellSelect(r, c, td));
+    return td;
+  }
 
   if (c.type === 'paid') {
     var cb = el('input', {type:'checkbox', checked:!!v, 'aria-label':'Paid',
       title: r.referred_at ? (v ? 'Paid ' + fmtLong(v) : 'Mark as paid') : 'Not referred yet'});
-    cb.disabled = !r.referred_at;
+    cb.disabled = !r.referred_at || !can('payments.write');
     cb.addEventListener('change', function(){
       var before = Object.assign({}, r);
       post({action:'paid', id:r.id, paid:cb.checked}).then(function(j){
@@ -377,7 +391,8 @@ var cardHandlers = {
 
 // Rotating a phone, or dragging a desktop window narrow, changes which
 // layout is right. Re-render only when the mode actually flips.
-onLayoutChange(function(){ render(); });
+// The Users tab has no grid to redraw.
+onLayoutChange(function(){ if (head) render(); });
 
 function renderPager(total, pages){
   var box = document.getElementById('pager');

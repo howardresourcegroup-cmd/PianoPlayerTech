@@ -3,7 +3,7 @@
 // Opened from the grid's Open button, or straight into the referral form
 // from its Refer button.
 
-import { D, REF_LABEL, TYPE_LABEL } from './state.js';
+import { D, REF_LABEL, TYPE_LABEL, can } from './state.js';
 import { el, dlg, dlgbody, fmt, fmtLong, tel, money, fields, showDlg, dlgHeader } from './dom.js';
 import { post } from './api.js';
 import { bumpRef } from './stats.js';
@@ -92,8 +92,8 @@ export function openLead(r, tab){
     panels.details.appendChild(el('details', null, [el('summary', {text:'Everything they submitted'}), dl]));
   }
   if (r.notes) panels.details.appendChild(el('div', {className:'msg', text:r.notes}));
-  panels.details.appendChild(referBox(r, f));
-  panels.details.appendChild(el('div', {className:'refer'}, [
+  if (r.referred_at || can('leads.refer')) panels.details.appendChild(referBox(r, f));
+  if (can('invoices.write')) panels.details.appendChild(el('div', {className:'refer'}, [
     el('h3', {text:'Invoice'}),
     el('button', {className:'ghost', type:'button', text:'Create an invoice for ' + (r.name || 'this customer'),
       on:{click:function(){ invoiceDialog({billTo:r.name, email:r.email, leadId:r.id}); }}})
@@ -101,7 +101,7 @@ export function openLead(r, tab){
 
   // ---- activity and history, fetched on open
   var actBox = el('div');
-  panels.activity.appendChild(composer(r.id, function(row){
+  if (can('activities.write')) panels.activity.appendChild(composer(r.id, function(row){
     acts.unshift(row); paintActivity();
   }));
   panels.activity.appendChild(actBox);

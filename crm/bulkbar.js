@@ -9,7 +9,7 @@
 // rather than assumed: the reply reports how many actually changed, which is
 // not always how many were asked for.
 
-import { D, view, state } from './state.js';
+import { D, view, state, can } from './state.js';
 import { el } from './dom.js';
 import { post } from './api.js';
 
@@ -48,7 +48,7 @@ export function renderBulkBar(onDone){
   }
 
   if (view === 'archive') {
-    bar.appendChild(el('button', {className:'go sm', type:'button', text:'Restore',
+    if (can('leads.archive')) bar.appendChild(el('button', {className:'go sm', type:'button', text:'Restore',
       on:{click:function(){ run({op:'restore'}, null, 'restore'); }}}));
   } else {
     // Status
@@ -64,7 +64,7 @@ export function renderBulkBar(onDone){
       run({op:'status', value:to},
         'Set ' + plural(ids.length, 'lead', 'leads') + ' to ' + label(to) + '?', 'status', to);
     });
-    bar.appendChild(st);
+    if (can('leads.update')) bar.appendChild(st);
 
     // Pipeline
     var pl = el('select', {'aria-label':'Move the selected leads to a pipeline'});
@@ -79,9 +79,9 @@ export function renderBulkBar(onDone){
       run({op:'pipeline', value:to},
         'Move ' + plural(ids.length, 'lead', 'leads') + ' to ' + to + '?', 'pipeline', to);
     });
-    bar.appendChild(pl);
+    if (can('leads.update')) bar.appendChild(pl);
 
-    bar.appendChild(el('button', {className:'ghost sm', type:'button', text:'Archive',
+    if (can('leads.archive')) bar.appendChild(el('button', {className:'ghost sm', type:'button', text:'Archive',
       on:{click:function(){
         run({op:'archive'},
           'Archive ' + plural(ids.length, 'lead', 'leads') + '? They leave this list and are ' +

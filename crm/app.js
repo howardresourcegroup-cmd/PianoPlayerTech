@@ -20,6 +20,7 @@
 //   invoices.js  Stripe invoicing and the Invoices tab
 //   outreach.js  the Emails tab: the queue of drafted emails, and their settings
 //   newlead.js   the New lead form, for a phone call or a walk-in
+//   users.js     the Users tab: who may sign in, and with which role
 //
 // Nothing above touches the page while it is being imported. Every module
 // exports functions; this file decides when they run. That is what keeps
@@ -36,6 +37,7 @@ import { state } from './state.js';
 import { openLead } from './record.js';
 import { initOutreach } from './outreach.js';
 import { initNewLead } from './newlead.js';
+import { initUsers } from './users.js';
 
 // Clicking the backdrop closes the dialog. A click inside it has a different
 // target, so this does not fire on the form.
@@ -46,7 +48,9 @@ dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); })
 var onTab = document.querySelector('.tab.on');
 if (onTab && onTab.scrollIntoView) onTab.scrollIntoView({block:'nearest', inline:'center'});
 
-if (view === 'invoices') {
+if (view === 'users') {
+  initUsers();
+} else if (view === 'invoices') {
   initInvoices();
 } else if (view === 'emails') {
   initOutreach();

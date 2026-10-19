@@ -39,3 +39,13 @@ export const PAGE_SIZES = [50, 100, 250, 0];
 export const REF_LABEL = { sent: 'Sent — waiting', booked: 'Booked', no_booking: "Didn't book" };
 export const INV_LABEL = { open: 'Unpaid', paid: 'Paid', void: 'Void', uncollectible: 'Uncollectible', draft: 'Draft' };
 export const TYPE_LABEL = { homeowner: 'Homeowner', business: 'Business', dealer: 'Dealer' };
+
+// Who is signed in, and what their role may do. Only for hiding what they
+// cannot use: the server checks every request again, so a button left
+// showing by mistake fails with a 403 rather than doing anything.
+export const ME = D.me || null;
+export function can(permission){
+  return !ME || (ME.perms || []).indexOf(permission) >= 0;
+}
+// Ticking rows is only worth offering to a role that can act on them.
+export function canBulk(){ return can('leads.update') || can('leads.archive'); }

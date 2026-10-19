@@ -8,7 +8,7 @@
 // Everything a customer typed reaches the page through textContent or
 // .value, never innerHTML.
 
-import { D } from './state.js';
+import { D, can } from './state.js';
 import { el, fmt } from './dom.js';
 import { post } from './api.js';
 
@@ -38,6 +38,7 @@ function draftCard(r, onGone){
   var msg = el('p', {className:'msg'});
   var send = el('button', {className:'go', type:'button', text: r.status === 'failed' ? 'Try again' : 'Send'});
   var skip = el('button', {className:'ghost', type:'button', text:'Skip'});
+  if (!can('outreach.send')) { send.disabled = true; skip.disabled = true; }
   if (r.status === 'failed' && r.error) say(msg, 'Last attempt: ' + r.error, false);
 
   var card = el('div', {className:'card oq'}, [
@@ -150,6 +151,7 @@ function settingsSection(){
   });
 
   var save = el('button', {className:'go', type:'button', text:'Save settings'});
+  if (!can('outreach.configure')) save.disabled = true;
   save.addEventListener('click', function(){
     var kinds = {};
     Object.keys(controls).forEach(function(k){

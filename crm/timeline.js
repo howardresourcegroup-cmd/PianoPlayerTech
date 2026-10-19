@@ -7,6 +7,7 @@
 
 import { el, fmt, fmtWhen } from './dom.js';
 import { post } from './api.js';
+import { can } from './state.js';
 
 export const TYPE_LABEL = {
   call: 'Call', email: 'Email', sms: 'Text', note: 'Note',
@@ -100,6 +101,7 @@ export function timeline(rows, onChange){
     if (a.due_at) {
       var cb = el('input', {type:'checkbox', className:'tick', checked:isDone,
         'aria-label': isDone ? 'Mark as not done' : 'Mark as done'});
+      if (!can('activities.write')) cb.disabled = true;
       cb.addEventListener('change', function(){
         cb.disabled = true;
         post({action:'activityDone', activityId:a.id, done:cb.checked}).then(function(j){
@@ -127,7 +129,7 @@ export function timeline(rows, onChange){
 
     // An automatic entry is the CRM's own record of what happened; deleting
     // one would be editing history, so only logged entries offer it.
-    if (a.type !== 'status') {
+    if (a.type !== 'status' && can('activities.delete')) {
       li.appendChild(el('button', {className:'del', type:'button', text:'×',
         title:'Delete this entry', 'aria-label':'Delete this entry',
         on:{click:function(){

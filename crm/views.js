@@ -9,7 +9,7 @@
 // is:unbilled in it and would mean nothing on Repair, so it is not offered
 // there.
 
-import { D, view, state } from './state.js';
+import { D, view, state, can } from './state.js';
 import { el, q, sf } from './dom.js';
 import { post } from './api.js';
 import { paintChips } from './filters.js';
@@ -54,7 +54,7 @@ export function renderViews(onChange){
     var wrap = el('span', {className:'vchip' + (on ? ' on' : '')});
     wrap.appendChild(el('button', {className:'vname', type:'button', text:v.name,
       title:'Apply this view', on:{click:function(){ apply(v.config, onChange); }}}));
-    wrap.appendChild(el('button', {className:'vdel', type:'button', text:'×',
+    if (can('settings.write')) wrap.appendChild(el('button', {className:'vdel', type:'button', text:'×',
       title:'Delete this view', 'aria-label':'Delete the view ' + v.name,
       on:{click:function(){
         if (!confirm('Delete the saved view "' + v.name + '"? The leads are not affected.')) return;
@@ -69,7 +69,7 @@ export function renderViews(onChange){
   // Only worth offering when there is something to save.
   var cfg = currentConfig();
   var worthSaving = cfg.q || cfg.sf || cfg.sortKey;
-  if (worthSaving && !mine.some(function(v){ return sameAsCurrent(v.config); })) {
+  if (worthSaving && can('settings.write') && !mine.some(function(v){ return sameAsCurrent(v.config); })) {
     box.appendChild(el('button', {className:'vsave', type:'button', text:'+ Save this view',
       title:'Keep this search and filter under a name',
       on:{click:function(){ save(onChange); }}}));

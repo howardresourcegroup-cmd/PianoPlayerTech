@@ -520,4 +520,24 @@ dialog[open]{display:flex;flex-direction:column}
   @keyframes sheet{from{transform:translateY(28px);opacity:.5}to{transform:none;opacity:1}}
   @media(prefers-reduced-motion:reduce){dialog[open]{animation:none}}
 }
+/* Users tab: who may sign in, and as what. Owner only. */
+.whoami strong{color:var(--text);font-weight:600}
+.users{display:grid;gap:1rem;max-width:960px}
+.users .note{border-left:3px solid var(--gold);padding:.5rem .8rem;background:var(--surface);color:var(--soft);font-size:.88rem;border-radius:0 7px 7px 0}
+.users .addform{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.users .addform input,.users .addform select,.users td select{background:var(--ground);color:var(--text);border:1px solid var(--border);
+border-radius:7px;height:36px;padding:0 .6rem;font:inherit}
+.users .addform input{flex:1;min-width:180px}
+.users .gridwrap{max-height:none}
+.users td{padding:0 .6rem;white-space:nowrap}
+.users td select{height:30px}
+.users .rolehelp{list-style:none;margin:.3rem 0 0;padding:0;font-size:.85rem;color:var(--soft)}
+.users .rolehelp b{color:var(--text);display:inline-block;min-width:5.5rem}
+.users .off td{opacity:.55}
+.users .tag{font-size:.72rem;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:0 .4rem;margin-left:.35rem}
+.users .msgline{min-height:1.2rem;font-size:.88rem}
+.users .msgline.bad{color:var(--bad)}
+.users .msgline.good{color:var(--ok)}
+.users .log{list-style:none;margin:0;padding:0;font-size:.85rem;color:var(--soft)}
+.users .log li{padding:.3rem 0;border-bottom:1px solid var(--border)}
 `;
