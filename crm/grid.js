@@ -105,8 +105,10 @@ function cell(r, c, i){
   td.style.minWidth = w + 'px';
   td.style.maxWidth = (widths[colKey(c, i)] ? w : w + 80) + 'px';
   var v = r[c.k] == null ? '' : r[c.k];
-  // A role that cannot change leads sees the same cells, read-only.
-  var ro = !can('leads.update');
+  // A role that cannot change leads sees the same cells, read-only. A
+  // referral's outcome is money (it decides what World Class owes), so it
+  // also needs payments.write, as the server requires.
+  var ro = !can('leads.update') || (c.k === 'referral_status' && !can('payments.write'));
   function roCell(t){
     t = t == null ? '' : String(t);
     return el('div', {className:'ro' + (t ? '' : ' empty'), text:t || BLANK, title:t});

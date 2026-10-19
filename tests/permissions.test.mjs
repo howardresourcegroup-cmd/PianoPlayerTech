@@ -222,11 +222,186 @@ test('the password session is the owner on the API', async () => {
   delete e.ACCESS_TEAM_DOMAIN;
   e.ADMIN_PASSWORD = 'pw-for-tests';
   const req = new Request('https://pianoplayertech.com/leads', { method: 'POST',
-    headers: { 'Content-Type': 'application/json', Cookie: `${COOKIE}=${await mintToken('pw-for-tests')}` },
+    headers: { 'Content-Type': 'application/json', Origin: 'https://pianoplayertech.com',
+      Cookie: `${COOKIE}=${await mintToken('pw-for-tests')}` },
     body: JSON.stringify({ action: 'userCreate', email: 'pat@ppt.test', role: 'tech' }) });
   const ctx = context(req, e);
   const res = await onRequestPost(ctx);
   await ctx.settle();
   assert.strictEqual(res.status, 200);
   assert.strictEqual(sqlite(e._file, "SELECT created_by FROM users WHERE email = 'pat@ppt.test'")[0].created_by, 'admin');
+});
+
+// ------------------------------------------------- fix round 1 (review)
+
+const TABLES = ['leads', 'users', 'activities', 'settings', 'views', 'invoices', 'outreach'];
+const snapshot = (e) => Object.fromEntries(TABLES.map((t) => [t, sqlite(e._file, `SELECT * FROM ${t}`)]));
+
+test('every action, for every role without its permission, is 403 and changes nothing', async () => {
+  const { can } = await import('../functions/_lib/roles.js');
+  const e = env();
+  sqlite(e._file, `INSERT INTO activities (created_at, lead_id, type, body) VALUES ('2026-10-02T00:00:00.000Z', 1, 'note', 'hi')`);
+  sqlite(e._file, `INSERT INTO views (created_at, name, config) VALUES ('2026-10-02T00:00:00.000Z', 'Mine', '{}')`);
+  const before = snapshot(e);
+  const base = { id: 1, activityId: 1, viewId: 1, email: PEOPLE.viewer, role: 'owner', active: false,
+    field: 'status', value: 'waiting', type: 'note', body: 'x', name: 'x', pipeline: 'repair',
+    billTo: 'X', manual: true, paid: true, ids: [1], config: {}, kind: 'quote_checkin' };
+  let checked = 0;
+  for (const role of ['manager', 'tech', 'viewer']) {
+    const bodies = [
+      ...Object.keys(ACTION_PERMS).map((action) => [ACTION_PERMS[action], { ...base, action }]),
+      ...Object.keys(BULK_PERMS).map((op) => [BULK_PERMS[op], { ...base, action: 'bulk', op }])
+    ];
+    for (const [perm, body] of bodies) {
+      if (can(role, perm)) continue;
+      const r = await post(e, PEOPLE[role], body);
+      assert.strictEqual(r.status, 403, `${role} ${body.action}${body.action === 'bulk' ? ' ' + body.op : ''}`);
+      checked++;
+    }
+  }
+  assert.ok(checked > 40, `checked ${checked}`);
+  assert.deepStrictEqual(snapshot(e), before);
+});
+
+test('nobody can delete or tick the user-change trail, owner included', async () => {
+  const e = env();
+  const add = await post(e, OWNER, { action: 'userCreate', email: 'pat@ppt.test', role: 'tech' });
+  assert.strictEqual(add.status, 200);
+  const [row] = sqlite(e._file, "SELECT id FROM activities WHERE json_extract(meta, '$.area') = 'users'");
+  for (const who of [PEOPLE.manager, OWNER]) {
+    assert.strictEqual((await post(e, who, { action: 'activityDelete', activityId: row.id })).status, 404);
+  }
+  const tick = await post(e, PEOPLE.tech, { action: 'activityDone', activityId: row.id, done: true });
+  assert.strictEqual(tick.status, 404);
+  assert.ok(!JSON.stringify(tick.body).includes('pat@ppt.test'), 'nothing of the row comes back');
+  const after = sqlite(e._file, `SELECT * FROM activities WHERE id = ${row.id}`)[0];
+  assert.ok(after, 'still there');
+  assert.strictEqual(after.completed_at, null);
+});
+
+test('ticking a follow-up returns only what the client needs, and not on an archived lead', async () => {
+  const e = env();
+  sqlite(e._file, `INSERT INTO leads (id, created_at, pipeline, status, name, archived_at)
+    VALUES (2, '2026-10-01T00:00:00.000Z', 'tuning', 'new', 'Gone', '2026-10-05T00:00:00.000Z')`);
+  sqlite(e._file, `INSERT INTO activities (id, created_at, lead_id, type, body, due_at) VALUES
+    (50, '2026-10-02T00:00:00.000Z', 1, 'followup', 'secret-body', '2026-10-09T00:00:00.000Z'),
+    (51, '2026-10-02T00:00:00.000Z', 2, 'followup', 'old', '2026-10-09T00:00:00.000Z')`);
+  const ok = await post(e, PEOPLE.tech, { action: 'activityDone', activityId: 50, done: true });
+  assert.strictEqual(ok.status, 200);
+  assert.deepStrictEqual(Object.keys(ok.body.activity).sort(), ['completed_at', 'id', 'lead_id']);
+  assert.strictEqual((await post(e, PEOPLE.tech, { action: 'activityDone', activityId: 51, done: true })).status, 404);
+  assert.strictEqual((await post(e, OWNER, { action: 'activityDelete', activityId: 51 })).status, 404);
+});
+
+test('a tech cannot change a referral outcome or clear its paid mark', async () => {
+  const e = env();
+  sqlite(e._file, `UPDATE leads SET referred_at = '2026-10-01T00:00:00.000Z', referral_status = 'booked',
+    referral_paid_at = '2026-10-05T00:00:00.000Z' WHERE id = 1`);
+  for (const value of ['sent', 'no_booking', 'booked']) {
+    const r = await post(e, PEOPLE.tech, { action: 'update', id: 1, field: 'referral_status', value });
+    assert.strictEqual(r.status, 403, value);
+  }
+  const row = sqlite(e._file, 'SELECT referral_status, referral_paid_at FROM leads WHERE id = 1')[0];
+  assert.deepStrictEqual(row, { referral_status: 'booked', referral_paid_at: '2026-10-05T00:00:00.000Z' });
+  assert.strictEqual((await post(e, PEOPLE.manager,
+    { action: 'update', id: 1, field: 'referral_status', value: 'sent' })).status, 200);
+});
+
+test('a POST must come from our own page, as JSON', async () => {
+  const e = env();
+  const token = (await asUser(PEOPLE.manager)).headers.get('Cf-Access-Jwt-Assertion');
+  const send = async (headers, ct = 'application/json') => {
+    const req = new Request('https://pianoplayertech.com/leads', { method: 'POST',
+      headers: { 'Cf-Access-Jwt-Assertion': token, 'Content-Type': ct, ...headers },
+      body: JSON.stringify({ action: 'record', id: 1 }) });
+    const ctx = context(req, e);
+    const res = await onRequestPost(ctx);
+    await ctx.settle();
+    return res.status;
+  };
+  assert.strictEqual(await send({}), 403, 'no Origin, no Referer, no Sec-Fetch-Site');
+  assert.strictEqual(await send({ Origin: 'https://evil.example' }), 403);
+  assert.strictEqual(await send({ 'Sec-Fetch-Site': 'cross-site', Origin: 'https://pianoplayertech.com' }), 403);
+  assert.strictEqual(await send({ 'Sec-Fetch-Site': 'same-site' }), 403);
+  assert.strictEqual(await send({ Referer: 'https://evil.example/x' }), 403);
+  assert.strictEqual(await send({ Origin: 'https://pianoplayertech.com' }, 'text/plain'), 415);
+  assert.strictEqual(await send({ Origin: 'https://pianoplayertech.com' }), 200);
+  assert.strictEqual(await send({ Referer: 'https://pianoplayertech.com/leads' }), 200);
+  assert.strictEqual(await send({ 'Sec-Fetch-Site': 'same-origin' }), 200);
+});
+
+test('a bulk op named after an Object.prototype member is unknown, not a permission', async () => {
+  for (const op of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+    assert.strictEqual(permissionFor({ action: 'bulk', op }), '');
+  }
+  assert.strictEqual((await post(env(), OWNER, { action: 'bulk', op: 'constructor', ids: [1] })).status, 400);
+});
+
+function payload(html) {
+  const m = html.match(/<script type="application\/json" id="data">([\s\S]*?)<\/script>/);
+  return JSON.parse(m[1]);
+}
+
+test('without invoices.read, rows, records and stats carry no referral payment data', async () => {
+  const e = env();
+  sqlite(e._file, `UPDATE leads SET referred_at = '2026-10-01T00:00:00.000Z', referral_status = 'booked',
+    referral_paid_at = '2026-10-05T00:00:00.000Z', referral_invoice_id = 7 WHERE id = 1`);
+  for (const role of ['tech', 'viewer']) {
+    const d = payload((await get(e, PEOPLE[role], '?p=referrals')).text);
+    assert.strictEqual(d.rows.length, 1);
+    assert.ok(!('referral_paid_at' in d.rows[0]) && !('referral_invoice_id' in d.rows[0]), role);
+    assert.strictEqual(d.ref.paid, 0);
+    const rec = (await post(e, PEOPLE[role], { action: 'record', id: 1 })).body.record;
+    assert.ok(!('referral_paid_at' in rec.lead) && !('referral_invoice_id' in rec.lead), role);
+  }
+  const d = payload((await get(e, PEOPLE.manager, '?p=referrals')).text);
+  assert.strictEqual(d.rows[0].referral_paid_at, '2026-10-05T00:00:00.000Z');
+  assert.strictEqual(d.ref.paid, 1);
+});
+
+test('a database hiccup on the users lookup is "try again", not "ask the owner"', async () => {
+  const e = env();
+  const real = e.DB;
+  e.DB = { batch: real.batch, prepare(sql) {
+    const st = real.prepare(sql);
+    if (/FROM users WHERE email = \?/.test(sql)) st.first = async () => { throw new Error('D1_ERROR: overloaded'); };
+    return st;
+  } };
+  const page = await get(e, PEOPLE.tech);
+  assert.strictEqual(page.status, 503);
+  assert.match(page.text, /Try again in a moment/);
+  const api = await post(e, PEOPLE.tech, { action: 'record', id: 1 });
+  assert.strictEqual(api.status, 503);
+  assert.match(api.body.error, /Try again/);
+  // The ACCESS_EMAILS owner is not held up by it.
+  assert.strictEqual((await get(e, OWNER)).status, 200);
+});
+
+test('before the migration: owners and the password get in, the Users tab says what to do, others are refused', async () => {
+  const e = env();
+  sqlite(e._file, 'DROP TABLE users');
+  assert.strictEqual((await get(e, OWNER)).status, 200);
+  assert.strictEqual((await post(e, OWNER, { action: 'record', id: 1 })).status, 200);
+  const tab = await get(e, OWNER, '?p=users');
+  assert.strictEqual(tab.status, 200);
+  assert.match(payload(tab.text).usersError, /Apply db\/2026-10-18-users\.sql/);
+  const add = await post(e, OWNER, { action: 'userCreate', email: 'pat@ppt.test', role: 'tech' });
+  assert.strictEqual(add.status, 500);
+  assert.match(add.body.error, /Apply db\/2026-10-18-users\.sql/);
+  const stranger = await get(e, PEOPLE.tech);
+  assert.strictEqual(stranger.status, 403);
+  assert.match(stranger.text, /Ask the owner to add you/);
+
+  const { mintToken, COOKIE } = await import('../functions/_lib/auth.js');
+  delete e.ACCESS_TEAM_DOMAIN;
+  e.ADMIN_PASSWORD = 'pw-for-tests';
+  const cookie = `${COOKIE}=${await mintToken('pw-for-tests')}`;
+  const g = context(new Request('https://pianoplayertech.com/leads', { headers: { Cookie: cookie } }), e);
+  assert.strictEqual((await onRequestGet(g)).status, 200);
+  await g.settle();
+  const p = context(new Request('https://pianoplayertech.com/leads', { method: 'POST',
+    headers: { Cookie: cookie, 'Content-Type': 'application/json', Origin: 'https://pianoplayertech.com' },
+    body: JSON.stringify({ action: 'record', id: 1 }) }), e);
+  assert.strictEqual((await onRequestPost(p)).status, 200);
+  await p.settle();
 });

@@ -142,16 +142,27 @@ export async function loadRecord(env, leadId) {
   };
 }
 
-// Tick or untick a follow-up. Returns the updated row, or null if there was
-// no such activity.
+// What a person may tick or delete: an activity on a lead that still
+// exists and is not archived. Never the users trail -- those rows have no
+// lead, and are the record of who was given access, so nobody may change or
+// delete them, owner included.
+const ON_A_LIVE_LEAD = `lead_id IS NOT NULL
+  AND COALESCE(json_extract(meta, '$.area'), '') <> 'users'
+  AND lead_id IN (SELECT id FROM leads WHERE archived_at IS NULL)`;
+
+// Tick or untick a follow-up. Returns { id, lead_id, completed_at }, or null
+// if there was no such activity it may touch. Only those fields: a probe by
+// id must not read back somebody else's row.
 export async function setActivityDone(env, activityId, done, now) {
   return await env.DB.prepare(
-    `UPDATE activities SET completed_at = ? WHERE id = ? RETURNING *`)
+    `UPDATE activities SET completed_at = ? WHERE id = ? AND ${ON_A_LIVE_LEAD}
+     RETURNING id, lead_id, completed_at`)
     .bind(done ? now : null, activityId).first() || null;
 }
 
 export async function deleteActivity(env, activityId) {
-  const r = await env.DB.prepare('DELETE FROM activities WHERE id = ?').bind(activityId).run();
+  const r = await env.DB.prepare(`DELETE FROM activities WHERE id = ? AND ${ON_A_LIVE_LEAD}`)
+    .bind(activityId).run();
   return !!(r.meta && r.meta.changes);
 }
 

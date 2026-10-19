@@ -269,3 +269,70 @@ test('schema.sql and the migration define the same users table', () => {
     pick(fs.readFileSync(path.join(ROOT, 'db/schema.sql'), 'utf8')),
     pick(fs.readFileSync(path.join(ROOT, 'db/2026-10-18-users.sql'), 'utf8')));
 });
+
+// ------------------------------------------------- fix round 1 (review)
+
+test('active must be a real boolean: "false" is refused, not read as true', async () => {
+  const env = accessEnv();
+  addUser(env, 't@ppt.test', 'tech', 0);
+  for (const active of ['false', '0', 0, 1, 'true', [], {}]) {
+    const out = await updateUser(env, 't@ppt.test', { active }, 'boss@ppt.test', NOW);
+    assert.strictEqual(out.status, 400, JSON.stringify(active));
+  }
+  assert.strictEqual((await getUser(env, 't@ppt.test')).active, false);
+  for (const role of [['owner'], { toString: () => 'owner' }, 1]) {
+    assert.strictEqual((await updateUser(env, 't@ppt.test', { role }, 'boss@ppt.test', NOW)).status, 400);
+    assert.strictEqual((await createUser(env, { email: 'n@ppt.test', role }, 'boss@ppt.test', NOW)).status, 400);
+  }
+});
+
+test('a user change and its log line land together or not at all', async () => {
+  const env = accessEnv();
+  addUser(env, 't@ppt.test', 'tech');
+  // A log that cannot be written must take the change down with it.
+  sqlite(env._file, 'ALTER TABLE activities RENAME TO activities_gone');
+  await assert.rejects(updateUser(env, 't@ppt.test', { role: 'manager' }, 'boss@ppt.test', NOW));
+  await assert.rejects(createUser(env, { email: 'n@ppt.test', role: 'viewer' }, 'boss@ppt.test', NOW));
+  sqlite(env._file, 'ALTER TABLE activities_gone RENAME TO activities');
+  assert.strictEqual((await getUser(env, 't@ppt.test')).role, 'tech');
+  assert.strictEqual(await getUser(env, 'n@ppt.test'), null);
+});
+
+test('a refused duplicate add writes no log line', async () => {
+  const env = accessEnv();
+  await createUser(env, { email: 'pat@ppt.test', role: 'tech' }, 'boss@ppt.test', NOW);
+  await createUser(env, { email: 'pat@ppt.test', role: 'viewer' }, 'boss@ppt.test', NOW);
+  assert.strictEqual(sqlite(env._file, 'SELECT COUNT(*) AS n FROM activities')[0].n, 1);
+});
+
+test('a @domain entry does not count as another owner for the last-owner rule', async () => {
+  const env = accessEnv({ ACCESS_EMAILS: '@ppt.test' });
+  addUser(env, 'only@other.test', 'owner');
+  assert.strictEqual((await updateUser(env, 'only@other.test', { role: 'tech' }, 'only@other.test', NOW)).status, 409);
+});
+
+test('tokens that are not genuinely from our Access team are no identity', async () => {
+  const env = accessEnv();
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const good = await accessToken('boss@ppt.test');
+  const [h, c, sig] = good.split('.');
+  const now = Math.floor(Date.now() / 1000);
+  const forged = b64({ aud: [AUD], iss: `https://${TEAM}`, exp: now + 3600, email: 'boss@ppt.test', admin: true });
+  const tokens = {
+    'wrong iss': await accessToken('boss@ppt.test', { iss: 'https://evil.cloudflareaccess.com' }),
+    'bad signature': `${h}.${forged}.${sig}`,
+    'truncated signature': `${h}.${c}.${sig.slice(0, -8)}`,
+    'unknown kid': await accessToken('boss@ppt.test', {}, { kid: 'not-a-key' }),
+    'alg none': `${b64({ alg: 'none', kid: 'test-key-1' })}.${c}.`,
+    'HS256': `${b64({ alg: 'HS256', kid: 'test-key-1' })}.${c}.${sig}`,
+    'no exp': await accessToken('boss@ppt.test', { exp: undefined }),
+    'not yet valid': await accessToken('boss@ppt.test', { nbf: now + 3600 })
+  };
+  for (const [what, t] of Object.entries(tokens)) {
+    const who = await identify(new Request('https://pianoplayertech.com/leads',
+      { headers: { 'Cf-Access-Jwt-Assertion': t } }), env);
+    assert.strictEqual(who.ok, false, what);
+    assert.strictEqual(who.reason, 'signin', what);
+  }
+  assert.strictEqual((await identify(await asUser('boss@ppt.test'), env)).ok, true, 'the genuine token still works');
+});

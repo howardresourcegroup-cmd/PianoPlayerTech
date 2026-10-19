@@ -17,12 +17,22 @@ const lit = (v) => v == null ? 'NULL' : typeof v === 'number' ? String(v)
   : typeof v === 'boolean' ? (v ? '1' : '0') : `'${String(v).replace(/'/g, "''")}'`;
 
 export function sqlite(file, sql) {
-  const out = execFileSync('sqlite3', ['-json', file, sql], { encoding: 'utf8' }).trim();
+  const out = execFileSync('sqlite3', ['-json', file, sql], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
   return out ? JSON.parse(out) : [];
 }
 
 export function fakeDb(file) {
   return {
+    // Like D1: one transaction, all or nothing, a result per statement.
+    async batch(stmts) {
+      const sql = ['BEGIN'];
+      stmts.forEach((s, i) => sql.push(s._sql(), `SELECT changes() AS c, ${i} AS __i`));
+      sql.push('COMMIT');
+      const out = execFileSync('sqlite3', ['-json', '-bail', file, sql.join(';\n') + ';'], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+      const changes = [];
+      for (const m of out.matchAll(/\[\{"c":(\d+),"__i":(\d+)\}\]/g)) changes[Number(m[2])] = Number(m[1]);
+      return stmts.map((_, i) => ({ meta: { changes: changes[i] || 0 } }));
+    },
     prepare(sql) {
       let params = [];
       const api = {
@@ -83,10 +93,10 @@ export async function installFetch() {
   };
 }
 
-export async function accessToken(email, over = {}) {
+export async function accessToken(email, over = {}, headerOver = {}) {
   const kp = await keys();
   const now = Math.floor(Date.now() / 1000);
-  const header = b64url(JSON.stringify({ alg: 'RS256', kid: KID, typ: 'JWT' }));
+  const header = b64url(JSON.stringify({ alg: 'RS256', kid: KID, typ: 'JWT', ...headerOver }));
   const claims = b64url(JSON.stringify({
     aud: [AUD], iss: `https://${TEAM}`, exp: now + 3600, iat: now, email, ...over
   }));
@@ -110,7 +120,12 @@ export function addUser(env, email, role, active = 1, name = '') {
 // A request as a signed-in browser would send it.
 export async function asUser(email, { method = 'GET', path: p = '/leads', body } = {}) {
   const headers = { 'Cf-Access-Jwt-Assertion': await accessToken(email) };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (body !== undefined) {
+    // What the dashboard's own fetch sends.
+    headers['Content-Type'] = 'application/json';
+    headers.Origin = 'https://pianoplayertech.com';
+    headers['Sec-Fetch-Site'] = 'same-origin';
+  }
   return new Request(`https://pianoplayertech.com${p}`, {
     method, headers, body: body === undefined ? undefined : JSON.stringify(body)
   });

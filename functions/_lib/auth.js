@@ -165,8 +165,10 @@ export function emailAllowed(env, email) {
 //
 // Returns { ok: true, user: { email, name, role, mode, bootstrap, lastSeenAt } }
 // or { ok: false, reason, email }, where reason is 'signin' (no valid Access
-// token), 'unknown', 'inactive', 'password' (not logged in) or
-// 'unconfigured'.
+// token), 'unknown', 'inactive', 'unavailable' (the users table could not be
+// read; try again), 'password' (not logged in) or 'unconfigured'.
+let warnedNoUsersTable = false;
+
 export async function identify(request, env) {
   if (accessMode(env)) {
     const raw = await accessIdentity(request, env);
@@ -174,12 +176,24 @@ export async function identify(request, env) {
     const email = String(raw).trim().toLowerCase();
 
     let row = null;
+    let lookupFailed = false;
     try {
       row = await getUser(env, email);
     } catch (err) {
-      // Before the migration is applied this is "no such table". Not fatal
-      // for ACCESS_EMAILS; fatal for everyone else, as it should be.
-      console.error('users lookup failed', err && err.message);
+      // Before the migration is applied this is "no such table": nobody
+      // can have a row, so everyone outside ACCESS_EMAILS is simply
+      // unknown. Said once per isolate, not on every request. Anything
+      // else is the database having a bad moment: still refused, but told
+      // to retry rather than to go and ask the owner.
+      if (/no such table/i.test(String(err && err.message))) {
+        if (!warnedNoUsersTable) {
+          warnedNoUsersTable = true;
+          console.error('users table missing: apply db/2026-10-18-users.sql');
+        }
+      } else {
+        lookupFailed = true;
+        console.error('users lookup failed', err && err.message);
+      }
     }
 
     if (emailAllowed(env, email)) {
@@ -190,6 +204,7 @@ export async function identify(request, env) {
       return { ok: true, user: { email, name: row.name, role: row.role,
         mode: 'access', bootstrap: false, lastSeenAt: row.lastSeenAt, hasRow: true } };
     }
+    if (lookupFailed) return { ok: false, reason: 'unavailable', email };
     return { ok: false, reason: row && !row.active ? 'inactive' : 'unknown', email };
   }
 
@@ -212,12 +227,32 @@ export async function authed(request, env) {
   return !!(await signedIn(request, env));
 }
 
-// The SameSite=Strict cookie already stops cross-site posts; this is the
-// belt to go with those braces.
+// Is this request from our own pages? Under the password, the
+// SameSite=Strict cookie already stops cross-site posts. Under Access the
+// session is Cloudflare's CF_Authorization cookie, which is not ours to
+// make Strict, so this check is the main defence there, not a backup.
+//
+// A browser says where a request came from in up to three ways. Any one
+// that says "elsewhere" refuses it, and at least one must say "here":
+//   Sec-Fetch-Site  set by the browser itself; must be same-origin
+//   Origin          sent on cross-site POSTs; host must match
+//   Referer         the fallback, as /api/lead and /api/photos use it
+// A request carrying none of them is refused: our own client always sends
+// at least Sec-Fetch-Site or Origin.
 export function sameOrigin(request) {
+  const host = (() => { try { return new URL(request.url).host; } catch { return ''; } })();
+  const hostOf = (v) => { try { return new URL(v).host; } catch { return null; } };
+
+  const site = request.headers.get('Sec-Fetch-Site');
+  if (site && site !== 'same-origin') return false;
+
   const origin = request.headers.get('Origin');
-  if (!origin) return true;
-  try { return new URL(origin).host === new URL(request.url).host; } catch { return false; }
+  if (origin) return hostOf(origin) === host;
+
+  const referer = request.headers.get('Referer');
+  if (referer) return hostOf(referer) === host;
+
+  return site === 'same-origin';
 }
 
 // Never cached, never indexed, never framed. The page renders text customers

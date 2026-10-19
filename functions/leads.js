@@ -135,11 +135,31 @@ export const BULK_PERMS = {
 // The permission a POST body needs, or '' when it is not an action at all.
 export function permissionFor(body) {
   const action = String((body && body.action) || '');
-  if (action === 'bulk') return BULK_PERMS[String(body.op || '')] || '';
+  if (action === 'bulk') {
+    const op = String(body.op || '');
+    return Object.prototype.hasOwnProperty.call(BULK_PERMS, op) ? BULK_PERMS[op] : '';
+  }
   return Object.prototype.hasOwnProperty.call(ACTION_PERMS, action) ? ACTION_PERMS[action] : '';
 }
 
+// Fields of a lead that are money, not work. Changing a referral's outcome
+// decides what World Class owes, and anything but 'booked' clears its paid
+// mark, so it needs what marking it paid needs.
+export const FIELD_PERMS = { referral_status: 'payments.write' };
+
+// Lead columns that are accounting: when a referral was paid, and on which
+// invoice. Left out of rows and records for a role without invoices.read.
+export const MONEY_COLUMNS = ['referral_paid_at', 'referral_invoice_id'];
+
+function withoutMoney(row) {
+  if (!row) return row;
+  const out = { ...row };
+  for (const c of MONEY_COLUMNS) delete out[c];
+  return out;
+}
+
 const NO_ACCESS = "You don't have access — ask the owner to add you.";
+const UNAVAILABLE = "Couldn't check your access just now. Try again in a moment.";
 
 // What the client is told about who is signed in. The permissions are for
 // hiding buttons; the server checks them again on every request regardless.
@@ -192,7 +212,7 @@ export async function onRequestGet(context) {
   // The role decides which tabs open. Checked here, on the server; the tab
   // strip leaving them out is only a courtesy.
   const exporting = url.searchParams.get('export') === 'csv';
-  const need = VIEW_PERMS[view];
+  const need = Object.prototype.hasOwnProperty.call(VIEW_PERMS, view) ? VIEW_PERMS[view] : '';
   if (!can(me.role, need) || (exporting && !can(me.role, 'leads.export'))) {
     return forbiddenPage(me, headers);
   }
@@ -243,6 +263,7 @@ export async function onRequestGet(context) {
     let stmt = env.DB.prepare(`SELECT ${COLUMNS.join(', ')} FROM leads ${where} ${order} LIMIT 5000`);
     if (view === 'repair' || view === 'tuning') stmt = stmt.bind(view);
     rows = (await stmt.all()).results || [];
+    if (!mayInvoices) rows = rows.map(withoutMoney);
 
     if (url.searchParams.get('export') === 'csv') {
       const day = new Date().toISOString().slice(0, 10);
@@ -268,7 +289,7 @@ export async function onRequestGet(context) {
               SUM(referral_status = 'booked' AND referral_paid_at IS NOT NULL) AS paid
          FROM leads WHERE referred_at IS NOT NULL AND ${NOT_ARCHIVED}`
     ).first();
-    if (s) ref = { sent: s.sent || 0, booked: s.booked || 0, lost: s.lost || 0, paid: s.paid || 0 };
+    if (s) ref = { sent: s.sent || 0, booked: s.booked || 0, lost: s.lost || 0, paid: mayInvoices ? s.paid || 0 : 0 };
   } catch (err) {
     context.waitUntil(alertError(env, 'dashboard load', err, { action: 'read leads' }));
     return new Response(page('Leads', `
@@ -382,16 +403,20 @@ export async function onRequestPost(context) {
     return new Response(null, { status: 303, headers: { Location: '/leads?e=1' } });
   }
 
-  // Everything else is a dashboard action and needs a valid session.
+  // Everything else is a dashboard action and needs a valid session. It
+  // must come from our own page, and as JSON: a cross-site form can send
+  // text/plain whose body happens to parse as JSON, but not this type
+  // without a preflight it would fail.
   if (!sameOrigin(request)) return json({ error: 'forbidden' }, 403);
+  if (!type.toLowerCase().startsWith('application/json')) return json({ error: 'bad request' }, 415);
   // signedIn is what authed wraps, so the gate is unchanged. Keeping the
   // identity rather than discarding it is what lets an activity record who
   // did the thing.
   const ident = await identify(request, env);
   if (!ident.ok) {
-    return ident.reason === 'unknown' || ident.reason === 'inactive'
-      ? json({ error: NO_ACCESS }, 403)
-      : json({ error: 'Signed out — reload and sign in again.' }, 401);
+    if (ident.reason === 'unknown' || ident.reason === 'inactive') return json({ error: NO_ACCESS }, 403);
+    if (ident.reason === 'unavailable') return json({ error: UNAVAILABLE }, 503);
+    return json({ error: 'Signed out — reload and sign in again.' }, 401);
   }
   const me = ident.user;
   const actor = me.email;
@@ -585,7 +610,10 @@ export async function onRequestPost(context) {
       if (!rec) return json({ error: 'That lead no longer exists.' }, 404);
       // The record carries the person's invoices. A role without invoices
       // gets the record without them, not an error.
-      if (!can(me.role, 'invoices.read')) rec.invoices = [];
+      if (!can(me.role, 'invoices.read')) {
+        rec.invoices = [];
+        rec.lead = withoutMoney(rec.lead);
+      }
       return json({ ok: true, record: rec });
     }
 
@@ -620,6 +648,10 @@ export async function onRequestPost(context) {
     if (body.action === 'update') {
       const field = body.field;
       if (!Object.prototype.hasOwnProperty.call(EDITABLE, field)) return json({ error: 'That column is read-only.' }, 400);
+      if (Object.prototype.hasOwnProperty.call(FIELD_PERMS, field) && !can(me.role, FIELD_PERMS[field])) {
+        return json({ error: `Your role (${roleName(me.role)}) can't change that. Ask the owner if you need it.`,
+          permission: FIELD_PERMS[field] }, 403);
+      }
       let value = String(body.value == null ? '' : body.value).trim();
 
       if (EDITABLE[field] === 'datetime') {
@@ -920,6 +952,15 @@ function refusal(request, env, ident, headers) {
       <p class="muted">Add an <code>ADMIN_PASSWORD</code> secret in Cloudflare Pages
       &rarr; Settings &rarr; Variables and secrets, then redeploy. Until then nobody
       can open this page, including you.</p></div>`), { status: 503, headers });
+  }
+  if (ident.reason === 'unavailable') {
+    // Failing closed, but not blaming them: this is a database hiccup, not
+    // a missing invitation.
+    return new Response(page('Try again', `
+      <div class="card narrow"><h1>Try again in a moment</h1>
+      <p class="muted">${escape_(UNAVAILABLE)}</p>
+      <p><a href="/leads" style="color:var(--gold)">Reload</a></p></div>`),
+      { status: 503, headers: { ...headers, 'Retry-After': '5' } });
   }
   if (ident.reason === 'password') {
     const bad = new URL(request.url).searchParams.get('e') === '1';
