@@ -9,7 +9,15 @@ import { escape_, page } from './html.js';
 import { REFERRAL_FEE, PURGE_DAYS } from './db.js';
 
 export const VIEWS = { repair: 'Repair & Pneumatic', tuning: 'Tuning',
-  referrals: 'Referrals', all: 'All', invoices: 'Invoices', emails: 'Emails', archive: 'Archive' };
+  referrals: 'Referrals', all: 'All', invoices: 'Invoices', emails: 'Emails', archive: 'Archive',
+  users: 'Users' };
+
+// The permission each tab needs. leads.js checks it on the server; here it
+// only decides which tabs are drawn.
+export const TAB_PERMS = {
+  repair: 'leads.read', tuning: 'leads.read', referrals: 'leads.read', all: 'leads.read',
+  archive: 'leads.read', invoices: 'invoices.read', emails: 'outreach.read', users: 'users.manage'
+};
 
 export const STATUSES = ['new', 'called', 'referred', 'booked', 'closed'];
 
@@ -51,24 +59,43 @@ export function dashboard(view, rows, counts, ref, extra, nonce) {
     refStatuses: REFERRAL_STATUSES, fee: REFERRAL_FEE, purgeDays: PURGE_DAYS, ref, ...extra
   }).replace(/</g, '\\u003c');
 
-  return page(VIEWS[view], `
+  // Who is signed in, and as what. Without `me` (older callers, tests of
+  // the shell alone) every tab is drawn, as it always was.
+  const me = extra.me || null;
+  const perms = me ? me.perms || [] : null;
+  const tabs = Object.keys(VIEWS).filter((k) => !perms || perms.includes(TAB_PERMS[k]));
+  const whoLine = me
+    ? `<span class="whoami muted" id="whoami"><strong>${escape_(me.name || me.email)}</strong> · ${escape_(me.roleName || me.role)} &nbsp;</span>`
+    : extra.who ? `<span class="muted">${escape_(extra.who)} &nbsp;</span>` : '';
+
+  const top = `
     <div class="top">
       <h1>Leads</h1>
       <span id="upcoming" hidden></span>
-      <form method="post">${extra.who ? `<span class="muted">${escape_(extra.who)} &nbsp;</span>` : ''}
+      <form method="post">${whoLine}
         <input type="hidden" name="action" value="logout">
         <button class="linkbtn" type="submit">Sign out</button></form>
     </div>
-    <nav class="tabs">${Object.keys(VIEWS).map(tab).join('')}</nav>
+    <nav class="tabs">${tabs.map(tab).join('')}</nav>`;
+
+  if (view === 'users') {
+    return page(VIEWS[view], `${top}
+    <div class="banner" id="banner" hidden></div>
+    <div id="users"></div>
+    <dialog id="dlg"><div class="dlg" id="dlgbody"></div></dialog>
+    <script type="application/json" id="data">${data}</script>`, null, nonce, '/crm/app.js');
+  }
+
+  return page(VIEWS[view], `${top}
     <div class="stats" id="stats" ${view === 'repair' ? 'hidden' : ''}></div>
     <div class="banner" id="banner" hidden></div>
     <div class="tools" id="tools">
       <input type="search" id="q" placeholder="Search, or try city:marietta or is:unbilled" aria-label="Search">
       <select id="sf" aria-label="Filter"></select>
       <span class="muted" id="shown"></span>
-      <a href="/leads?p=${view}&amp;export=csv">Export all</a>
-      <button class="linkbtn" type="button" id="exportfiltered" hidden></button>
-      <button class="linkbtn" type="button" id="newlead">New lead</button>
+      ${!perms || perms.includes('leads.export') ? `<a href="/leads?p=${view}&amp;export=csv">Export all</a>
+      <button class="linkbtn" type="button" id="exportfiltered" hidden></button>` : ''}
+      ${!perms || perms.includes('leads.create') ? '<button class="linkbtn" type="button" id="newlead">New lead</button>' : ''}
     </div>
     <div class="quick" id="quick"></div>
     <div class="views" id="views"></div>

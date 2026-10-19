@@ -32,8 +32,12 @@
 import { escape_, page, privateHeaders, newNonce, json } from './_lib/html.js';
 import {
   SESSION_HOURS, COOKIE, safeEqual, mintToken,
-  accessMode, accessIdentity, emailAllowed, signedIn, sameOrigin
+  accessMode, identify, sameOrigin
 } from './_lib/auth.js';
+import { ROLES, ROLE_LABELS, can, permissionsFor, roleName } from './_lib/roles.js';
+import {
+  listUsers, createUser, updateUser, touchIfStale, userActivity
+} from './_lib/users.js';
 import {
   dashboard, VIEWS, REFERRAL_STATUSES
 } from './_lib/grid.js';
@@ -89,6 +93,58 @@ const COLUMNS = [
   'scheduled_at', 'scheduled_mins', 'archived_at', 'fields'
 ];
 
+// ------------------------------------------------------------ permissions
+//
+// What each tab and each POST action needs. Every route in this file is
+// listed, and tests/permissions.test.mjs fails if one is added without an
+// entry here. docs/users-and-roles.md carries the same table.
+
+export const VIEW_PERMS = {
+  repair: 'leads.read', tuning: 'leads.read', referrals: 'leads.read',
+  all: 'leads.read', archive: 'leads.read',
+  invoices: 'invoices.read', emails: 'outreach.read', users: 'users.manage'
+};
+
+export const ACTION_PERMS = {
+  record: 'leads.read',
+  create: 'leads.create',
+  update: 'leads.update',
+  archive: 'leads.archive', restore: 'leads.archive',
+  purge: 'leads.delete',
+  refer: 'leads.refer',
+  activity: 'activities.write', activityDone: 'activities.write',
+  activityDelete: 'activities.delete',
+  invoice: 'invoices.write', void: 'invoices.void',
+  paid: 'payments.write',
+  outreachSend: 'outreach.send', outreachSkip: 'outreach.send', outreachTest: 'outreach.send',
+  outreachConfig: 'outreach.configure',
+  calendarOn: 'settings.write', calendarRotate: 'settings.write', calendarOff: 'settings.write',
+  viewSave: 'settings.write', viewDelete: 'settings.write',
+  userCreate: 'users.manage', userUpdate: 'users.manage'
+};
+
+// Bulk actions differ by what they do to the leads.
+export const BULK_PERMS = {
+  status: 'leads.update', pipeline: 'leads.update',
+  archive: 'leads.archive', restore: 'leads.archive'
+};
+
+// The permission a POST body needs, or '' when it is not an action at all.
+export function permissionFor(body) {
+  const action = String((body && body.action) || '');
+  if (action === 'bulk') return BULK_PERMS[String(body.op || '')] || '';
+  return Object.prototype.hasOwnProperty.call(ACTION_PERMS, action) ? ACTION_PERMS[action] : '';
+}
+
+const NO_ACCESS = "You don't have access — ask the owner to add you.";
+
+// What the client is told about who is signed in. The permissions are for
+// hiding buttons; the server checks them again on every request regardless.
+function meFor(me) {
+  return { email: me.email, name: me.name, role: me.role, roleName: roleName(me.role),
+    mode: me.mode, perms: permissionsFor(me.role) };
+}
+
 // ----------------------------------------------------------------- routes
 
 export async function onRequestGet(context) {
@@ -96,41 +152,10 @@ export async function onRequestGet(context) {
   const nonce = newNonce();
   const headers = privateHeaders(nonce);
 
-  let who = '';
-  if (accessMode(env)) {
-    who = await accessIdentity(request, env);
-    if (!who) {
-      return new Response(page('Sign in required', `
-        <div class="card narrow"><h1>Sign in required</h1>
-        <p class="muted">Open <a href="https://pianoplayertech.com/leads" style="color:var(--gold)">pianoplayertech.com/leads</a>
-        to sign in with your email.</p></div>`), { status: 403, headers });
-    }
-    if (!emailAllowed(env, who)) {
-      const none = !String(env.ACCESS_EMAILS || '').trim();
-      return new Response(page('Not on the list', `
-        <div class="card narrow"><h1>Not on the list</h1>
-        <p class="muted">You're signed in as <strong>${escape_(who)}</strong>, but that email isn't allowed to open the CRM.</p>
-        <p class="muted">${none
-          ? 'No one is allowed yet: add an <code>ACCESS_EMAILS</code> variable in Cloudflare Pages &rarr; Settings &rarr; Variables and secrets, then redeploy.'
-          : 'Add it to the <code>ACCESS_EMAILS</code> variable in Cloudflare Pages settings and redeploy, or sign in with a different account.'}</p>
-        <form method="post"><input type="hidden" name="action" value="logout">
-        <button class="go full" type="submit">Use a different account</button></form></div>`), { status: 403, headers });
-    }
-  } else if (!env.ADMIN_PASSWORD) {
-    return new Response(page('Not set up yet', `
-      <div class="card narrow"><h1>Dashboard not configured</h1>
-      <p class="muted">Add an <code>ADMIN_PASSWORD</code> secret in Cloudflare Pages
-      &rarr; Settings &rarr; Variables and secrets, then redeploy. Until then nobody
-      can open this page, including you.</p></div>`), { status: 503, headers });
-  }
-
-  if (!who) {
-    who = await signedIn(request, env);
-    if (!who) {
-      const bad = new URL(request.url).searchParams.get('e') === '1';
-      return new Response(loginPage(bad), { status: bad ? 401 : 200, headers });
-    }
-  }
+  const ident = await identify(request, env);
+  if (!ident.ok) return refusal(request, env, ident, headers);
+  const me = ident.user;
+  const who = me.email;
 
   if (!env.DB) {
     return new Response(page('Leads', `
@@ -154,10 +179,28 @@ export async function onRequestGet(context) {
   const view = Object.prototype.hasOwnProperty.call(VIEWS, url.searchParams.get('p'))
     ? url.searchParams.get('p') : 'repair';
 
+  // When they were last here, for the Users screen. Off the response path,
+  // and only for someone who has a row to write it on.
+  if (me.hasRow) {
+    context.waitUntil(touchIfStale(env, me, new Date().toISOString())
+      .catch((err) => console.error('last-seen update failed', err && err.message)));
+  }
+
+  // The role decides which tabs open. Checked here, on the server; the tab
+  // strip leaving them out is only a courtesy.
+  const exporting = url.searchParams.get('export') === 'csv';
+  const need = VIEW_PERMS[view];
+  if (!can(me.role, need) || (exporting && !can(me.role, 'leads.export'))) {
+    return forbiddenPage(me, headers);
+  }
+
+  if (view === 'users') return usersPage(env, me, nonce, headers);
+
+  const mayInvoices = can(me.role, 'invoices.read');
   let rows;
   let counts = { repair: 0, tuning: 0 };
   let ref = { sent: 0, booked: 0, lost: 0, paid: 0 };
-  const extra = { stripeReady: !!env.STRIPE_SECRET_KEY, invoices: [], lastWcEmail: '' };
+  const extra = { stripeReady: !!env.STRIPE_SECRET_KEY && mayInvoices, invoices: [], lastWcEmail: '' };
   try {
     // Catch up on anything paid since last time.
     if (extra.stripeReady && (view === 'invoices' || view === 'referrals')) await syncInvoices(env);
@@ -175,15 +218,17 @@ export async function onRequestGet(context) {
           }
         });
       }
-    } else if (view === 'referrals') {
+    } else if (view === 'referrals' && mayInvoices) {
       extra.invoices = (await env.DB.prepare(
         `SELECT id, number, status, hosted_url FROM invoices WHERE kind = 'referral' AND status != 'creating'`
       ).all()).results || [];
     }
-    const last = await env.DB.prepare(
-      `SELECT email FROM invoices WHERE kind = 'referral' AND status != 'creating' ORDER BY id DESC LIMIT 1`
-    ).first();
-    extra.lastWcEmail = (last && last.email) || '';
+    if (mayInvoices) {
+      const last = await env.DB.prepare(
+        `SELECT email FROM invoices WHERE kind = 'referral' AND status != 'creating' ORDER BY id DESC LIMIT 1`
+      ).first();
+      extra.lastWcEmail = (last && last.email) || '';
+    }
 
     const where = view === 'archive' ? 'WHERE archived_at IS NOT NULL'
       : view === 'all' || view === 'invoices' || view === 'emails' ? `WHERE ${NOT_ARCHIVED}`
@@ -233,12 +278,15 @@ export async function onRequestGet(context) {
 
   extra.wcReady = !!(env.WORLDCLASS_EMAIL && env.RESEND_API_KEY);
   extra.who = accessMode(env) ? who : '';
+  extra.me = meFor(me);
   // The pipeline's own vocabulary, not a list hardcoded in the client.
   extra.statusList = await loadStatuses(env);
   extra.views = await listViews(env);
   // Only if it has been switched on. The URL is a bearer credential, so it
   // is never created just by loading the page.
-  const calTok = await getCalendarToken(env);
+  // A bearer credential for every booked customer's address, so only a
+  // role that may change settings is ever shown it.
+  const calTok = can(me.role, 'settings.write') ? await getCalendarToken(env) : '';
   extra.calendarUrl = calTok ? `${url.origin}/calendar/${calTok}.ics` : '';
 
   // Follow-ups you owe someone. A CRM that does not surface these is a
@@ -336,12 +384,45 @@ export async function onRequestPost(context) {
   // signedIn is what authed wraps, so the gate is unchanged. Keeping the
   // identity rather than discarding it is what lets an activity record who
   // did the thing.
-  const actor = await signedIn(request, env);
-  if (!actor) return json({ error: 'Signed out — reload and sign in again.' }, 401);
+  const ident = await identify(request, env);
+  if (!ident.ok) {
+    return ident.reason === 'unknown' || ident.reason === 'inactive'
+      ? json({ error: NO_ACCESS }, 403)
+      : json({ error: 'Signed out — reload and sign in again.' }, 401);
+  }
+  const me = ident.user;
+  const actor = me.email;
   if (!env.DB) return json({ error: 'No database connected.' }, 503);
 
   let body;
   try { body = await request.json(); } catch { return json({ error: 'bad request' }, 400); }
+  if (!body || typeof body !== 'object') return json({ error: 'bad request' }, 400);
+
+  // Every action names the permission it needs, before any of it runs. An
+  // action missing from ACTION_PERMS is refused rather than let through.
+  const need = permissionFor(body);
+  if (!need) return json({ error: 'unknown action' }, 400);
+  if (!can(me.role, need)) {
+    return json({ error: `Your role (${roleName(me.role)}) can't do that. Ask the owner if you need it.`,
+      permission: need }, 403);
+  }
+
+  if (body.action === 'userCreate' || body.action === 'userUpdate') {
+    const now = new Date().toISOString();
+    try {
+      const out = body.action === 'userCreate'
+        ? await createUser(env, { email: body.email, name: body.name, role: body.role }, actor, now)
+        : await updateUser(env, body.email, { name: body.name, role: body.role, active: body.active }, actor, now);
+      if (out.error) return json({ error: out.error }, out.status || 400);
+      return json({ ok: true, user: out.user, users: await listUsers(env), userLog: await userActivity(env) });
+    } catch (err) {
+      console.error('user action failed', body.action, err && err.message);
+      report('users', err, body.action);
+      return json({ error: /no such table/i.test(String(err && err.message))
+        ? 'The users table has not been added to this database yet. Apply db/2026-10-18-users.sql.'
+        : 'Could not save that — try again.' }, 500);
+    }
+  }
 
   if (body.action === 'invoice' || body.action === 'void') {
     if (!env.STRIPE_SECRET_KEY) return json({ error: 'Stripe is not connected. Add a STRIPE_SECRET_KEY secret in Cloudflare, then redeploy.' }, 503);
@@ -499,6 +580,9 @@ export async function onRequestPost(context) {
     if (body.action === 'record') {
       const rec = await loadRecord(env, id);
       if (!rec) return json({ error: 'That lead no longer exists.' }, 404);
+      // The record carries the person's invoices. A role without invoices
+      // gets the record without them, not an error.
+      if (!can(me.role, 'invoices.read')) rec.invoices = [];
       return json({ ok: true, record: rec });
     }
 
@@ -817,6 +901,65 @@ function toCsv(rows, columns) {
 
 function parseFields(raw) {
   try { return JSON.parse(raw || '{}') || {}; } catch { return {}; }
+}
+
+// Someone who got past Cloudflare Access, or not, but not into the CRM.
+function refusal(request, env, ident, headers) {
+  if (ident.reason === 'signin') {
+    return new Response(page('Sign in required', `
+      <div class="card narrow"><h1>Sign in required</h1>
+      <p class="muted">Open <a href="https://pianoplayertech.com/leads" style="color:var(--gold)">pianoplayertech.com/leads</a>
+      to sign in with your email.</p></div>`), { status: 403, headers });
+  }
+  if (ident.reason === 'unconfigured') {
+    return new Response(page('Not set up yet', `
+      <div class="card narrow"><h1>Dashboard not configured</h1>
+      <p class="muted">Add an <code>ADMIN_PASSWORD</code> secret in Cloudflare Pages
+      &rarr; Settings &rarr; Variables and secrets, then redeploy. Until then nobody
+      can open this page, including you.</p></div>`), { status: 503, headers });
+  }
+  if (ident.reason === 'password') {
+    const bad = new URL(request.url).searchParams.get('e') === '1';
+    return new Response(loginPage(bad), { status: bad ? 401 : 200, headers });
+  }
+  // 'unknown' or 'inactive': Access knows who they are; this app does not
+  // let them in. The same words either way, so the page does not tell a
+  // stranger which addresses were once on the list.
+  const none = !String(env.ACCESS_EMAILS || '').trim();
+  return new Response(page('No access', `
+    <div class="card narrow"><h1>You don't have access</h1>
+    <p class="muted">You're signed in as <strong>${escape_(ident.email)}</strong>. Ask the owner to add you.</p>
+    ${none ? `<p class="muted">No owner is set up yet: add an <code>ACCESS_EMAILS</code> variable in
+      Cloudflare Pages &rarr; Settings &rarr; Variables and secrets, then redeploy.</p>` : ''}
+    <form method="post"><input type="hidden" name="action" value="logout">
+    <button class="go full" type="submit">Use a different account</button></form></div>`), { status: 403, headers });
+}
+
+// Signed in, but this tab is not for their role.
+function forbiddenPage(me, headers) {
+  return new Response(page('Not for your role', `
+    <div class="card narrow"><h1>Not for your role</h1>
+    <p class="muted">You're signed in as <strong>${escape_(me.name || me.email)}</strong>
+    (${escape_(roleName(me.role))}), and that role can't open this. Ask the owner if you need it.</p>
+    <p><a href="/leads" style="color:var(--gold)">Back to the leads</a></p></div>`), { status: 403, headers });
+}
+
+// The Users tab. Owner only: VIEW_PERMS has already checked.
+async function usersPage(env, me, nonce, headers) {
+  const extra = { me: meFor(me), who: me.mode === 'access' ? me.email : '',
+    roles: ROLES, roleLabels: ROLE_LABELS, accessMode: me.mode === 'access',
+    users: [], userLog: [], usersError: '' };
+  try {
+    extra.users = await listUsers(env);
+    extra.userLog = await userActivity(env);
+  } catch (err) {
+    console.error('users load failed', err && err.message);
+    extra.usersError = /no such table/i.test(String(err && err.message))
+      ? 'The users table has not been added to this database yet. Apply db/2026-10-18-users.sql (see docs/users-and-roles.md).'
+      : 'Could not load the users. Try again in a moment.';
+  }
+  return new Response(dashboard('users', [], {}, { sent: 0, booked: 0, lost: 0, paid: 0 }, extra, nonce),
+    { headers });
 }
 
 function loginPage(bad) {
