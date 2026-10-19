@@ -10,8 +10,11 @@
 //   Secrets:    ADMIN_PASSWORD     password login, used until Access is set up
 //   Variables:  ACCESS_TEAM_DOMAIN e.g. pianoplayertech.cloudflareaccess.com
 //               ACCESS_AUD         the Access application's "Application Audience (AUD) Tag"
-//               ACCESS_EMAILS      who may open the dashboard, comma-separated;
-//                                  "@pianoplayertech.com" allows a whole domain
+//               ACCESS_EMAILS      the owners, comma-separated; always admitted
+//                                  as owner. Everyone else is added, with a
+//                                  role, on the Users tab (docs/users-and-roles.md).
+//                                  "@pianoplayertech.com" allows a whole domain,
+//                                  all of them as owners
 //               With the first two set, sign-in is Cloudflare Access (Google /
 //               email code) and the password is no longer used. ACCESS_EMAILS
 //               must then be set too — an empty list lets nobody in.
