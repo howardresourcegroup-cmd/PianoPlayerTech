@@ -9,6 +9,13 @@
 // length-safe and non-short-circuiting, and emailAllowed must keep matching
 // a domain only on a full '@domain' suffix.
 
+// Roles and the users table (2026-10-18) were added around these functions,
+// not into them: identify() below is new, and the checks above it are as
+// they were.
+
+import { getUser } from './users.js';
+import { isRole } from './roles.js';
+
 export const SESSION_HOURS = 12;
 export const COOKIE = 'ppt_admin';
 
@@ -139,15 +146,66 @@ export function emailAllowed(env, email) {
   return list.some((x) => x === e || (x.startsWith('@') && x === domain));
 }
 
-// The one gate every read and write goes through. Returns who is signed in
-// (an email under Access, 'admin' under the password), or '' for nobody.
-export async function signedIn(request, env) {
+// ------------------------------------------------------------ identity
+//
+// The one gate every read and write goes through. Who is asking, and with
+// which role. Ported from HRG's platform (api/internal/auth/identity.go).
+//
+// Under Access, an email must pass BOTH Cloudflare Access (the signed JWT
+// above) AND this app: be in ACCESS_EMAILS, or have an active users row.
+//   - ACCESS_EMAILS: always an active owner. A users row may give them a
+//     name, never a lesser role and never a deactivation.
+//   - users row, active: the row's role.
+//   - users row, deactivated: refused, on their very next request.
+//   - neither: refused.
+// Under the password, the session is the owner.
+//
+// Fails closed. If the users table cannot be read, only ACCESS_EMAILS gets
+// in -- which is exactly who got in before the table existed.
+//
+// Returns { ok: true, user: { email, name, role, mode, bootstrap, lastSeenAt } }
+// or { ok: false, reason, email }, where reason is 'signin' (no valid Access
+// token), 'unknown', 'inactive', 'password' (not logged in) or
+// 'unconfigured'.
+export async function identify(request, env) {
   if (accessMode(env)) {
-    const email = await accessIdentity(request, env);
-    return email && emailAllowed(env, email) ? email : '';
+    const raw = await accessIdentity(request, env);
+    if (!raw) return { ok: false, reason: 'signin', email: '' };
+    const email = String(raw).trim().toLowerCase();
+
+    let row = null;
+    try {
+      row = await getUser(env, email);
+    } catch (err) {
+      // Before the migration is applied this is "no such table". Not fatal
+      // for ACCESS_EMAILS; fatal for everyone else, as it should be.
+      console.error('users lookup failed', err && err.message);
+    }
+
+    if (emailAllowed(env, email)) {
+      return { ok: true, user: { email, name: (row && row.name) || '', role: 'owner',
+        mode: 'access', bootstrap: true, lastSeenAt: row ? row.lastSeenAt : null, hasRow: !!row } };
+    }
+    if (row && row.active && isRole(row.role)) {
+      return { ok: true, user: { email, name: row.name, role: row.role,
+        mode: 'access', bootstrap: false, lastSeenAt: row.lastSeenAt, hasRow: true } };
+    }
+    return { ok: false, reason: row && !row.active ? 'inactive' : 'unknown', email };
   }
-  if (!env.ADMIN_PASSWORD) return '';
-  return (await tokenValid(env.ADMIN_PASSWORD, cookieValue(request, COOKIE))) ? 'admin' : '';
+
+  if (!env.ADMIN_PASSWORD) return { ok: false, reason: 'unconfigured', email: '' };
+  if (await tokenValid(env.ADMIN_PASSWORD, cookieValue(request, COOKIE))) {
+    return { ok: true, user: { email: 'admin', name: 'Admin', role: 'owner',
+      mode: 'password', bootstrap: true, lastSeenAt: null, hasRow: false } };
+  }
+  return { ok: false, reason: 'password', email: '' };
+}
+
+// Who is signed in (an email under Access, 'admin' under the password), or
+// '' for nobody. Kept for callers that only need yes or no.
+export async function signedIn(request, env) {
+  const who = await identify(request, env);
+  return who.ok ? who.user.email : '';
 }
 
 export async function authed(request, env) {

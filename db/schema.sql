@@ -23,6 +23,8 @@
 -- full list and the runbook): contact_id, assigned_to, person_id, partner_id,
 -- lead_source, piano_make, piano_model, estimated_cents, quoted_cents,
 -- tech_pct, state, zip.
+--
+-- Added 2026-10-18: the users table (db/2026-10-18-users.sql).
 
 CREATE TABLE IF NOT EXISTS leads (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -310,4 +312,19 @@ CREATE TABLE IF NOT EXISTS unsubscribes (
   email_norm  TEXT PRIMARY KEY,
   created_at  TEXT NOT NULL,
   source      TEXT
+);
+
+-- ------------------------------------------------------------------- users
+-- Who may sign in to the CRM, and with which role. Not the people table:
+-- that is contractors and partners. Added 2026-10-18 (see
+-- db/2026-10-18-users.sql and docs/users-and-roles.md). ACCESS_EMAILS
+-- addresses are owners with or without a row here.
+CREATE TABLE IF NOT EXISTS users (
+  email        TEXT PRIMARY KEY CHECK (email = lower(trim(email)) AND email LIKE '%_@_%'),
+  name         TEXT NOT NULL DEFAULT '',
+  role         TEXT NOT NULL CHECK (role IN ('owner', 'manager', 'tech', 'viewer')),
+  active       INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+  created_at   TEXT NOT NULL,
+  last_seen_at TEXT,
+  created_by   TEXT
 );
