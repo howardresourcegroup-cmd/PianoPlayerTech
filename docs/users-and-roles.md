@@ -92,6 +92,10 @@ Inside a page that opens:
   `invoices.read`.
 - The calendar feed address is a bearer credential, so it is sent only with
   `settings.write`.
+- Without `invoices.read`, lead rows and records leave out
+  `referral_paid_at` and `referral_invoice_id`, and the "paid" referral
+  count is zero. Tech and viewer get no accounting data, even in the
+  page's data.
 
 ### `POST /leads` (JSON API, `action` in the body)
 
@@ -99,14 +103,14 @@ Inside a page that opens:
 |---|---|
 | `record` | `leads.read` (the record's invoices are left out without `invoices.read`) |
 | `create` | `leads.create` |
-| `update` | `leads.update` |
+| `update` | `leads.update`; changing `referral_status` also needs `payments.write`, because it decides what World Class owes and anything but `booked` clears the paid mark |
 | `archive`, `restore` | `leads.archive` |
 | `purge` | `leads.delete` |
 | `refer` | `leads.refer` |
 | `bulk` with `op: status` or `pipeline` | `leads.update` |
 | `bulk` with `op: archive` or `restore` | `leads.archive` |
-| `activity`, `activityDone` | `activities.write` |
-| `activityDelete` | `activities.delete` |
+| `activity`, `activityDone` | `activities.write` (only on an activity of a lead that exists and is not archived; returns just `id`, `lead_id`, `completed_at`) |
+| `activityDelete` | `activities.delete` (same scope; never the user-change trail) |
 | `invoice` | `invoices.write` |
 | `void` | `invoices.void` |
 | `paid` | `payments.write` |
@@ -115,6 +119,15 @@ Inside a page that opens:
 | `calendarOn`, `calendarRotate`, `calendarOff` | `settings.write` |
 | `viewSave`, `viewDelete` | `settings.write` |
 | `userCreate`, `userUpdate` | `users.manage` |
+
+Every JSON action must also come from our own page and be sent as JSON.
+`Sec-Fetch-Site`, when the browser sends it, must be `same-origin`. `Origin`,
+or `Referer` when there is no `Origin`, must be this host. A request that
+carries none of the three is refused with `403`, and a body that is not
+`Content-Type: application/json` is refused with `415`. Under Access the
+session cookie is Cloudflare's `CF_Authorization`, not the app's
+`SameSite=Strict` cookie, so this check is what stops a cross-site form
+post.
 
 The login and logout form posts are not dashboard actions. Logout is open to
 anyone, and login exists only in password mode.
@@ -148,9 +161,16 @@ Under Cloudflare Access, a person needs **both** of these:
 
 Anyone else gets the page "You don't have access — ask the owner to add you."
 A deactivated user is refused on their next request. They do not keep access
-until their Google session expires. If the `users` table cannot be read, only
-`ACCESS_EMAILS` gets in. That is the same group that got in before this
-change.
+until their Google session expires.
+
+If the `users` table cannot be read, only `ACCESS_EMAILS` gets in:
+
+- Before the migration (the table does not exist), everyone else is treated
+  as unknown. That is the same group as before this change. The missing
+  table is logged once per Worker isolate, not on every request.
+- On any other database error, everyone else gets a `503` asking them to
+  "Try again in a moment", not the "ask the owner" page. This still fails
+  closed.
 
 ### The bootstrap, so nobody is locked out
 
@@ -194,6 +214,17 @@ On the same tab you can change a role from the dropdown, or **Deactivate** and
 `actor` column always names someone on the list. Every add and change is
 written to the activity log and listed under **Recent changes**. These rows
 have no lead attached, so they never show in a lead's timeline.
+
+The trail is append-only:
+
+- It is written in the same D1 batch (one transaction) as the change it
+  records. Either both land or neither does.
+- Each log line is written only if the change actually happened, so a
+  refused change leaves no line.
+- No action can tick or delete a trail row, the owner's included.
+  `activityDone` and `activityDelete` only touch activities on a live lead.
+- Refused attempts are not logged. A non-owner calling the user actions
+  gets a `403` and nothing is written.
 
 To take someone's access away completely, deactivate them here **and**
 remove them from the Access policy.
