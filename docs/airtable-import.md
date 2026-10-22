@@ -75,13 +75,16 @@ The import writes only `leads` and `activities` rows: no `outreach`,
   the original Created date, so there is no recent status change either.
 - `booked`, `in_repair` and `diag_scheduled` are not triggers for any email.
 
-## Archived leads and the 30-day purge
+## Imported leads are never auto-deleted
 
-The CRM deletes archived leads 30 days after `archived_at`. To keep the
-imported history, archived imports get `archived_at` about ten years out, so
-the Archive tab's "Deletes in" column will look odd. To use the normal 30-day
-clock instead, generate with `--purge-archived`. Restoring a lead from the
-Archive tab clears `archived_at`.
+The CRM deletes other archived leads 30 days after `archived_at`. The purge
+(`purgeExpired` in `functions/_lib/db.js`) skips any lead whose source starts
+with "Airtable:", and every imported lead has one. Archived imports carry the
+import time in `archived_at`, and the Archive tab shows "Kept (imported)"
+instead of a "Deletes in" countdown. The owner can still delete one by hand
+with "Delete now". Restoring a lead clears `archived_at`.
+
+Do not edit the source of an imported lead if you want it to stay protected.
 
 ## Checks
 

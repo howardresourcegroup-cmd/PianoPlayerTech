@@ -28,9 +28,13 @@ export function purgeCutoff(now) {
   return new Date(now.getTime() - PURGE_DAYS * 86400000).toISOString();
 }
 
+// Leads imported from Airtable (tools/airtable-import.mjs sets source to
+// "Airtable: <Source>" on every one) are never purged on the timer. The owner
+// can still delete one by hand. crm/retention.js mirrors this for the display.
 export async function purgeExpired(env, cutoff) {
   const r = await env.DB.prepare(
-    'DELETE FROM leads WHERE archived_at IS NOT NULL AND archived_at < ?'
+    `DELETE FROM leads WHERE archived_at IS NOT NULL AND archived_at < ?
+       AND COALESCE(source, '') NOT LIKE 'Airtable:%'`
   ).bind(cutoff).run();
   return (r.meta && r.meta.changes) || 0;
 }

@@ -10,6 +10,7 @@ import { post } from './api.js';
 import { COLS } from './columns.js';
 import { passes, refreshMatcher } from './filters.js';
 import { bumpRef } from './stats.js';
+import { purgeLabel } from './retention.js';
 import { openLead, openRefer } from './record.js';
 import { invById, renderBanner } from './invoices.js';
 import { renderBulkBar, bulkSummary } from './bulkbar.js';
@@ -186,10 +187,8 @@ function cell(r, c, i){
   }
 
   if (c.type === 'purgein') {
-    var left = D.purgeDays -
-      Math.floor((Date.now() - new Date(r.archived_at).getTime()) / 86400000);
-    td.appendChild(el('div', {className:'ro' + (left <= 3 ? ' soon' : ''),
-      text: left > 0 ? left + (left === 1 ? ' day' : ' days') : 'any time now'}));
+    var pl = purgeLabel(r, D.purgeDays, Date.now());
+    td.appendChild(el('div', {className:'ro' + (pl.soon ? ' soon' : ''), text: pl.text}));
     return td;
   }
 

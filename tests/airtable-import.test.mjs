@@ -146,8 +146,8 @@ test('SQL: creates, merges, never touches existing leads, writes only leads and 
   // Original Created date is used when parseable; otherwise import time.
   assert.strictEqual(q(db, "SELECT created_at FROM leads WHERE name = 'Rae New' AND status = 'quoted'"), '2026-09-09T10:00:00.000Z');
   assert.ok(q(db, "SELECT created_at FROM leads WHERE name = 'Sid Blank'").startsWith('20'));
-  // Archived leads outlive the 30-day purge by default.
-  assert.ok(q(db, "SELECT archived_at FROM leads WHERE name = 'Sid Blank'") > '2030');
+  // Archived leads carry the import time (the purge skips their source).
+  assert.ok(q(db, "SELECT archived_at FROM leads WHERE name = 'Sid Blank'") < '2100');
   assert.strictEqual(q(db, "SELECT status || '/' || pipeline || '/' || source FROM leads WHERE name = 'Rae New' AND status = 'quoted'"), 'quoted/repair/Airtable: Google');
   // Side effects: nothing but leads and activities.
   for (const t of ['outreach', 'unsubscribes', 'invoices', 'payments', 'people', 'contacts', 'settings']) {
@@ -167,10 +167,19 @@ test('SQL: running it twice creates nothing', () => {
   assert.strictEqual(snap(), once);
 });
 
-test('SQL: --purge-archived opts back into the normal 30-day clock', () => {
+test('SQL: archived_at is the import time, and the real purge keeps the lead', async () => {
   const db = freshDb();
-  run(db, buildSql([row({ Status: '' })], { purgeArchived: true }).sql);
-  assert.ok(q(db, 'SELECT archived_at FROM leads') < '2030');
+  run(db, buildSql([row({ Status: '' })]).sql);
+  const at = q(db, 'SELECT archived_at FROM leads');
+  assert.ok(Math.abs(Date.parse(at) - Date.now()) < 120000, 'archived_at should be about now');
+  // Run the app's own purge a year from now against this row.
+  const env = { DB: { prepare: (sql) => ({ bind: (v) => ({ run: async () => {
+    const out = execFileSync('sqlite3', [db, sql.replace('?', "'" + v + "'") + '; SELECT changes();'], { encoding: 'utf8' });
+    return { meta: { changes: Number(out.trim()) } };
+  } }) }) } };
+  const { purgeExpired, purgeCutoff } = await import('../functions/_lib/db.js');
+  assert.strictEqual(await purgeExpired(env, purgeCutoff(new Date(Date.now() + 365 * 86400000))), 0);
+  assert.strictEqual(q(db, 'SELECT count(*) FROM leads'), '1');
 });
 
 test('SQL: hostile cell values stay data', () => {
