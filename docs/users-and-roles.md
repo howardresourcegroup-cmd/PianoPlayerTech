@@ -53,7 +53,7 @@ they drift apart.
 | | `outreach.configure` | ✓ | ✓ | | |
 | People (contractors) | `people.read` | ✓ | ✓ | ✓ | ✓ |
 | | `people.write` | ✓ | ✓ | | |
-| Settings, statuses, views | `settings.write` (calendar feed, shared saved views) | ✓ | | | |
+| Settings, statuses, views | `settings.write` (calendar feed, shared saved views, custom tables) | ✓ | | | |
 | Users | `users.manage` | ✓ | | | |
 
 The same matrix, one line per role:
@@ -84,6 +84,7 @@ without an entry.
 | `invoices` | `invoices.read` |
 | `emails` | `outreach.read` |
 | `users` | `users.manage` |
+| a custom table, `?t=<id>` | `leads.read` (every role; see docs/custom-tables.md) |
 | any tab with `&export=csv` | the tab's permission **and** `leads.export` |
 
 Inside a page that opens:
@@ -93,7 +94,8 @@ Inside a page that opens:
 - The calendar feed address is a bearer credential, so it is sent only with
   `settings.write`.
 - Without `invoices.read`, lead rows and records leave out
-  `referral_paid_at` and `referral_invoice_id`, and the "paid" referral
+  `referral_paid_at`, `referral_invoice_id` and `quoted_cents` (since
+  2026-10-23), and the "paid" referral
   count is zero. Tech and viewer get no accounting data, even in the
   page's data.
 
@@ -118,6 +120,7 @@ Inside a page that opens:
 | `outreachConfig` | `outreach.configure` |
 | `calendarOn`, `calendarRotate`, `calendarOff` | `settings.write` |
 | `viewSave`, `viewDelete` | `settings.write` |
+| `tableSave`, `tableDuplicate`, `tableOrder`, `tableDelete` (custom tables, docs/custom-tables.md) | `settings.write` |
 | `userCreate`, `userUpdate` | `users.manage` |
 
 Every JSON action must also come from our own page and be sent as JSON.

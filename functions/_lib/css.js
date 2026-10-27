@@ -540,4 +540,50 @@ border-radius:7px;height:36px;padding:0 .6rem;font:inherit}
 .users .msgline.good{color:var(--ok)}
 .users .log{list-style:none;margin:0;padding:0;font-size:.85rem;color:var(--soft)}
 .users .log li{padding:.3rem 0;border-bottom:1px solid var(--border)}
+/* ---- custom tables: tabs and the editor ---- */
+.ttab{display:inline-flex;align-items:center;gap:.35rem}
+.ticon{font-size:.95em;line-height:1;opacity:.9}
+.tc-gold{border-top:3px solid var(--gold)}
+.tc-blue{border-top:3px solid #7aa7d9}
+.tc-green{border-top:3px solid var(--ok)}
+.tc-red{border-top:3px solid var(--bad)}
+.tc-purple{border-top:3px solid #b294d6}
+.tc-teal{border-top:3px solid #6fc1b3}
+.tc-gray{border-top:3px solid var(--muted)}
+.tabmanage{cursor:pointer;font:inherit;font-size:.9rem;background:none;border-style:dashed;color:var(--muted)}
+.tabmanage:hover{color:var(--gold);border-color:var(--gold)}
+.tabsep{flex:0 0 1px;align-self:stretch;background:var(--border);margin:0 .25rem}
+.warnbar{border-color:var(--bad);color:var(--bad);margin-bottom:.7rem;padding:.55rem .8rem}
+.tedit{min-width:0}
+.tedit .rule select,.tedit .rule input{max-width:100%}
+.tedit label{display:block;font-size:.8rem;color:var(--muted);margin:.7rem 0 .25rem}
+.tedit input[type=text],.tedit input[type=number],.tedit input[type=date],.tedit select{background:var(--ground);color:var(--text);
+border:1px solid var(--border);border-radius:6px;padding:.4rem .5rem;font:inherit;max-width:100%}
+.tedit .tname{width:100%}
+.tedit .row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end}
+.tedit .rule{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.4rem .5rem;border:1px solid var(--border);
+border-radius:7px;margin:.35rem 0;background:var(--surface)}
+.tedit .rule .vals{display:flex;flex-wrap:wrap;gap:.25rem .7rem;font-size:.86rem;color:var(--soft)}
+.tedit .rule .vals label{display:inline-flex;gap:.3rem;align-items:center;margin:0;color:var(--soft);font-size:.86rem}
+.tedit .x{background:none;border:0;color:var(--muted);font-size:1.1rem;cursor:pointer;margin-left:auto}
+.tedit .x:hover{color:var(--bad)}
+.tedit .cols{list-style:none;margin:0;padding:0;columns:2;column-gap:1.2rem}
+.tedit .cols li{display:flex;gap:.35rem;align-items:center;break-inside:avoid;padding:.12rem 0;font-size:.88rem}
+.tedit .cols li.off{opacity:.55}
+.tedit .mv{background:none;border:1px solid var(--border);border-radius:5px;color:var(--soft);cursor:pointer;
+font-size:.72rem;line-height:1;padding:.15rem .3rem}
+.tedit .mv:disabled{opacity:.3;cursor:default}
+.tedit .swatches{display:flex;gap:.35rem;flex-wrap:wrap}
+.tedit .sw{min-width:2rem;height:1.8rem;border-radius:6px;border:1px solid var(--border);background:var(--raised);
+color:var(--soft);cursor:pointer;font:inherit}
+.tedit .sw.on{outline:2px solid var(--gold);outline-offset:1px;color:var(--text)}
+.tedit .acts{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+.tedit .acts .go{flex:1 1 10rem}
+.tlist{list-style:none;margin:.6rem 0;padding:0}
+.tlist li{display:flex;gap:.45rem;align-items:center;padding:.45rem .5rem;border:1px solid var(--border);border-radius:7px;
+margin:.3rem 0;background:var(--surface);cursor:grab}
+.tlist li.dragging{opacity:.5}
+.tlist li.over{border-color:var(--gold)}
+.tlist .tgrip{color:var(--muted);cursor:grab;user-select:none}
+.tlist .tn{flex:1;font-weight:500}
 `;

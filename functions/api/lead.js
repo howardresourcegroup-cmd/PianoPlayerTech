@@ -16,7 +16,15 @@
 // Resend outage still stores the lead. A submission has to fail all of it to
 // be lost.
 
+import { classifyCategory, CATEGORY_LABELS } from '../_lib/category.js';
+import { normEmail, normPhone, namesCompatible } from '../_lib/dedupe.js';
+
 const ALLOWED_HOSTS = new Set(['pianoplayertech.com', 'www.pianoplayertech.com']);
+
+// The same form, word for word, from the same page this soon after is a
+// double click or a resubmit, not a second enquiry. It is stored once and
+// emailed about once.
+const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
 
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_FIELDS = 40;
@@ -88,10 +96,23 @@ export async function onRequestPost(context) {
     return new Response('bad request', { status: 400 });
   }
 
+  if (!body || typeof body !== 'object') return new Response('bad request', { status: 400 });
+
+  // The honeypot. Every lead form has a hidden `_gotcha` box a person never
+  // sees; ppt-tracking.js reports it as `hp`. A bot that fills it in gets the
+  // same 204 a person gets, so it learns nothing, and no email goes out. The
+  // row is still kept, already archived, so a real person caught by
+  // autofill can be found in the Archive tab and restored; the archive purge
+  // clears the rest after 30 days. A direct POST that carries the field
+  // itself is treated the same.
+  const submittedRaw = (body.fields && typeof body.fields === 'object') ? body.fields : {};
+  const trapped = !!(body.hp || String(submittedRaw._gotcha || '').trim());
+
   // Clamp field count and value length before anything is stored or emailed.
-  const submitted = (body && body.fields) || {};
+  // Underscore names are form plumbing (_subject, _next, _gotcha), not answers.
+  const submitted = submittedRaw;
   const fields = {};
-  for (const key of Object.keys(submitted).slice(0, MAX_FIELDS)) {
+  for (const key of Object.keys(submitted).filter((k) => k.charAt(0) !== '_').slice(0, MAX_FIELDS)) {
     fields[key] = String(submitted[key]).slice(0, MAX_VALUE_CHARS);
   }
 
@@ -125,27 +146,55 @@ export async function onRequestPost(context) {
     source,
     fields: JSON.stringify(fields)
   };
+  // What kind of work, from what they wrote (every answer, so a quiz summary
+  // or a mail-in "location" counts) and the page they were on.
+  lead.category = classifyCategory(lead, Object.values(fields).join(' \n '));
+
+  if (trapped) {
+    // A count in the logs, so a spike of real people being caught shows up.
+    console.log('lead honeypot hit', lead.source);
+    lead.status = 'closed';
+    lead.archived_at = lead.created_at;
+    lead.notes = 'Caught by the spam trap (the hidden box was filled in). No emails were sent. ' +
+      'If this is a real enquiry, restore it and call them.';
+  }
 
   // Store first. The record has to be safe before we spend time on email.
   let stored = false;
+  let duplicate = false;
   if (env.DB) {
-    try {
-      await env.DB.prepare(
-        `INSERT INTO leads
-           (created_at, pipeline, status, name, email, phone, service, system, city, address, message, source, fields)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        lead.created_at, lead.pipeline, lead.status, lead.name, lead.email,
-        lead.phone, lead.service, lead.system, lead.city, lead.address, lead.message,
-        lead.source, lead.fields
-      ).run();
-      stored = true;
-    } catch (err) {
-      // Log and keep going. An unstored lead we email about is recoverable;
-      // a lead we drop entirely is not.
-      console.error('d1 insert failed', err && err.message);
+    // Linking a bot's submission to a real customer would be worse than useless.
+    const contactId = trapped ? null : await matchContact(env, lead);
+    const cols = ['created_at', 'pipeline', 'status', 'name', 'email', 'phone', 'service', 'system',
+      'city', 'address', 'message', 'source', 'fields', 'archived_at', 'notes', 'contact_id', 'category'];
+    const vals = [lead.created_at, lead.pipeline, lead.status, lead.name, lead.email,
+      lead.phone, lead.service, lead.system, lead.city, lead.address, lead.message,
+      lead.source, lead.fields, lead.archived_at || null, lead.notes || null, contactId, lead.category];
+    // A double submit is the same lead, so it gets no second row and no
+    // second pair of emails. Only an exact repeat counts: if they changed a
+    // word, it is new information and is kept. The check and the insert are
+    // one statement, so two submits arriving together cannot both store.
+    const since = new Date(Date.parse(lead.created_at) - DUPLICATE_WINDOW_MS).toISOString();
+    // The last two columns are newer than some databases. A missing column
+    // must cost the category, never the lead.
+    for (const n of [cols.length, cols.length - 2]) {
+      try {
+        const r = await env.DB.prepare(
+          `INSERT INTO leads (${cols.slice(0, n).join(', ')})
+           SELECT ${cols.slice(0, n).map(() => '?').join(', ')}
+            WHERE NOT EXISTS (SELECT 1 FROM leads WHERE source = ? AND fields = ? AND created_at >= ?)`
+        ).bind(...vals.slice(0, n), lead.source, lead.fields, since).run();
+        if (r.meta && r.meta.changes === 0) duplicate = true; else stored = true;
+        break;
+      } catch (err) {
+        // Log and keep going. An unstored lead we email about is recoverable;
+        // a lead we drop entirely is not.
+        console.error('d1 insert failed', err && err.message);
+        if (!/no such column|has no column/i.test(String(err && err.message))) break;
+      }
     }
   }
+  if (duplicate || trapped) return new Response(null, { status: 204 });
 
   // Both emails, in parallel, neither able to break the other or the response.
   context.waitUntil(Promise.allSettled([
@@ -154,6 +203,37 @@ export async function onRequestPost(context) {
   ]));
 
   return new Response(null, { status: 204 });
+}
+
+// The person this lead belongs to, if they are already a contact. The same
+// rules as functions/_lib/dedupe.js, made stricter for a public form: link
+// only on strong evidence (the same email or phone, and a name on both
+// sides that agrees), only
+// when exactly one contact fits, and never create or change a contact here.
+// Merging two people is the mistake that is hard to undo; leaving a lead
+// unlinked costs one click later.
+async function matchContact(env, lead) {
+  const email = normEmail(lead.email);
+  const phone = normPhone(lead.phone);
+  if (!email && !phone) return null;
+  try {
+    const r = await env.DB.prepare(
+      `SELECT id, name, email_norm, phone_norm FROM contacts
+        WHERE (email_norm = ? AND ? != '') OR (phone_norm = ? AND ? != '') LIMIT 5`
+    ).bind(email, email, phone, phone).all();
+    // Web input is unauthenticated: anyone can type a customer's email or
+    // phone. So every match also needs a name on both sides that agrees
+    // (namesCompatible alone would accept a blank one).
+    const named = (c) => String(c.name || '').trim() && String(lead.name || '').trim() &&
+      namesCompatible(c.name, lead.name);
+    const fits = (r.results || []).filter((c) =>
+      ((email && c.email_norm === email) || (phone && c.phone_norm === phone)) && named(c));
+    return fits.length === 1 ? fits[0].id : null;
+  } catch (err) {
+    // No contacts table yet, or a hiccup: an unlinked lead is fine.
+    console.error('contact match failed', err && err.message);
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------- emails
@@ -168,7 +248,9 @@ async function notifyUs(env, lead, fields, stored) {
   const kind = lead.pipeline === 'tuning' ? 'TUNING' : 'REPAIR';
 
   const bits = [lead.name || 'No name', lead.system, lead.city].filter(Boolean);
-  const subject = `NEW ${kind} — ${bits.join(' · ')}`;
+  // "NEW REPAIR (Pneumatic player)": which list it landed on, from the lock screen.
+  const cat = lead.category && lead.category !== 'tuning' ? ` (${CATEGORY_LABELS[lead.category]})` : '';
+  const subject = `NEW ${kind}${cat} — ${bits.join(' · ')}`;
 
   // Every field, in submission order, so the specifics each form collects
   // survive into the inbox rather than only into the database.
@@ -220,13 +302,23 @@ async function notifyUs(env, lead, fields, stored) {
   }, 'notify');
 }
 
+// What the confirmation says they got in touch about. Every repair lead used
+// to read "your player piano", including a cleaning quote and a general
+// question from the home page.
+function aboutLine(lead) {
+  if (/referral partner/i.test(lead.service || '')) return 'referring your students';
+  if (lead.pipeline === 'tuning') return 'tuning your piano';
+  if (lead.category === 'pneumatic' || lead.category === 'electronic') return 'your player piano';
+  return 'your piano';
+}
+
 // Customer-facing. No scheduling links, no payment — booking is a phone call.
 async function confirmCustomer(env, lead) {
   if (!env.RESEND_API_KEY || !lead.email) return;
 
   const from = env.LEAD_FROM_EMAIL || 'PianoPlayerTech <info@pianoplayertech.com>';
   const name = (lead.name || '').split(' ')[0] || 'there';
-  const about = lead.pipeline === 'tuning' ? 'tuning your piano' : 'your player piano';
+  const about = aboutLine(lead);
 
   const text = [
     `Hi ${name},`,

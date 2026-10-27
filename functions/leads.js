@@ -49,7 +49,14 @@ import {
 } from './_lib/stripe.js';
 import { NOT_ARCHIVED, purgeCutoff, purgeExpired, loadStatuses } from './_lib/db.js';
 import { BULK_OPS, parseIds, applyBulk } from './_lib/bulk.js';
-import { listViews, saveView, deleteView } from './_lib/views.js';
+import {
+  listViews, saveView, deleteView,
+  listTables, getTable, saveTable, deleteTable, duplicateTable, orderTables
+} from './_lib/views.js';
+import { compileRules, compileOrder, FIELDS as TABLE_FIELDS, OPS as TABLE_OPS,
+  TABLE_COLUMNS, DEFAULT_COLUMNS, SORTS as TABLE_SORTS, COLORS as TABLE_COLORS, ICONS as TABLE_ICONS
+} from './_lib/tablefilter.js';
+import { CATEGORIES, CATEGORY_LABELS } from './_lib/category.js';
 import { getCalendarToken, rotateCalendarToken, disableCalendar } from './_lib/settings.js';
 import { alertError } from './_lib/alert.js';
 import { createLead, CUSTOMER_TYPES } from './_lib/newlead.js';
@@ -75,6 +82,7 @@ const PIPELINES = ['repair', 'tuning'];
 const EDITABLE = {
   name: 200, phone: 50, email: 200, address: 300, city: 100,
   system: 200, service: 200, notes: 4000, status: 0, pipeline: 0, referral_status: 0, customer_type: 0,
+  category: 0,
   // The browser sends local wall-clock time. It is parsed and stored as the
   // normalised UTC instant, never as the text that arrived -- a string no
   // query can compare is worse than no value.
@@ -84,17 +92,39 @@ const EDITABLE = {
 
 // Changes worth a line in the lead's history. Editing a typo in an address
 // is not a story; moving a job from new to booked is.
-const TRACKED_FIELDS = ['status', 'pipeline', 'referral_status'];
+const TRACKED_FIELDS = ['status', 'pipeline', 'referral_status', 'category'];
 const FIELD_LABEL = {
-  status: 'Status', pipeline: 'Pipeline', referral_status: 'Referral outcome'
+  status: 'Status', pipeline: 'Pipeline', referral_status: 'Referral outcome', category: 'Category'
 };
 
 const COLUMNS = [
   'id', 'created_at', 'updated_at', 'pipeline', 'status', 'name', 'phone', 'email',
   'address', 'city', 'system', 'service', 'message', 'notes', 'source', 'customer_type',
   'referred_at', 'referral_status', 'referral_paid_at', 'referral_invoice_id',
-  'scheduled_at', 'scheduled_mins', 'archived_at', 'fields'
+  'scheduled_at', 'scheduled_mins', 'archived_at', 'fields',
+  'assigned_to', 'quoted_cents', 'category'
 ];
+
+// leads.category arrived with db/2026-10-23-custom-tables.sql. Code deployed
+// before that migration ran must still show the dashboard, so the column is
+// asked for only once the database is known to have it. Per database, since
+// one isolate may serve more than one binding (and the tests do).
+const NEW_COLUMNS = ['category'];
+// Only a yes is remembered: a no is asked again next time, so the column
+// appears as soon as the migration lands (or a probe that failed for some
+// other reason succeeds), not when the isolate happens to be recycled.
+const columnCheck = new WeakSet();
+async function leadColumns(env) {
+  if (!columnCheck.has(env.DB)) {
+    try {
+      await env.DB.prepare('SELECT category FROM leads WHERE id = ? LIMIT 0').bind(0).all();
+      columnCheck.add(env.DB);
+    } catch {
+      return COLUMNS.filter((c) => !NEW_COLUMNS.includes(c));
+    }
+  }
+  return COLUMNS;
+}
 
 // ------------------------------------------------------------ permissions
 //
@@ -105,6 +135,9 @@ const COLUMNS = [
 export const VIEW_PERMS = {
   repair: 'leads.read', tuning: 'leads.read', referrals: 'leads.read',
   all: 'leads.read', archive: 'leads.read',
+  // A custom table (?t=<id>). Every role sees the tabs; what is in them is
+  // still cut down to the role below (withoutMoney).
+  table: 'leads.read',
   invoices: 'invoices.read', emails: 'outreach.read', users: 'users.manage'
 };
 
@@ -123,6 +156,8 @@ export const ACTION_PERMS = {
   outreachConfig: 'outreach.configure',
   calendarOn: 'settings.write', calendarRotate: 'settings.write', calendarOff: 'settings.write',
   viewSave: 'settings.write', viewDelete: 'settings.write',
+  tableSave: 'settings.write', tableDelete: 'settings.write',
+  tableOrder: 'settings.write', tableDuplicate: 'settings.write',
   userCreate: 'users.manage', userUpdate: 'users.manage'
 };
 
@@ -149,7 +184,9 @@ export const FIELD_PERMS = { referral_status: 'payments.write' };
 
 // Lead columns that are accounting: when a referral was paid, and on which
 // invoice. Left out of rows and records for a role without invoices.read.
-export const MONEY_COLUMNS = ['referral_paid_at', 'referral_invoice_id'];
+// The quoted amount is the price of the job, which a viewer ("no invoices,
+// no accounting") and a tech do not see either.
+export const MONEY_COLUMNS = ['referral_paid_at', 'referral_invoice_id', 'quoted_cents'];
 
 function withoutMoney(row) {
   if (!row) return row;
@@ -199,8 +236,11 @@ export async function onRequestGet(context) {
   );
 
   const url = new URL(request.url);
-  const view = Object.prototype.hasOwnProperty.call(VIEWS, url.searchParams.get('p'))
-    ? url.searchParams.get('p') : 'repair';
+  // ?t=<id> is a custom table; ?p=<name> one of the built-in tabs.
+  const tableParam = url.searchParams.get('t');
+  const view = tableParam != null ? 'table'
+    : Object.prototype.hasOwnProperty.call(VIEWS, url.searchParams.get('p'))
+      ? url.searchParams.get('p') : 'repair';
 
   // When they were last here, for the Users screen. Off the response path,
   // and only for someone who has a row to write it on.
@@ -218,6 +258,13 @@ export async function onRequestGet(context) {
   }
 
   if (view === 'users') return usersPage(env, me, nonce, headers);
+
+  const table = view === 'table' ? await getTable(env, tableParam) : null;
+  if (view === 'table' && !table) return missingTablePage(me, headers);
+  // A table that filters or sorts on the quoted amount tells whoever opens
+  // it which leads are above or below a price, even with the digits hidden.
+  // So it is money, and a role without invoices.read cannot open it.
+  if (table && !can(me.role, 'invoices.read') && tableUsesMoney(table)) return forbiddenPage(me, headers);
 
   const mayInvoices = can(me.role, 'invoices.read');
   let rows;
@@ -253,6 +300,7 @@ export async function onRequestGet(context) {
       extra.lastWcEmail = (last && last.email) || '';
     }
 
+    const cols = await leadColumns(env);
     const where = view === 'archive' ? 'WHERE archived_at IS NOT NULL'
       : view === 'all' || view === 'invoices' || view === 'emails' ? `WHERE ${NOT_ARCHIVED}`
       : view === 'referrals' ? `WHERE referred_at IS NOT NULL AND ${NOT_ARCHIVED}`
@@ -260,17 +308,31 @@ export async function onRequestGet(context) {
     const order = view === 'archive' ? 'ORDER BY archived_at DESC'
       : view === 'referrals' ? 'ORDER BY referred_at DESC'
       : `ORDER BY CASE status WHEN 'new' THEN 0 ELSE 1 END, created_at DESC`;
-    let stmt = env.DB.prepare(`SELECT ${COLUMNS.join(', ')} FROM leads ${where} ${order} LIMIT 5000`);
-    if (view === 'repair' || view === 'tuning') stmt = stmt.bind(view);
+    let clause = where;
+    let ordering = order;
+    let params = view === 'repair' || view === 'tuning' ? [view] : [];
+    if (view === 'table') {
+      // The table's own filter, compiled from whitelisted pieces with every
+      // value bound (functions/_lib/tablefilter.js). A filter that no longer
+      // checks out shows nothing, with the reason, rather than everything.
+      const c = table.broken ? { sql: '0', params: [] }
+        : compileRules(table.config.rules, { me: me.email, now: new Date() });
+      clause = `WHERE ${c.sql}`;
+      params = c.params;
+      ordering = compileOrder(table.config.sort);
+    }
+    let stmt = env.DB.prepare(`SELECT ${cols.join(', ')} FROM leads ${clause} ${ordering} LIMIT 5000`);
+    if (params.length) stmt = stmt.bind(...params);
     rows = (await stmt.all()).results || [];
     if (!mayInvoices) rows = rows.map(withoutMoney);
 
     if (url.searchParams.get('export') === 'csv') {
       const day = new Date().toISOString().slice(0, 10);
-      return new Response(toCsv(rows, COLUMNS), {
+      const name = view === 'table' ? `table-${table.id}` : view;
+      return new Response(toCsv(rows, mayInvoices ? cols : cols.filter((c) => !MONEY_COLUMNS.includes(c))), {
         headers: {
           ...privateHeaders(nonce, 'text/csv; charset=utf-8'),
-          'Content-Disposition': `attachment; filename="ppt-${view}-${day}.csv"`
+          'Content-Disposition': `attachment; filename="ppt-${name}-${day}.csv"`
         }
       });
     }
@@ -306,6 +368,13 @@ export async function onRequestGet(context) {
   // The pipeline's own vocabulary, not a list hardcoded in the client.
   extra.statusList = await loadStatuses(env);
   extra.views = await listViews(env);
+  // The custom tables are every role's tabs. The editor's vocabulary goes
+  // to the role that may use it.
+  extra.tables = tablesFor(me, await listTables(env));
+  extra.table = table ? tableFor(me, table) : null;
+  extra.categories = CATEGORIES;
+  extra.categoryLabels = CATEGORY_LABELS;
+  if (can(me.role, 'settings.write')) extra.tableSchema = tableSchema();
   // Only if it has been switched on. The URL is a bearer credential, so it
   // is never created just by loading the page.
   // A bearer credential for every booked customer's address, so only a
@@ -539,6 +608,32 @@ export async function onRequestPost(context) {
     }
   }
 
+  // Custom tables are views too (kind 'table'), so they run here as well.
+  if (['tableSave', 'tableDelete', 'tableOrder', 'tableDuplicate'].includes(body.action)) {
+    const now = new Date().toISOString();
+    try {
+      let out;
+      if (body.action === 'tableSave') {
+        const statusKeys = (await loadStatuses(env)).map((x) => x.key);
+        out = await saveTable(env, { tableId: body.tableId, name: body.name, config: body.config }, actor, now, statusKeys);
+      } else if (body.action === 'tableDelete') {
+        out = await deleteTable(env, body.tableId);
+      } else if (body.action === 'tableDuplicate') {
+        out = await duplicateTable(env, body.tableId, actor, now);
+      } else {
+        out = await orderTables(env, body.order);
+      }
+      if (out.error) return json({ error: out.error }, 400);
+      return json({ ok: true, ...out, tables: await listTables(env) });
+    } catch (err) {
+      console.error('table action failed', body.action, err && err.message);
+      report('custom table', err, body.action);
+      return json({ error: /no such column/i.test(String(err && err.message))
+        ? 'Custom tables need db/2026-10-23-custom-tables.sql applied to this database first.'
+        : 'Could not save that table — try again.' }, 500);
+    }
+  }
+
   // Many leads at once, so it runs before the single-lead lookup.
   if (body.action === 'bulk') {
     const op = String(body.op || '');
@@ -691,6 +786,7 @@ export async function onRequestPost(context) {
       }
       if (field === 'pipeline' && !PIPELINES.includes(value)) return json({ error: 'bad pipeline' }, 400);
       if (field === 'customer_type' && value && !CUSTOMER_TYPES.includes(value)) return json({ error: 'bad customer type' }, 400);
+      if (field === 'category' && value && !CATEGORIES.includes(value)) return json({ error: 'bad category' }, 400);
       if (field === 'referral_status' && !REFERRAL_STATUSES.includes(value)) return json({ error: 'bad referral status' }, 400);
       if (typeof EDITABLE[field] === 'number' && EDITABLE[field]) value = value.slice(0, EDITABLE[field]);
 
@@ -781,7 +877,8 @@ export async function onRequestPost(context) {
 // it for payout tracking. Without `manual` it also emails World Class, which
 // needs WORLDCLASS_EMAIL.
 async function refer(env, id, body, now) {
-  const lead = await env.DB.prepare(`SELECT ${COLUMNS.join(', ')} FROM leads WHERE id = ?`).bind(id).first();
+  const cols = await leadColumns(env);
+  const lead = await env.DB.prepare(`SELECT ${cols.join(', ')} FROM leads WHERE id = ?`).bind(id).first();
   if (!lead) return json({ error: 'Lead not found.' }, 404);
 
   const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
@@ -820,7 +917,7 @@ async function refer(env, id, body, now) {
     await sendEmail(env, customerHandoffEmail(env, lead));
   }
 
-  const row = await env.DB.prepare(`SELECT ${COLUMNS.join(', ')} FROM leads WHERE id = ?`).bind(id).first();
+  const row = await env.DB.prepare(`SELECT ${cols.join(', ')} FROM leads WHERE id = ?`).bind(id).first();
   return json({ ok: true, row });
 }
 
@@ -979,6 +1076,46 @@ function refusal(request, env, ident, headers) {
     <button class="go full" type="submit">Use a different account</button></form></div>`), { status: 403, headers });
 }
 
+// A table link from before it was deleted, or a typed id.
+function missingTablePage(me, headers) {
+  return new Response(page('No such table', `
+    <div class="card narrow"><h1>That table is gone</h1>
+    <p class="muted">It may have been deleted or renamed. The tables that exist are along the top of the leads page.</p>
+    <p><a href="/leads" style="color:var(--gold)">Back to the leads</a></p></div>`), { status: 404, headers });
+}
+
+// Tables are money when a rule or the sort uses the quoted amount.
+export function tableUsesMoney(t) {
+  const c = (t && t.config) || {};
+  return (c.rules || []).some((r) => r.field === 'quoted') || !!(c.sort && c.sort.key === 'quoted_cents');
+}
+
+// A table as this role is sent it. Only a role that edits tables gets the
+// rules; everyone else gets what draws the tab and the grid, so no rule
+// value (a price threshold, say) ever reaches their page.
+function tableFor(me, t) {
+  if (can(me.role, 'settings.write')) return { id: t.id, name: t.name, config: t.config, broken: t.broken };
+  const c = t.config || {};
+  return { id: t.id, name: t.name, broken: t.broken ? 'ask the owner to fix it' : '',
+    config: { columns: c.columns || null, color: c.color || '', icon: c.icon || '' } };
+}
+
+function tablesFor(me, list) {
+  const money = can(me.role, 'invoices.read');
+  return list.filter((t) => money || !tableUsesMoney(t)).map((t) => tableFor(me, t));
+}
+
+// What the table editor offers: the same whitelist the server enforces, so
+// the editor cannot build a rule the server will refuse for being unknown.
+function tableSchema() {
+  const fields = {};
+  for (const [k, f] of Object.entries(TABLE_FIELDS)) {
+    fields[k] = { type: f.type, label: f.label, values: f.values || null, ops: TABLE_OPS[f.type] };
+  }
+  return { fields, columns: TABLE_COLUMNS, defaultColumns: DEFAULT_COLUMNS,
+    sorts: Object.keys(TABLE_SORTS), colors: TABLE_COLORS, icons: TABLE_ICONS };
+}
+
 // Signed in, but this tab is not for their role.
 function forbiddenPage(me, headers) {
   return new Response(page('Not for your role', `
@@ -992,7 +1129,9 @@ function forbiddenPage(me, headers) {
 async function usersPage(env, me, nonce, headers) {
   const extra = { me: meFor(me), who: me.mode === 'access' ? me.email : '',
     roles: ROLES, roleLabels: ROLE_LABELS, accessMode: me.mode === 'access',
-    users: [], userLog: [], usersError: '' };
+    users: [], userLog: [], usersError: '',
+    tables: tablesFor(me, await listTables(env)),
+    tableSchema: tableSchema(), categories: CATEGORIES, categoryLabels: CATEGORY_LABELS };
   try {
     extra.users = await listUsers(env);
     extra.userLog = await userActivity(env);

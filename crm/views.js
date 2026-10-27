@@ -9,7 +9,7 @@
 // is:unbilled in it and would mean nothing on Repair, so it is not offered
 // there.
 
-import { D, view, state, can } from './state.js';
+import { D, TAB_KEY, state, can } from './state.js';
 import { el, q, sf } from './dom.js';
 import { post } from './api.js';
 import { paintChips } from './filters.js';
@@ -21,7 +21,7 @@ var views = (D.views || []).slice();
 export function currentConfig(){
   return {
     q: q.value, sf: sf.value, sortKey: state.sortKey, sortDir: state.sortDir,
-    pageSize: state.pageSize, tab: view
+    pageSize: state.pageSize, tab: TAB_KEY
   };
 }
 
@@ -47,7 +47,7 @@ export function renderViews(onChange){
   if (!box) return;
   box.textContent = '';
 
-  var mine = views.filter(function(v){ return !v.config.tab || v.config.tab === view; });
+  var mine = views.filter(function(v){ return !v.config.tab || v.config.tab === TAB_KEY; });
 
   mine.forEach(function(v){
     var on = sameAsCurrent(v.config);

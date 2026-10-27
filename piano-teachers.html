@@ -244,7 +244,8 @@
         <h2 class="section-title" style="text-align:center;">Become a Referral Partner</h2>
         <p class="section-subtitle" style="margin:0 auto; text-align:center;">Tell us about your studio. We'll reach out to set up your bulk rate and get cards in your hands. No cost, no commitment.</p>
         <div class="signup-wrap">
-            <form id="teacher-form">
+            <form id="teacher-form" data-lead-after-ok>
+<div class="pp-hp" aria-hidden="true"><label>Leave this box empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
                 <input type="hidden" name="_subject" value="New Teacher Referral Partner — PianoPlayerTech">
                 <input type="hidden" name="lead_type" value="Teacher Referral Partner">
                 <div class="form-row">
@@ -299,8 +300,9 @@
         var btn=document.getElementById('teacher-submit');
         btn.textContent='Sending...'; btn.disabled=true;
         fetch('https://formspree.io/f/xeebglab',{ method:'POST', headers:{'Accept':'application/json'}, body:new FormData(form) })
+        .then(function(res){ var how = window.pptAfterFormspree ? window.pptAfterFormspree(form, res.status) : (res.ok ? 'ok' : 'saved'); if (res.ok) return res; return res.json().catch(function(){ return {}; }).then(function(j){ var e = new Error((j && j.errors && j.errors[0] && j.errors[0].message) || ''); e.how = how; throw e; }); })
         .then(function(){ form.style.display='none'; document.getElementById('signup-success').style.display='block'; })
-        .catch(function(){ btn.textContent='Become a Partner →'; btn.disabled=false; alert('Something went wrong — please call (470) 758-9572.'); });
+        .catch(function(err){ var how = err && err.how; if (!how) how = window.pptAfterFormspree ? window.pptAfterFormspree(form, 0) : 'offline'; btn.textContent='Become a Partner →'; btn.disabled=false; alert((window.pptFormspreeMessage ? window.pptFormspreeMessage(how, how === 'refused' ? err.message : '') : 'Something went wrong — please call (470) 758-9572.')); });
     });
 })();
 </script>

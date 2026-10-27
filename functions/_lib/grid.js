@@ -64,6 +64,22 @@ export function dashboard(view, rows, counts, ref, extra, nonce) {
   const me = extra.me || null;
   const perms = me ? me.perms || [] : null;
   const tabs = Object.keys(VIEWS).filter((k) => !perms || perms.includes(TAB_PERMS[k]));
+
+  // The owner's own tables come first, in their saved order. Every role
+  // sees them; leads.read, which every role has, is what opens one.
+  const current = view === 'table' && extra.table ? extra.table.id : null;
+  const tables = (!perms || perms.includes('leads.read')) ? (extra.tables || []) : [];
+  const tableTab = (t) => {
+    const c = t.config || {};
+    return `<a class="tab ttab${c.color ? ` tc-${escape_(c.color)}` : ''}${t.id === current ? ' on' : ''}" href="/leads?t=${Number(t.id)}" data-table="${Number(t.id)}">${
+      c.icon ? `<span class="ticon" aria-hidden="true">${escape_(c.icon)}</span>` : ''}${escape_(t.name)}</a>`;
+  };
+  const manage = !perms || perms.includes('settings.write')
+    ? '<button class="tab tabmanage" type="button" id="tablesbtn" title="Make, rename, reorder or delete tables">+ Tables</button>' : '';
+  const tableStrip = tables.length || manage
+    ? `${tables.map(tableTab).join('')}${manage}<span class="tabsep" aria-hidden="true"></span>` : '';
+  const title = view === 'table' && extra.table ? extra.table.name : VIEWS[view];
+  const exportHref = view === 'table' && extra.table ? `/leads?t=${Number(extra.table.id)}&amp;export=csv` : `/leads?p=${view}&amp;export=csv`;
   const whoLine = me
     ? `<span class="whoami muted" id="whoami"><strong>${escape_(me.name || me.email)}</strong> · ${escape_(me.roleName || me.role)} &nbsp;</span>`
     : extra.who ? `<span class="muted">${escape_(extra.who)} &nbsp;</span>` : '';
@@ -76,24 +92,27 @@ export function dashboard(view, rows, counts, ref, extra, nonce) {
         <input type="hidden" name="action" value="logout">
         <button class="linkbtn" type="submit">Sign out</button></form>
     </div>
-    <nav class="tabs">${tabs.map(tab).join('')}</nav>`;
+    <nav class="tabs" id="tabs">${tableStrip}${tabs.map(tab).join('')}</nav>`;
 
   if (view === 'users') {
-    return page(VIEWS[view], `${top}
+    return page(title, `${top}
     <div class="banner" id="banner" hidden></div>
     <div id="users"></div>
     <dialog id="dlg"><div class="dlg" id="dlgbody"></div></dialog>
     <script type="application/json" id="data">${data}</script>`, null, nonce, '/crm/app.js');
   }
 
-  return page(VIEWS[view], `${top}
-    <div class="stats" id="stats" ${view === 'repair' ? 'hidden' : ''}></div>
+  const broken = view === 'table' && extra.table && extra.table.broken
+    ? `<div class="banner warnbar">This table's filter no longer checks out (${escape_(extra.table.broken)}), so it shows nothing until it is edited.</div>` : '';
+  return page(title, `${top}
+    <div class="stats" id="stats" ${view === 'repair' || view === 'table' ? 'hidden' : ''}></div>${broken}
     <div class="banner" id="banner" hidden></div>
     <div class="tools" id="tools">
       <input type="search" id="q" placeholder="Search, or try city:marietta or is:unbilled" aria-label="Search">
       <select id="sf" aria-label="Filter"></select>
       <span class="muted" id="shown"></span>
-      ${!perms || perms.includes('leads.export') ? `<a href="/leads?p=${view}&amp;export=csv">Export all</a>
+      ${view === 'table' && (!perms || perms.includes('settings.write')) ? '<button class="linkbtn" type="button" id="edittable">Edit this table</button>' : ''}
+      ${!perms || perms.includes('leads.export') ? `<a href="${exportHref}">Export all</a>
       <button class="linkbtn" type="button" id="exportfiltered" hidden></button>` : ''}
       ${!perms || perms.includes('leads.create') ? '<button class="linkbtn" type="button" id="newlead">New lead</button>' : ''}
     </div>

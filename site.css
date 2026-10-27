@@ -1182,3 +1182,7 @@ h1 {
   input:not([type='checkbox']):not([type='radio']):not([type='hidden']), select, textarea { font-size: max(1rem, 16px); }
   .pp-footer a { display: inline-block; padding: 0.3rem 0; }
 }
+
+/* The spam trap on every lead form. Off-screen rather than display:none,
+   which some bots skip; aria-hidden and tabindex keep people out of it. */
+.pp-hp{position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important}

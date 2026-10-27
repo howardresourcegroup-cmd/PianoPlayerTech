@@ -96,12 +96,21 @@
   // the page navigation that native (non-AJAX) form submits trigger. It is
   // fire-and-forget and wrapped in try/catch, so it can never block or break
   // the Formspree submission. Add data-no-airtable to a form to skip it.
-  function toAirtable(form) {
+  function toAirtable(form, force) {
     try {
       if (!form || form.hasAttribute('data-no-airtable')) return;
+      // A form that posts to Formspree itself sends to the CRM once it knows
+      // how Formspree answered (it calls pptAfterFormspree), so a submission
+      // Formspree refuses as bad input -- a mistyped email -- and the
+      // corrected resubmit do not become two leads.
+      if (!force && form.hasAttribute('data-lead-after-ok')) return;
       var fields = {};
+      var hp = false;
       new FormData(form).forEach(function (value, key) {
-        // Skip Formspree meta/honeypot fields (_subject, _next, _gotcha…) and blanks.
+        // _gotcha is the honeypot: a box no person can see. Anything in it
+        // means a bot, and the server is told so it stores nothing.
+        if (key === '_gotcha') { if (String(value).trim() !== '') hp = true; return; }
+        // Skip Formspree meta fields (_subject, _next…) and blanks.
         if (key && key.charAt(0) !== '_' && String(value).trim() !== '') {
           fields[key] = value;
         }
@@ -111,6 +120,7 @@
         page: location.href,
         fields: fields
       };
+      if (hp) payload.hp = 1;
       var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
       if (navigator.sendBeacon) {
         navigator.sendBeacon('/api/lead', blob);
@@ -120,12 +130,43 @@
     } catch (err) { /* never let lead capture affect the form */ }
   }
 
+  // For the data-lead-after-ok forms, once Formspree has answered. `status`
+  // is the HTTP status, or 0 when the request never got an answer.
+  //
+  // The CRM copy is skipped only when Formspree refused the input itself
+  // (400 or 422): the person is shown why and will send a corrected one.
+  // Everything else -- success, an outage, a quota or rate limit (429), a
+  // network failure -- still sends it. The CRM is the safety net for a
+  // Formspree failure, and a lead must fail everywhere to be lost.
+  //
+  // Returns what happened, for the page's message:
+  //   'ok'       Formspree took it
+  //   'refused'  Formspree refused the input; nothing was sent to the CRM
+  //   'saved'    Formspree failed, but the CRM copy was sent
+  //   'offline'  no answer at all; the CRM copy was attempted
+  window.pptAfterFormspree = function (form, status) {
+    var refused = status === 400 || status === 422;
+    if (!refused) toAirtable(form, true);
+    if (status >= 200 && status < 300) return 'ok';
+    if (refused) return 'refused';
+    return status ? 'saved' : 'offline';
+  };
+
+  // The words for each outcome, so the seven forms say the same true thing.
+  window.pptFormspreeMessage = function (how, detail) {
+    if (how === 'refused') return (detail ? detail + ' \u2014 ' : '') + 'please check the form and send it again, or call (470) 758-9572.';
+    if (how === 'saved') return 'Your details reached us, but our form service had a problem confirming it. We will be in touch \u2014 if you have not heard from us within the hour, please call (470) 758-9572.';
+    return 'We could not confirm that went through. Please try again, or call (470) 758-9572.';
+  };
+
   // Lead form submit — capture phase so it fires even when a handler
   // calls preventDefault() (e.g. the AJAX fetch forms).
   document.addEventListener('submit', function (e) {
     var f = e.target;
     if (!f || f.tagName !== 'FORM') return;
     toAirtable(f);
+    var trap = f.querySelector && f.querySelector('[name="_gotcha"]');
+    if (trap && String(trap.value || '').trim() !== '') return; // a bot is not a conversion
     if (!f.hasAttribute('data-no-conversion')) {
       fire(window.PPT_CONV.lead);
       report('lead');

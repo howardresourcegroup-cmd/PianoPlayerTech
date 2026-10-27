@@ -17,8 +17,9 @@ test('every listing query against leads excludes archived rows', () => {
   for (const q of queries) {
     const excludes = /NOT_ARCHIVED|archived_at IS (?:NOT )?NULL/.test(q);
     const byId = /WHERE id = \?/.test(q);
-    // The grid query interpolates its clause; that clause is checked below.
-    const interpolated = /\$\{where\}/.test(q);
+    // The grid query interpolates its clause; that clause is checked below,
+    // and a custom table's (compileRules) in tests/tables.test.mjs.
+    const interpolated = /\$\{(?:where|clause)\}/.test(q);
     assert.ok(excludes || byId || interpolated,
       `query neither excludes archived rows nor looks up one id:\n  ${q.slice(0, 160)}`);
   }

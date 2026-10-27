@@ -6,6 +6,7 @@
 // line in the history saying who added it.
 
 import { logQuietly } from './activity.js';
+import { classifyCategory, CATEGORIES } from './category.js';
 
 export const PIPELINES = ['repair', 'tuning'];
 export const CAME_IN_BY = ['phone', 'text', 'email', 'in_person', 'other'];
@@ -41,15 +42,29 @@ export async function createLead(env, body, actor, nowIso) {
   if (cameInBy) fields.came_in_by = cameInBy;
   if (customerType) fields.customer_type = customerType;
 
-  const res = await env.DB.prepare(
+  // Chosen in the form, or worked out the way a web lead's is.
+  const category = CATEGORIES.includes(b.category) ? b.category
+    : classifyCategory({ pipeline: b.pipeline, source: 'dashboard', service: lead.service,
+      system: lead.system, message: lead.message });
+
+  const insert = (withCategory) => env.DB.prepare(
     `INSERT INTO leads
        (created_at, updated_at, pipeline, status, name, email, phone, service, system, city, address,
-        message, notes, source, lead_source, customer_type, fields)
-     VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'dashboard', ?, ?, ?)`
+        message, notes, source, lead_source, customer_type, fields${withCategory ? ', category' : ''})
+     VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'dashboard', ?, ?, ?${withCategory ? ', ?' : ''})`
   ).bind(
     nowIso, nowIso, b.pipeline, lead.name, lead.email, lead.phone, lead.service, lead.system,
-    lead.city, lead.address, lead.message, lead.notes, cameInBy, customerType, JSON.stringify(fields)
+    lead.city, lead.address, lead.message, lead.notes, cameInBy, customerType, JSON.stringify(fields),
+    ...(withCategory ? [category] : [])
   ).run();
+  let res;
+  try {
+    res = await insert(true);
+  } catch (err) {
+    // Before db/2026-10-23-custom-tables.sql there is no category column.
+    if (!/no such column|has no column/i.test(String(err && err.message))) throw err;
+    res = await insert(false);
+  }
   const id = res.meta && res.meta.last_row_id;
   const row = await env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(id).first();
 

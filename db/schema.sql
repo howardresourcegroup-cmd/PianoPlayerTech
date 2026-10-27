@@ -25,6 +25,12 @@
 -- tech_pct, state, zip.
 --
 -- Added 2026-10-18: the users table (db/2026-10-18-users.sql).
+--
+-- Added 2026-10-23, custom tables (db/2026-10-23-custom-tables.sql, which
+-- also backfills, then db/2026-10-23-custom-tables-seed.sql): views.kind, leads.category, their indexes and
+-- the three starting tables at the end of this file. On a database created
+-- before then, run that migration rather than this file: the index on
+-- leads.category below needs the column to exist.
 
 CREATE TABLE IF NOT EXISTS leads (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,6 +82,11 @@ CREATE TABLE IF NOT EXISTS leads (
   zip            TEXT,
   -- 'homeowner' | 'business' | 'dealer'. NULL means nobody has said.
   customer_type  TEXT,
+  -- 'tuning' | 'electronic' | 'pneumatic' | 'acoustic'. What kind of work
+  -- it is, which the pipeline cannot say: a pneumatic restoration and a
+  -- Disklavier power supply are both 'repair'. NULL means it could not be
+  -- told; see functions/_lib/category.js.
+  category       TEXT,
 
   -- When the job is booked for, and how long it runs. Feeds the calendar.
   scheduled_at   TEXT,     -- ISO-8601 UTC
@@ -273,9 +284,15 @@ CREATE TABLE IF NOT EXISTS views (
   created_at TEXT NOT NULL,
   owner      TEXT,
   name       TEXT NOT NULL,
-  config     TEXT NOT NULL,   -- JSON {filters, sort, columns}
-  sort       INTEGER NOT NULL DEFAULT 0
+  config     TEXT NOT NULL,   -- JSON; shape depends on kind
+  sort       INTEGER NOT NULL DEFAULT 0,
+  -- 'view': a saved filter chip on one tab ({q, sf, sortKey, ...}).
+  -- 'table': a custom table, shown as its own tab ({rules, columns, sort,
+  -- color, icon}); sort is its place in the tab strip.
+  kind       TEXT NOT NULL DEFAULT 'view'
 );
+CREATE INDEX IF NOT EXISTS idx_views_kind ON views(kind, sort);
+CREATE INDEX IF NOT EXISTS idx_leads_category ON leads(category);
 
 CREATE INDEX IF NOT EXISTS idx_leads_contact  ON leads(contact_id)
   WHERE contact_id IS NOT NULL;
@@ -328,3 +345,20 @@ CREATE TABLE IF NOT EXISTS users (
   last_seen_at TEXT,
   created_by   TEXT
 );
+
+-- ------------------------------------------------------- custom tables
+-- The three starting tables, only on a database that has none. Kept
+-- identical to db/2026-10-23-custom-tables-seed.sql (a test checks).
+INSERT INTO views (created_at, owner, name, config, sort, kind)
+SELECT '2026-10-23T00:00:00.000Z', NULL, s.name, s.config, s.sort, 'table'
+  FROM (
+    SELECT 'Tuning' AS name, 10 AS sort,
+           '{"rules":[{"field":"pipeline","op":"in","value":["tuning"]}],"columns":["phone","status","referral_status","scheduled_at","created_at","city","address","system","email","message","notes"],"sort":null,"color":"blue","icon":"♪"}' AS config
+    UNION ALL
+    SELECT 'Repair', 20,
+           '{"rules":[{"field":"pipeline","op":"in","value":["repair"]},{"field":"category","op":"not_in","value":["pneumatic"]}],"columns":null,"sort":null,"color":"gold","icon":"⚙"}'
+    UNION ALL
+    SELECT 'Pneumatic', 30,
+           '{"rules":[{"field":"category","op":"in","value":["pneumatic"]}],"columns":null,"sort":null,"color":"purple","icon":"✦"}'
+  ) AS s
+ WHERE NOT EXISTS (SELECT 1 FROM views WHERE kind = 'table');

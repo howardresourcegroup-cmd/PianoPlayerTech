@@ -285,7 +285,8 @@
                     <p>Got it — we'll be in touch.</p>
                     <p>A confirmation email is on its way, and someone will call you within 30 minutes to an hour to schedule. Tuning is billed upfront, before your visit, by invoice or card. In a hurry? Call <a href="tel:4707589572">(470)&nbsp;758-9572</a>.</p>
                 </div>
-                <form class="pp-form" id="tuning-booking-form">
+                <form class="pp-form" id="tuning-booking-form" data-lead-after-ok>
+<div class="pp-hp" aria-hidden="true"><label>Leave this box empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
                     <input type="hidden" name="_subject" value="New Tuning Booking — PianoPlayerTech">
                     <input type="hidden" name="service_type" value="Piano Tuning">
                     <label for="t-name">Name</label>
@@ -417,14 +418,30 @@
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
+        .then(function(res) {
+            // The CRM copy goes now, unless Formspree refused the input
+            // (ppt-tracking.js decides). A refusal is still a response:
+            // without this check a rejected request showed success.
+            var how = window.pptAfterFormspree ? window.pptAfterFormspree(form, res.status) : (res.ok ? 'ok' : 'saved');
+            if (res.ok) return res;
+            return res.json().catch(function() { return {}; }).then(function(j) {
+                var e = new Error((j && j.errors && j.errors[0] && j.errors[0].message) || '');
+                e.how = how;
+                throw e;
+            });
+        })
         .then(function() {
             form.style.display = 'none';
             document.getElementById('booking-success').style.display = 'block';
         })
-        .catch(function() {
+        .catch(function(err) {
+            // No answer at all: still try the CRM copy.
+            var how = err && err.how;
+            if (!how) how = window.pptAfterFormspree ? window.pptAfterFormspree(form, 0) : 'offline';
             btn.textContent = 'Request My Tuning';
             btn.disabled = false;
-            alert('Something went wrong — please call us at (470) 758-9572.');
+            alert(window.pptFormspreeMessage ? window.pptFormspreeMessage(how, how === 'refused' ? err.message : '')
+              : 'Something went wrong — please call us at (470) 758-9572.');
         });
     });
 })();

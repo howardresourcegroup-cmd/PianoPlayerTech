@@ -80,6 +80,9 @@ export function newLeadDialog(){
         render();
         dlg.close();
         openLead(r);
+      } else if (view === 'table') {
+        // Whether it belongs in this table is the server's filter to say.
+        window.location.reload();
       } else {
         window.location.href = '/leads?p=' + r.pipeline;
       }

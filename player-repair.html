@@ -327,7 +327,8 @@
             <div class="pp-form-panel">
                 <h3>Book Your Diagnosis</h3>
                 <p>Tell us about your system and we'll call within 30 min–1 hr to verify and schedule. The $100 diagnosis fee is due at the visit and is separate from the repair. Repair work is quoted in writing and due once it is complete.</p>
-                <form class="pp-form" id="diagnosis-intake">
+                <form class="pp-form" id="diagnosis-intake" data-lead-after-ok>
+<div class="pp-hp" aria-hidden="true"><label>Leave this box empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
                     <input type="hidden" name="_subject" value="Player Piano Diagnosis Booking — PianoPlayerTech">
                     <input type="hidden" name="service_type" value="Player Piano Diagnosis — $100">
                     <label for="c-name">Name</label>
@@ -440,19 +441,28 @@ if (intakeForm) {
             body: data,
             headers: { 'Accept': 'application/json' }
         }).then(function(res) {
+            // The CRM copy goes now, unless Formspree refused the input.
+            var how = window.pptAfterFormspree ? window.pptAfterFormspree(intakeForm, res.status) : (res.ok ? 'ok' : 'saved');
             if (res.ok) {
                 window.location = '/thank-you';
-            } else {
+                return;
+            }
+            return res.json().catch(function() { return {}; }).then(function(j) {
                 intakeSubmit.disabled = false;
                 intakeSubmit.textContent = 'Request My Diagnosis →';
                 intakeStatus.style.display = 'block';
-                intakeStatus.textContent = 'Something went wrong — please call us at (470) 758-9572.';
-            }
+                intakeStatus.textContent = window.pptFormspreeMessage
+                  ? window.pptFormspreeMessage(how, how === 'refused' && j && j.errors && j.errors[0] ? j.errors[0].message : '')
+                  : 'Something went wrong — please call us at (470) 758-9572.';
+            });
         }).catch(function() {
+            // No answer at all: still try the CRM copy.
+            var how = window.pptAfterFormspree ? window.pptAfterFormspree(intakeForm, 0) : 'offline';
             intakeSubmit.disabled = false;
             intakeSubmit.textContent = 'Request My Diagnosis →';
             intakeStatus.style.display = 'block';
-            intakeStatus.textContent = 'Could not connect — please call us at (470) 758-9572.';
+            intakeStatus.textContent = window.pptFormspreeMessage ? window.pptFormspreeMessage(how, '')
+              : 'Could not connect — please call us at (470) 758-9572.';
         });
     });
 }

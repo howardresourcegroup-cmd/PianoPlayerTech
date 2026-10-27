@@ -454,7 +454,8 @@ function showResults() {
   html += '<div class="lead-form" id="lead">'
     + '<h3>Tell us about your piano</h3>'
     + '<p>Leave your details and a quick note. We’ll call within 30 minutes to an hour to talk it through — no pressure, no obligation.</p>'
-    + '<form id="quizLead">'
+    + '<form id="quizLead" data-lead-after-ok>'
+    + '<div class="pp-hp" aria-hidden="true"><label>Leave this box empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>'
     + '<input type="hidden" name="_subject" value="Quiz lead — PianoPlayerTech">'
     + '<input type="hidden" name="quiz_summary" value="' + summary.replace(/"/g,'&quot;') + '">'
     + '<input type="hidden" name="recommended" value="' + rec.name.replace(/<[^>]+>/g,'').replace(/"/g,'&quot;') + '">'
@@ -495,22 +496,31 @@ function wireLeadForm() {
     fetch('https://formspree.io/f/xeebglab', {
       method: 'POST', body: data, headers: { 'Accept': 'application/json' }
     }).then(function(res) {
+      // The CRM copy goes now, unless Formspree refused the input.
+      var how = window.pptAfterFormspree ? window.pptAfterFormspree(form, res.status) : (res.ok ? 'ok' : 'saved');
       if (res.ok) {
         form.style.display = 'none';
         status.style.display = 'block';
         status.textContent = 'Got it — thank you. We’ll call you within 30 minutes to an hour. If you’d rather not wait, call us anytime at (470) 758-9572.';
         if (typeof gtag === 'function') gtag('event', 'generate_lead', { source: 'quiz', need: answers.need || '' });
       } else {
-        submit.disabled = false;
-        submit.textContent = 'Send — we’ll call you back';
-        status.style.display = 'block';
-        status.textContent = 'Something went wrong — please call us at (470) 758-9572.';
+        return res.json().catch(function() { return {}; }).then(function(j) {
+          submit.disabled = false;
+          submit.textContent = 'Send — we’ll call you back';
+          status.style.display = 'block';
+          status.textContent = window.pptFormspreeMessage
+            ? window.pptFormspreeMessage(how, how === 'refused' && j && j.errors && j.errors[0] ? j.errors[0].message : '')
+            : 'Something went wrong — please call us at (470) 758-9572.';
+        });
       }
     }).catch(function() {
+      // No answer at all: still try the CRM copy.
+      var how = window.pptAfterFormspree ? window.pptAfterFormspree(form, 0) : 'offline';
       submit.disabled = false;
       submit.textContent = 'Send — we’ll call you back';
       status.style.display = 'block';
-      status.textContent = 'Could not connect — please call us at (470) 758-9572.';
+      status.textContent = window.pptFormspreeMessage ? window.pptFormspreeMessage(how, '')
+        : 'Could not connect — please call us at (470) 758-9572.';
     });
   });
 }

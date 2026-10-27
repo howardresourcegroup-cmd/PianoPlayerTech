@@ -14,6 +14,12 @@ export const D = JSON.parse(document.getElementById('data').textContent);
 
 export const view = D.view;
 
+// The custom table this tab shows, when it is one (view === 'table').
+export const TABLE = D.table || null;
+// What a saved view on this tab is filed under: the tab's name, or 't' and
+// the table's id, so a view saved on one table is not offered on another.
+export const TAB_KEY = view === 'table' && TABLE ? 't' + TABLE.id : view;
+
 export const state = {
   // The leads on this tab. Replaced, not spliced, when one no longer belongs.
   rows: D.rows,

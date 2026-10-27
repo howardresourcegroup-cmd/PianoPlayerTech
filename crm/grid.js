@@ -5,7 +5,7 @@
 // lead that looks saved is worse than a slow one.
 
 import { D, view, state, INV_LABEL, PAGE_SIZES, can, canBulk } from './state.js';
-import { el, head, body, shown, empty, fmt, fmtLong, fmtWhen, tel, flash } from './dom.js';
+import { el, head, body, shown, empty, fmt, fmtLong, fmtWhen, tel, flash, money } from './dom.js';
 import { post } from './api.js';
 import { COLS } from './columns.js';
 import { passes, refreshMatcher } from './filters.js';
@@ -246,6 +246,12 @@ function cell(r, c, i){
 
   if (c.type === 'ref') {
     td.appendChild(el('div', {className:'ro', text:'PPT-' + r.id}));
+    return td;
+  }
+
+  if (c.type === 'money') {
+    var amt = v === '' ? '' : money(v);
+    td.appendChild(el('div', {className:'ro' + (amt ? '' : ' empty'), text:amt || BLANK, title:amt}));
     return td;
   }
 

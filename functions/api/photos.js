@@ -13,6 +13,7 @@ import {
   MAX_PHOTOS, MAX_TOTAL_BYTES, MAX_NOTE_CHARS,
   validEmail, checkUpload, buildPhotoEmail
 } from '../_lib/photos.js';
+import { logQuietly } from '../_lib/activity.js';
 
 const ALLOWED_HOSTS = new Set(['pianoplayertech.com', 'www.pianoplayertech.com']);
 
@@ -118,5 +119,38 @@ export async function onRequestPost(context) {
   }
 
   if (!sent) return reply(request, 502, false, 'We could not send those photos. ' + FALLBACK);
+  // The photos themselves go only to the inbox: there is no file storage
+  // behind the CRM. What the lead can carry is the fact that they arrived,
+  // so whoever opens it knows to look in the email before calling.
+  const noted = notePhotos(env, email, files.length, new Date().toISOString());
+  if (typeof context.waitUntil === 'function') context.waitUntil(noted);
   return reply(request, 200, true, 'Photos received. We will match them to your message.');
+}
+
+// A line on the customer's lead, when it is unambiguous which one: exactly
+// one live lead from the last 30 days has this email. The uploader's email
+// is not verified, so the note says what happened rather than whose photos
+// they are, and it is marked meta.auto so outreach does not count it as a
+// conversation. Never fails the upload: the photos have already been sent.
+const PHOTO_MATCH_DAYS = 30;
+async function notePhotos(env, email, count, now) {
+  if (!env.DB) return null;
+  try {
+    const since = new Date(Date.parse(now) - PHOTO_MATCH_DAYS * 86400000).toISOString();
+    const r = await env.DB.prepare(
+      `SELECT id, contact_id FROM leads
+        WHERE LOWER(TRIM(email)) = ? AND archived_at IS NULL AND created_at >= ?
+        ORDER BY created_at DESC LIMIT 2`).bind(email.toLowerCase(), since).all();
+    const hits = r.results || [];
+    if (hits.length !== 1) return null;
+    return await logQuietly(env, {
+      lead_id: hits[0].id, contact_id: hits[0].contact_id, type: 'note', actor: 'website',
+      subject: 'Photos received',
+      body: `${count} photo${count === 1 ? ' was' : 's were'} sent from the website using this lead's email address (not verified). They are in the lead-alert inbox, not stored here.`,
+      meta: { auto: 'photos' }
+    }, now);
+  } catch (err) {
+    console.error('photo note failed', err && err.message);
+    return null;
+  }
 }

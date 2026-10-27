@@ -382,7 +382,9 @@ async function factsFor(env, ids) {
       // Our own sends are logged as email activities. They are not a reply.
       let meta = null;
       try { meta = JSON.parse(a.meta || 'null'); } catch { meta = null; }
-      if (!(meta && meta.outreach)) f.lastTouchAt = a.created_at;
+      // Nor is a line the website wrote by itself (meta.auto), such as
+      // "photos were sent": nobody spoke to anybody.
+      if (!(meta && (meta.outreach || meta.auto))) f.lastTouchAt = a.created_at;
     }
   }
   return facts;

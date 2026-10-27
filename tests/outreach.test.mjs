@@ -448,6 +448,15 @@ test('our own email on the timeline does not count as a conversation', async () 
   assert.strictEqual(await draftDue(env, NOW), 1);
 });
 
+test('a note the website wrote by itself (photos received) does not count as a conversation', async () => {
+  const env = freshEnv();
+  await saveConfig(env, cfg(), NOW);
+  const l = addLead(env, { status: 'quoted' });
+  became(env, l.id, 'quoted', ago(5));
+  addActivity(env, l.id, 'note', ago(1), { auto: 'photos' });
+  assert.strictEqual(await draftDue(env, NOW), 1);
+});
+
 // ------------------------------------------------------------------ needs contact
 test('a lead marked Needs Contact gets a "tried to reach you" draft after the delay', () => {
   const l = { id: 1, email: 'dana@example.com', status: 'needs_contact', pipeline: 'repair', updated_at: ago(10) };
