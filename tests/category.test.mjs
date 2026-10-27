@@ -64,8 +64,23 @@ test('tuning is tuning, a teacher partner is nothing, cleaning is acoustic', () 
   assert.strictEqual(c({ source: '/' }), null);
 });
 
+test('the detailing and voicing pages are acoustic; the install page is electronic unless pneumatic is named', () => {
+  assert.strictEqual(c({ source: '/piano-detailing #detailing-quote-form', service: 'Piano Detailing' }), 'acoustic');
+  assert.strictEqual(c({ source: '/piano-detailing.html #detailing-quote-form', service: 'Piano Detailing', message: 'add a tuning too' }), 'acoustic');
+  assert.strictEqual(c({ source: '/piano-voicing-regulation #voicing-form', service: 'Piano Voicing & Regulation' }), 'acoustic');
+  assert.strictEqual(c({ source: '/piano-voicing-regulation #voicing-form', service: 'Piano Voicing & Regulation', system: 'Steinway M' }), 'acoustic');
+  assert.strictEqual(c({ source: '/player-system-install #install-form', service: 'Player System Install / Removal' }), 'electronic');
+  assert.strictEqual(c({ source: '/player-system-install #install-form', system: 'PianoDisc iQ on a Yamaha C3' }), 'electronic');
+  // The existing rules still apply: the customer's words beat the page.
+  assert.strictEqual(c({ source: '/player-system-install #install-form', message: 'Removing an old Ampico mechanism' }), 'pneumatic');
+  assert.strictEqual(c({ source: '/player-system-install #install-form', message: 'Ampico upstairs, Disklavier removal downstairs' }), null);
+  // A technician's referral from the trade page is electronic.
+  assert.strictEqual(c({ source: '/for-technicians #tech-referral-form', service: 'Technician Referral — Player System', system: 'Yamaha Disklavier' }), 'electronic');
+});
+
 test('the answer is always one of the categories, or blank', () => {
-  for (const src of ['/', '/antique-player-piano', '/player-repair', '/piano-repair', 'Airtable: x']) {
+  for (const src of ['/', '/antique-player-piano', '/player-repair', '/piano-repair', '/piano-detailing',
+    '/piano-voicing-regulation', '/player-system-install', 'Airtable: x']) {
     for (const sys of ['', 'Ampico', 'Disklavier', 'Steinway']) {
       const v = c({ source: src, system: sys });
       assert.ok(v === null || CATEGORIES.includes(v), `${src} ${sys} -> ${v}`);

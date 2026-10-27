@@ -179,8 +179,20 @@ const CASES = [
     over: { system: 'Disklavier MX100A' } },
   { form: 'disklavier-repair.html#https://formspree.io/f/xeebglab', pipeline: 'repair', category: 'electronic', table: 'Repair', about: 'your player piano' },
   { form: 'for-technicians.html#https://formspree.io/f/xeebglab', pipeline: 'repair', category: 'electronic', table: 'Repair', about: 'your player piano' },
+  // A technician refers a customer: the lead is the customer, electronic,
+  // with the referring tech's name kept in the lead's fields.
+  { form: 'for-technicians.html#tech-referral-form', pipeline: 'repair', category: 'electronic', table: 'Repair', about: 'your player piano',
+    over: { referring_tech: 'Sam Tuner', tech_phone: '(404) 555-0123' } },
   { form: 'piano-cleaning.html#detailing-form', pipeline: 'repair', category: 'acoustic', table: 'Repair', about: 'your piano' },
   { form: 'piano-repair.html#repair-form', pipeline: 'repair', category: 'acoustic', table: 'Repair', about: 'your piano' },
+  { form: 'piano-detailing.html#detailing-quote-form', pipeline: 'repair', category: 'acoustic', table: 'Repair', about: 'your piano' },
+  { form: 'piano-detailing.html#detailing-quote-form', name: 'piano-detailing (bundled with a tuning)', pipeline: 'repair', category: 'acoustic', table: 'Repair', about: 'your piano',
+    over: { service_level: 'Detailing + a tuning (bundle)' } },
+  // "voicing" reads as tuning to the pipeline rule; this page is ours to quote and do.
+  { form: 'piano-voicing-regulation.html#voicing-form', pipeline: 'repair', category: 'acoustic', table: 'Repair', about: 'your piano' },
+  { form: 'player-system-install.html#install-form', pipeline: 'repair', category: 'electronic', table: 'Repair', about: 'your player piano' },
+  { form: 'player-system-install.html#install-form', name: 'player-system-install (pneumatic system named)', pipeline: 'repair', category: 'pneumatic', table: 'Pneumatic', about: 'your player piano',
+    over: { service_level: 'Not sure yet', message: 'It is an old Ampico reproducing grand, we want the player taken out' } },
   { form: 'piano-teachers.html#teacher-form', pipeline: 'tuning', category: null, table: 'Tuning', about: 'referring your students' },
   { form: 'piano-tuning-atlanta.html#https://formspree.io/f/xzdlraeq', pipeline: 'tuning', category: 'tuning', table: 'Tuning', about: 'tuning your piano' },
   { form: 'piano-tuning-cumming-ga.html#https://formspree.io/f/xzdlraeq', pipeline: 'tuning', category: 'tuning', table: 'Tuning', about: 'tuning your piano' },
@@ -280,6 +292,34 @@ for (const c of CASES) {
   });
 }
 
+test('a technician referral records the referring tech on the lead, and touches no World Class referral column', async () => {
+  const form = ALL_FORMS.find((f) => formKey(f) === 'for-technicians.html#tech-referral-form');
+  assert.ok(form && form.afterOk, 'the referral form uses the lead-safe Formspree flow');
+  const sent = await submitThroughTracking(form, fill(form, { referring_tech: 'Sam Tuner', tech_phone: '(404) 555-0123' }), '/for-technicians');
+  const e = env();
+  await postLead(e, sent[0].body);
+  const [row] = sqlite(e._file, 'SELECT * FROM leads');
+  assert.strictEqual(row.category, 'electronic');
+  assert.strictEqual(row.service, 'Technician Referral — Player System');
+  assert.strictEqual(JSON.parse(row.fields).referring_tech, 'Sam Tuner');
+  assert.strictEqual(JSON.parse(row.fields).tech_phone, '(404) 555-0123');
+  // Those columns are outbound referrals to World Class, billed at the $25 fee.
+  assert.strictEqual(row.referred_at, null);
+  assert.strictEqual(row.referral_status, null);
+});
+
+test('the job application still posts to Formspree only, with the role and experience questions', () => {
+  const form = ALL_FORMS.find((f) => formKey(f) === 'careers.html#apply-form');
+  assert.ok(form, 'careers.html#apply-form');
+  assert.strictEqual(form.action, 'https://formspree.io/f/xeebglab');
+  assert.ok(form.noAirtable, 'never a CRM lead, never a customer confirmation');
+  assert.ok(form.fields.some((x) => x.name === '_gotcha'), 'keeps its honeypot');
+  const role = form.fields.find((x) => x.name === 'role');
+  assert.deepStrictEqual(role && role.options, ['', 'Lead Responder', 'Piano Tuner', 'Player System Apprentice', 'Other']);
+  assert.ok(form.fields.some((x) => x.name === 'experience' && x.type === 'select'));
+  assert.ok(!ALL_FORMS.some((f) => f.file === 'index.html' && f.id === 'apply-form'));
+});
+
 test('a bot that fills the honeypot is told 204 and nothing is stored or sent', async () => {
   const form = ALL_FORMS.find((f) => formKey(f) === 'tuning.html#tuning-booking-form');
   const entries = fill(form, { _gotcha: 'http://spam.example' });
@@ -309,7 +349,7 @@ test('a bot that fills the honeypot is told 204 and nothing is stored or sent', 
 });
 
 test('the job application and the photo upload never become leads', async () => {
-  for (const key of ['index.html#apply-form', 'antique-player-piano.html#photo-form']) {
+  for (const key of ['careers.html#apply-form', 'antique-player-piano.html#photo-form']) {
     const form = ALL_FORMS.find((f) => formKey(f) === key);
     assert.ok(form && form.noAirtable, `${key} must carry data-no-airtable`);
     assert.strictEqual((await submitThroughTracking(form, fill(form), pathOf(form.file))).length, 0, key);

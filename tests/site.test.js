@@ -21,7 +21,11 @@ const REBUILT = [
   'player-repair.html',
   'player-unit-mail-in-repair.html',
   'tuning.html',
-  'disklavier-power-supply-repair.html'
+  'disklavier-power-supply-repair.html',
+  'careers.html',
+  'piano-detailing.html',
+  'piano-voicing-regulation.html',
+  'player-system-install.html'
 ];
 
 const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
@@ -82,9 +86,38 @@ test('rebuilt pages post the same forms with the same fields', () => {
 });
 
 test('the job application form still opts out of lead conversions', () => {
-  const apply = formsOf(read('index.html')).find((f) => f.id === 'apply-form');
-  assert.ok(apply, 'index.html lost #apply-form');
+  // It moved from the home page to /careers.html; the home page keeps a teaser.
+  const apply = formsOf(read('careers.html')).find((f) => f.id === 'apply-form');
+  assert.ok(apply, 'careers.html lost #apply-form');
   assert.ok(apply.noConversion, '#apply-form must keep data-no-conversion');
+  assert.strictEqual(apply.action, 'https://formspree.io/f/xeebglab', 'the application still posts to Formspree');
+  assert.ok(apply.fields.includes('role'), 'the application asks which role');
+  assert.ok(apply.fields.includes('experience'), 'the application keeps the experience question');
+  assert.ok(!formsOf(read('index.html')).some((f) => f.id === 'apply-form'), 'the application is no longer on the home page');
+  assert.match(read('index.html'), /href="\/careers\.html"/, 'the home page links to the careers page');
+});
+
+test('every service page carries the hiring line, linking to the careers page', () => {
+  const services = ['antique-player-piano.html', 'player-repair.html', 'player-unit-mail-in-repair.html', 'tuning.html',
+    'disklavier-power-supply-repair.html', 'disklavier-repair.html', 'pianodisc-repair.html', 'qrs-repair.html',
+    'spirio-repair.html', 'piano-repair.html', 'piano-cleaning.html', 'for-technicians.html',
+    'piano-tuning-atlanta.html', 'piano-tuning-cumming-ga.html', 'piano-tuning-gainesville-ga.html',
+    'piano-tuning-marietta-ga.html', 'piano-detailing.html', 'piano-voicing-regulation.html', 'player-system-install.html'];
+  for (const file of services) {
+    assert.match(read(file), /<aside class="pp-hiring"[^>]*>\s*<a href="\/careers\.html">We&rsquo;re hiring tuners, a player-system apprentice and a lead responder\. <span>See open roles/,
+      `${file} has no hiring line`);
+  }
+});
+
+test('every page with a nav links to the careers page', () => {
+  const untouched = new Set(['review.html', 'privacy-policy.html', 'terms-of-service.html', 'checkout-return.html', 'thank-you.html']);
+  for (const file of PUBLIC.filter((f) => !untouched.has(f))) {
+    const html = read(file);
+    const nav = (html.match(/<nav[\s\S]*?<\/nav>/) || [''])[0];
+    assert.match(nav, /href="\/careers\.html"/, `${file} nav has no Careers link`);
+    assert.match(html, /href="\/piano-detailing\.html"[\s\S]*href="\/player-system-install\.html"|href="\/player-system-install\.html"[\s\S]*href="\/piano-detailing\.html"/,
+      `${file} footer is missing the new service pages`);
+  }
 });
 
 test('no page claims a certification', () => {

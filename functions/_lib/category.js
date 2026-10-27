@@ -35,7 +35,7 @@ const ELECTRONIC_STRONG_RE = /disklavier|enspire|piano ?disc|pianomation|spirio|
 const ELECTRONIC_RE = /disklavier|enspire|piano ?disc|pianomation|spirio|\bceus\b|solenoid|power supply|driver board|floppy|\bmidi\b|\bqrs\b|player system/i;
 
 // Ordinary-piano work: repair, regulation, cleaning.
-const ACOUSTIC_RE = /piano repair|piano detailing|detailing|cleaning|regulation|sticking keys?|broken string|in-home assessment/i;
+const ACOUSTIC_RE = /piano repair|piano detailing|detailing|cleaning|regulation|voicing|sticking keys?|broken string|in-home assessment/i;
 
 // The page a lead came from, without ".html", a trailing slash or the form id.
 export function pagePath(source) {
@@ -45,8 +45,16 @@ export function pagePath(source) {
 
 const PNEUMATIC_PAGES = ['/antique-player-piano'];
 const ELECTRONIC_PAGES = ['/disklavier-repair', '/disklavier-power-supply-repair', '/pianodisc-repair',
-  '/qrs-repair', '/spirio-repair', '/player-repair', '/player-unit-mail-in-repair', '/for-technicians'];
-const ACOUSTIC_PAGES = ['/piano-repair', '/piano-cleaning'];
+  '/qrs-repair', '/spirio-repair', '/player-repair', '/player-unit-mail-in-repair', '/for-technicians',
+  '/player-system-install'];
+const ACOUSTIC_PAGES = ['/piano-repair', '/piano-cleaning', '/piano-detailing', '/piano-voicing-regulation'];
+
+// Pages whose leads are always repair-pipeline work, whatever words the form
+// sends. The voicing page's path and service name contain "voicing", which
+// the pipeline rule in functions/api/lead.js reads as tuning; a detailing or
+// voicing quote that offers "add a tuning" would read as tuning too. These
+// are jobs we quote and do ourselves, so they belong in Repair.
+export const REPAIR_PAGES = ['/piano-detailing', '/piano-voicing-regulation', '/player-system-install'];
 const PARTNER_RE = /referral partner/i;
 
 /**

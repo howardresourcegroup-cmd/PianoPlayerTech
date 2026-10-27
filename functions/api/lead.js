@@ -16,7 +16,7 @@
 // Resend outage still stores the lead. A submission has to fail all of it to
 // be lost.
 
-import { classifyCategory, CATEGORY_LABELS } from '../_lib/category.js';
+import { classifyCategory, CATEGORY_LABELS, REPAIR_PAGES, pagePath } from '../_lib/category.js';
 import { normEmail, normPhone, namesCompatible } from '../_lib/dedupe.js';
 
 const ALLOWED_HOSTS = new Set(['pianoplayertech.com', 'www.pianoplayertech.com']);
@@ -41,6 +41,9 @@ const PLAYER_RE = /disklavier|pianodisc|pianomation|qrs|spirio|player|pneumatic|
 const TUNING_RE = /tuning|tune|pitch raise|temperament|voicing|teacher|studio/;
 
 function classifyPipeline(source, serviceType) {
+  // Detailing, voicing & regulation and player-system installs are quoted
+  // and done by us, so they are repair even though "voicing" reads as tuning.
+  if (REPAIR_PAGES.includes(pagePath(source))) return 'repair';
   const hay = ((serviceType || '') + ' ' + (source || '')).toLowerCase();
   if (PLAYER_RE.test(hay)) return 'repair';
   if (TUNING_RE.test(hay)) return 'tuning';

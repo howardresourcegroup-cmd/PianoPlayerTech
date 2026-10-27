@@ -873,6 +873,63 @@ a:hover > .pp-arrow, .pp-btn:hover .pp-arrow { transform: translateX(3px); }
 .pp-banner p strong { font-family: var(--pp-display); font-size: 1.3rem; font-weight: 400; color: var(--_text); }
 .pp-banner .pp-btn { flex: none; }
 
+/* ---------- hiring line under the header ----------
+   One brass line on every service page. It sits under the fixed header, so
+   it takes the header's height as its top margin, and the hero (or legacy
+   .hero) that follows drops the header allowance it would otherwise add.
+   Brass #c9a55c on #15100c is 8.1:1, past WCAG AA (4.5:1) and AAA (7:1). */
+.pp-hiring {
+  position: relative;
+  margin-top: var(--pp-header-h);
+  background: var(--pp-ink-2);
+  border-bottom: 1px solid var(--pp-line);
+  text-align: center;
+}
+.pp-hiring a {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 0.5rem;
+  min-height: 44px;
+  padding: 0.55rem var(--pp-gutter);
+  font-family: var(--pp-body);
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--pp-brass);
+  text-decoration: none;
+}
+.pp-hiring a span { font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
+.pp-hiring a:hover { color: var(--pp-brass-hi); }
+.pp-hiring + main > .pp-hero:first-child { padding-top: clamp(3rem, 8vw, 6rem); }
+body > .pp-hiring + section.hero { padding-top: clamp(3rem, 8vw, 5.5rem); margin-top: 0; }
+
+/* ---------- careers: one listing per seat ---------- */
+.pp-roles { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.pp-role { display: flex; flex-direction: column; }
+.pp-role__kind {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--_accent);
+}
+.pp-role > p:not(.pp-role__kind) { margin: 0 0 1.25rem; }
+.pp-role__facts { margin: 0 0 1.5rem; padding: 0; border-top: 1px solid var(--_line); }
+.pp-role__facts > div { padding: 0.7rem 0; border-bottom: 1px solid var(--_line); }
+.pp-role__facts dt {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--_muted);
+}
+.pp-role__facts dd { margin: 0; font-size: 1rem; color: var(--_text); }
+.pp-role .pp-path__go { margin-top: auto; min-height: 44px; display: inline-flex; align-items: center; }
+
 /* ---------- about ---------- */
 .pp-about { display: block; max-width: 760px; }
 .pp-prose p { margin: 0 0 1.15rem; font-size: 1.1rem; line-height: 1.75; color: var(--_muted); }

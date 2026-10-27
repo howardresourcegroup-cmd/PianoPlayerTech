@@ -1,22 +1,6 @@
 {
   "index.html": [
     {
-      "id": "apply-form",
-      "action": "https://formspree.io/f/xeebglab",
-      "noConversion": true,
-      "fields": [
-        "_gotcha",
-        "_subject",
-        "email",
-        "experience",
-        "form_type",
-        "location",
-        "message",
-        "name",
-        "phone"
-      ]
-    },
-    {
       "id": "",
       "action": "https://formspree.io/f/xeebglab",
       "noConversion": false,
@@ -130,6 +114,82 @@
         "phone",
         "service_type",
         "system"
+      ]
+    }
+  ],
+  "careers.html": [
+    {
+      "id": "apply-form",
+      "action": "https://formspree.io/f/xeebglab",
+      "noConversion": true,
+      "fields": [
+        "_gotcha",
+        "_subject",
+        "email",
+        "experience",
+        "form_type",
+        "location",
+        "message",
+        "name",
+        "phone",
+        "role"
+      ]
+    }
+  ],
+  "piano-detailing.html": [
+    {
+      "id": "detailing-quote-form",
+      "action": "",
+      "noConversion": false,
+      "fields": [
+        "_gotcha",
+        "_subject",
+        "city",
+        "email",
+        "name",
+        "notes",
+        "phone",
+        "piano",
+        "service_level",
+        "service_type"
+      ]
+    }
+  ],
+  "piano-voicing-regulation.html": [
+    {
+      "id": "voicing-form",
+      "action": "",
+      "noConversion": false,
+      "fields": [
+        "_gotcha",
+        "_subject",
+        "city",
+        "email",
+        "name",
+        "notes",
+        "phone",
+        "piano",
+        "service_level",
+        "service_type"
+      ]
+    }
+  ],
+  "player-system-install.html": [
+    {
+      "id": "install-form",
+      "action": "",
+      "noConversion": false,
+      "fields": [
+        "_gotcha",
+        "_subject",
+        "city",
+        "email",
+        "message",
+        "name",
+        "phone",
+        "piano",
+        "service_level",
+        "service_type"
       ]
     }
   ]

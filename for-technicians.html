@@ -290,6 +290,7 @@
         <a href="/antique-player-piano.html">Restoration</a>
         <a href="/tuning.html">Tuning</a>
         <a href="#contact">Contact</a>
+        <a href="/careers.html">Careers</a>
         <a href="tel:4707589572" class="nav-cta">Call Now</a>
     </div>
     <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
@@ -303,8 +304,13 @@
     <a href="/antique-player-piano.html">Restoration</a>
     <a href="/tuning.html">Tuning</a>
     <a href="#contact">Contact</a>
+    <a href="/careers.html">Careers</a>
     <a href="tel:4707589572" class="mobile-cta">Call (470) 758-9572</a>
 </div>
+
+<aside class="pp-hiring" aria-label="We're hiring">
+    <a href="/careers.html">We&rsquo;re hiring tuners, a player-system apprentice and a lead responder. <span>See open roles&nbsp;&rarr;</span></a>
+</aside>
 
 <!-- HERO -->
 <section class="hero" style="background: linear-gradient(rgba(0,0,0,0.68), rgba(0,0,0,0.68)), url('Images/piano-strings-og.jpg') center/cover no-repeat;">
@@ -510,6 +516,51 @@
     </div>
 </section>
 
+<!-- TECHNICIAN REFERRALS -->
+<section id="refer">
+    <div class="section-inner">
+        <div class="contact-grid">
+            <div class="contact-info">
+                <p class="section-label">Technician Referrals</p>
+                <h2 class="section-title">Technicians: refer a player-system job, earn 10%</h2>
+                <p>Got a customer with a Disklavier, PianoDisc, QRS or Spirio problem you would rather not take on? Send us their details. We call them, and we record the referral under your name so it is paid to you.</p>
+                <p>Dealers: we also do labor-only player system installs and removals. See <a href="/player-system-install.html">player system install &amp; removal</a>.</p>
+            </div>
+            <div class="contact-form-wrap">
+                <h3>Refer a Job</h3>
+                <div id="referral-success" style="display:none">
+                    <p><strong>Thanks &mdash; referral received.</strong></p>
+                    <p>We&rsquo;ll call your customer and keep you posted. Questions? Call <a href="tel:4707589572">(470)&nbsp;758-9572</a>.</p>
+                </div>
+                <form id="tech-referral-form" data-lead-after-ok>
+<div class="pp-hp" aria-hidden="true"><label>Leave this box empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
+                    <input type="hidden" name="_subject" value="Technician Referral (Player System) — PianoPlayerTech">
+                    <input type="hidden" name="service_type" value="Technician Referral — Player System">
+                    <label for="rf-tech">Your name</label>
+                    <input type="text" id="rf-tech" name="referring_tech" placeholder="Your name" autocomplete="name" required>
+                    <label for="rf-tech-phone">Your phone</label>
+                    <input type="tel" id="rf-tech-phone" name="tech_phone" placeholder="(470) 000-0000" autocomplete="tel" required>
+                    <label for="rf-name">Customer&rsquo;s name</label>
+                    <input type="text" id="rf-name" name="name" placeholder="Customer's name" autocomplete="off" required>
+                    <label for="rf-phone">Customer&rsquo;s phone</label>
+                    <input type="tel" id="rf-phone" name="phone" placeholder="(470) 000-0000" autocomplete="off" required>
+                    <label for="rf-email">Customer&rsquo;s email (optional)</label>
+                    <input type="email" id="rf-email" name="email" placeholder="customer@email.com" autocomplete="off">
+                    <label for="rf-system">Player system</label>
+                    <select id="rf-system" name="system">
+                        <option>Yamaha Disklavier</option>
+                        <option>PianoDisc</option>
+                        <option>QRS Pianomation</option>
+                        <option>Steinway Spirio</option>
+                        <option>Other / not sure</option>
+                    </select>
+                    <button type="submit" id="referral-submit">Send Referral &rarr;</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- CONTACT -->
 <section id="contact">
     <div class="section-inner">
@@ -567,7 +618,7 @@
         <a href="/antique-player-piano.html">Antique Player Pianos</a> &nbsp;&middot;&nbsp;
         <a href="/for-technicians.html">For Technicians</a> &nbsp;&middot;&nbsp;
         <a href="/player-diagnostic.html">Diagnose My Player System</a> &nbsp;&middot;&nbsp;
-        <a href="/piano-repair.html">Piano Repair</a> &nbsp;&middot;&nbsp; <a href="/piano-tuning-cost.html">Piano Tuning Cost</a> &nbsp;&middot;&nbsp; <a href="/piano-cleaning.html">Piano Cleaning</a> &nbsp;&middot;&nbsp; <a href="/piano-teachers.html">For Piano Teachers</a> &nbsp;&middot;&nbsp; <a href="/review">Leave a Review</a> &nbsp;&middot;&nbsp;
+        <a href="/piano-repair.html">Piano Repair</a> &nbsp;&middot;&nbsp; <a href="/piano-tuning-cost.html">Piano Tuning Cost</a> &nbsp;&middot;&nbsp; <a href="/piano-cleaning.html">Piano Cleaning</a> &nbsp;&middot;&nbsp; <a href="/piano-detailing.html">Piano Detailing</a> &nbsp;&middot;&nbsp; <a href="/piano-voicing-regulation.html">Voicing &amp; Regulation</a> &nbsp;&middot;&nbsp; <a href="/player-system-install.html">Player System Install &amp; Removal</a> &nbsp;&middot;&nbsp; <a href="/piano-teachers.html">For Piano Teachers</a> &nbsp;&middot;&nbsp; <a href="/careers.html">Careers</a> &nbsp;&middot;&nbsp; <a href="/review">Leave a Review</a> &nbsp;&middot;&nbsp;
         <a href="/privacy-policy">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="/terms-of-service">Terms of Service</a> &nbsp;&middot;&nbsp;
         <a href="https://howardresourcegroup.com/websites.html" target="_blank" rel="noopener">Website by Howard Resource Group</a>
     </p>
@@ -588,6 +639,51 @@ if (btn && nav) {
         }
     });
 }
+</script>
+
+<script>
+// Technician referral — Formspree first, then the CRM copy through
+// pptAfterFormspree. The lead is the customer; the referring tech's name
+// travels with it in the lead's fields (referring_tech).
+(function() {
+    var form = document.getElementById('tech-referral-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('referral-submit');
+        btn.textContent = 'Sending...';
+        btn.disabled = true;
+        fetch('https://formspree.io/f/xeebglab', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: new FormData(form)
+        })
+        .then(function(res) {
+            // The CRM copy goes now, unless Formspree refused the input
+            // (ppt-tracking.js decides). A refusal is still a response.
+            var how = window.pptAfterFormspree ? window.pptAfterFormspree(form, res.status) : (res.ok ? 'ok' : 'saved');
+            if (res.ok) return res;
+            return res.json().catch(function() { return {}; }).then(function(j) {
+                var e = new Error((j && j.errors && j.errors[0] && j.errors[0].message) || '');
+                e.how = how;
+                throw e;
+            });
+        })
+        .then(function() {
+            form.style.display = 'none';
+            document.getElementById('referral-success').style.display = 'block';
+        })
+        .catch(function(err) {
+            // No answer at all: still try the CRM copy.
+            var how = err && err.how;
+            if (!how) how = window.pptAfterFormspree ? window.pptAfterFormspree(form, 0) : 'offline';
+            btn.textContent = 'Send Referral \u2192';
+            btn.disabled = false;
+            alert(window.pptFormspreeMessage ? window.pptFormspreeMessage(how, how === 'refused' ? err.message : '')
+              : 'Something went wrong — please call us at (470) 758-9572.');
+        });
+    });
+})();
 </script>
 
     <script src="/ppt-tracking.js"></script>
