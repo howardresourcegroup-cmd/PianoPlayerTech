@@ -22,6 +22,7 @@
 
   --pp-brass: #c9a55c;
   --pp-brass-hi: #e3c98a;
+  --pp-brass-lift: #d6b872;
   --pp-brass-deep: #74561a;
 
   --pp-paper: #f5efe6;
@@ -31,6 +32,7 @@
   --pp-paper-line: rgba(26, 20, 16, 0.16);
 
   --pp-display: 'Fraunces', 'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --pp-caps: 'Josefin Sans', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --pp-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   --pp-wrap: 1120px;
@@ -137,38 +139,119 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .pp-link:hover { color: var(--_text, var(--pp-text)); }
 
-/* ---------- buttons ---------- */
-.pp-btn {
+/* ---------- buttons ----------
+   Three tiers, all square-cornered. One primary per page section; the
+   companions beside it step down.
+     1. Primary   .pp-btn--primary    brass plate with an inset nameplate line
+     2. Secondary .pp-btn--secondary  1px brass outline (.pp-btn--ghost is the old name)
+     3. Tertiary  .pp-btn--tertiary   engraved serif link, brass rule, trailing arrow
+   The legacy class names (.btn-primary, .btn-secondary, .btn-outline, .call-cta,
+   .nav-cta, .mobile-cta, .pp-path__go and the form submit buttons) are aliases
+   of the same three, so pages that still carry the old names look right.
+   Contrast: brass #c9a55c on #0d0a08 is 8.5:1 (secondary, tertiary); #0d0a08 on
+   brass is the same 8.5:1 (primary). On paper sections the outline and link use
+   the deep brass #74561a on #f5efe6, 5.9:1. All pass WCAG AA and AAA. */
+.pp-btn,
+.btn-primary, .btn-secondary, .btn-outline, .call-cta, .call-btn, .diagnosis-cta, .hiw-btn-primary, .hiw-btn-secondary,
+.nav-links a.nav-cta, .mobile-nav a.mobile-cta,
+.pp-form button[type='submit'], .contact-form-wrap button[type='submit'] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  min-height: 52px;
-  padding: 0.85rem 1.6rem;
-  border: 1px solid transparent;
-  border-radius: var(--pp-radius);
-  font-family: var(--pp-body);
-  font-size: 0.98rem;
+  min-height: 44px;
+  padding: 14px 23px;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--pp-caps);
+  font-size: 0.8rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
+  letter-spacing: 0.2em;
+  line-height: 1.3;
   text-align: center;
   text-decoration: none;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
-.pp-btn--primary { background: var(--pp-brass); color: var(--pp-ink); }
-.pp-btn--primary:hover { background: var(--pp-brass-hi); transform: translateY(-1px); }
+/* 1. Primary: brass plate */
+.pp-btn--primary,
+.btn-primary, .hiw-btn-primary,
+.nav-links a.nav-cta, .mobile-nav a.mobile-cta,
+.pp-form button[type='submit']:not(.pp-btn--secondary), .contact-form-wrap button[type='submit']:not(.pp-btn--secondary) {
+  background: var(--pp-brass);
+  color: var(--pp-ink);
+  box-shadow: inset 0 0 0 3px #0d0a08, inset 0 0 0 4px #c9a55c;
+}
+.pp-btn--primary:hover,
+.btn-primary:hover, .hiw-btn-primary:hover,
+.pp-form button[type='submit']:not(.pp-btn--secondary):hover, .contact-form-wrap button[type='submit']:not(.pp-btn--secondary):hover {
+  background: var(--pp-brass-lift);
+  color: var(--pp-ink);
+}
+.nav-links a.nav-cta, .mobile-nav a.mobile-cta { background: var(--pp-brass) !important; color: var(--pp-ink) !important; font-weight: 600 !important; }
+.nav-links a.nav-cta:hover, .mobile-nav a.mobile-cta:hover { background: var(--pp-brass-lift) !important; }
+.nav-links a.nav-cta { padding: 12px 20px; margin-left: 0.25rem; }
+.mobile-nav a.mobile-cta { border-bottom: 0; }
 
-.pp-btn--ghost {
+/* 2. Secondary: brass outline */
+.pp-btn--secondary, .pp-btn--ghost,
+.btn-secondary, .btn-outline, .call-cta, .call-btn, .diagnosis-cta, .hiw-btn-secondary,
+.pp-form button[type='submit'].pp-btn--secondary, .contact-form-wrap button[type='submit'].pp-btn--secondary {
   background: transparent;
-  color: var(--_text, var(--pp-text));
-  border-color: var(--_line-strong, var(--pp-line-strong));
+  color: var(--_accent, var(--pp-brass));
+  border: 1px solid var(--_accent, var(--pp-brass));
+  padding: 13px 22px;
 }
-.pp-btn--ghost:hover { border-color: var(--_text, var(--pp-text)); }
+.pp-btn--secondary:hover, .pp-btn--ghost:hover,
+.btn-secondary:hover, .btn-outline:hover, .call-cta:hover, .call-btn:hover, .diagnosis-cta:hover, .hiw-btn-secondary:hover,
+.pp-form button[type='submit'].pp-btn--secondary:hover, .contact-form-wrap button[type='submit'].pp-btn--secondary:hover {
+  background: color-mix(in srgb, var(--_accent, var(--pp-brass)) 12%, transparent);
+  color: var(--_accent, var(--pp-brass));
+  border-color: var(--_accent, var(--pp-brass));
+}
 
-.pp-btn--small { min-height: 44px; padding: 0.55rem 1.1rem; font-size: 0.9rem; }
+/* 3. Tertiary: engraved text link. The arrow is drawn here, so the markup
+   carries the words only. The ::before widens the tap target to 44px without
+   moving the rule away from the text. */
+.pp-btn--tertiary {
+  position: relative;
+  display: inline-block;
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 1px solid var(--_accent, var(--pp-brass));
+  font-family: var(--pp-display);
+  font-size: 1.125rem;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-decoration: none;
+  color: var(--_accent, var(--pp-brass));
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.pp-btn--tertiary::before { content: ''; position: absolute; inset: -11px -6px; }
+.pp-btn--tertiary::after {
+  content: '\2192' / '';
+  display: inline-block;
+  margin-left: 0.4em;
+  font-style: normal;
+  transition: transform 0.18s ease;
+}
+.pp-btn--tertiary:hover { color: var(--_text, var(--pp-text)); border-bottom-color: var(--_text, var(--pp-text)); }
+.pp-btn--tertiary:hover::after { transform: translateX(3px); }
+
+.pp-btn:focus-visible, .btn-primary:focus-visible, .btn-secondary:focus-visible, .btn-outline:focus-visible,
+.call-cta:focus-visible, .nav-links a.nav-cta:focus-visible, .mobile-nav a.mobile-cta:focus-visible,
+.pp-form button[type='submit']:focus-visible, .contact-form-wrap button[type='submit']:focus-visible {
+  outline: 2px solid var(--pp-text);
+  outline-offset: 3px;
+}
+.pp-section--paper .pp-btn:focus-visible { outline-color: var(--pp-paper-ink); }
+
+.pp-btn--small { min-height: 44px; padding: 12px 20px; font-size: 0.75rem; }
+.pp-btn--secondary.pp-btn--small, .pp-btn--ghost.pp-btn--small { padding: 11px 19px; }
 .pp-btn--block { width: 100%; }
 
 .pp-arrow { transition: transform 0.18s ease; }
@@ -457,14 +540,7 @@ a:hover > .pp-arrow, .pp-btn:hover .pp-arrow { transform: translateX(3px); }
   color: var(--_muted);
 }
 .pp-path__meta strong { color: var(--_text); font-weight: 600; }
-.pp-path__go {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: auto;
-  font-weight: 600;
-  color: var(--_accent);
-}
+.pp-path__go { align-self: flex-start; margin-top: auto; }
 
 .pp-path--minor {
   grid-column: 1 / -1;
@@ -713,20 +789,7 @@ a:hover > .pp-arrow, .pp-btn:hover .pp-arrow { transform: translateX(3px); }
   border-color: var(--_accent);
   box-shadow: 0 0 0 3px rgba(201, 165, 92, 0.28);
 }
-.pp-form button[type='submit'] {
-  min-height: 54px;
-  margin-top: 0.4rem;
-  padding: 0.9rem 1.5rem;
-  font: inherit;
-  font-weight: 600;
-  color: var(--pp-ink);
-  background: var(--pp-brass);
-  border: 0;
-  border-radius: var(--pp-radius);
-  cursor: pointer;
-  transition: background-color 0.18s ease;
-}
-.pp-form button[type='submit']:hover { background: var(--pp-brass-hi); }
+.pp-form button[type='submit'] { min-height: 48px; margin-top: 0.4rem; }
 .pp-form button[disabled] { opacity: 0.6; cursor: progress; }
 .pp-form__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }
 @media (max-width: 560px) { .pp-form__row { grid-template-columns: 1fr; } }
@@ -797,7 +860,7 @@ a:hover > .pp-arrow, .pp-btn:hover .pp-arrow { transform: translateX(3px); }
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--pp-line);
   }
-  .pp-actionbar .pp-btn { min-height: 48px; padding: 0.6rem 1rem; font-size: 0.95rem; }
+  .pp-actionbar .pp-btn { min-height: 48px; padding: 0.6rem 1rem; font-size: 0.75rem; letter-spacing: 0.16em; }
   body.pp-has-actionbar { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
   /* While the hero's own buttons are on screen the bar would only repeat them. */
   .pp-actionbar { transition: transform 0.25s ease; }
@@ -900,8 +963,17 @@ a:hover > .pp-arrow, .pp-btn:hover .pp-arrow { transform: translateX(3px); }
   color: var(--pp-brass);
   text-decoration: none;
 }
-.pp-hiring a span { font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
-.pp-hiring a:hover { color: var(--pp-brass-hi); }
+.pp-hiring a span {
+  padding-bottom: 1px;
+  border-bottom: 1px solid var(--pp-brass);
+  font-family: var(--pp-display);
+  font-size: 1.125rem;
+  font-style: italic;
+  font-weight: 400;
+}
+.pp-hiring a span::after { content: '\2192' / ''; margin-left: 0.4em; font-style: normal; display: inline-block; transition: transform 0.18s ease; }
+.pp-hiring a:hover span { color: var(--pp-brass-hi); border-bottom-color: var(--pp-brass-hi); }
+.pp-hiring a:hover span::after { transform: translateX(3px); }
 .pp-hiring + main > .pp-hero:first-child { padding-top: clamp(3rem, 8vw, 6rem); }
 body > .pp-hiring + section.hero { padding-top: clamp(3rem, 8vw, 5.5rem); margin-top: 0; }
 
@@ -929,7 +1001,7 @@ body > .pp-hiring + section.hero { padding-top: clamp(3rem, 8vw, 5.5rem); margin
   color: var(--_muted);
 }
 .pp-role__facts dd { margin: 0; font-size: 1rem; color: var(--_text); }
-.pp-role .pp-path__go { margin-top: auto; min-height: 44px; display: inline-flex; align-items: center; }
+.pp-role .pp-path__go { margin-top: auto; align-self: flex-start; }
 
 /* ---------- about ---------- */
 .pp-about { display: block; max-width: 760px; }
@@ -1014,7 +1086,7 @@ body > .pp-hiring + section.hero { padding-top: clamp(3rem, 8vw, 5.5rem); margin
 }
 .pp-price > p { margin: 1.25rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--_line); color: var(--_muted); }
 
-.pp-path__go--second { margin-top: 0.6rem; }
+.pp-path__go--second { margin-top: 1.1rem; }
 
 /* ---------- photo upload ---------- */
 .pp-photos { margin-top: 2.25rem; padding-top: 2rem; border-top: 1px solid var(--_line); }
@@ -1081,19 +1153,11 @@ body > nav {
 .nav-links { gap: 1.9rem; }
 .nav-links a { font-size: 0.93rem; color: var(--pp-muted); letter-spacing: 0; }
 .nav-links a:hover, .nav-links a.active { color: var(--pp-text); }
-.nav-cta {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0.55rem 1.1rem;
-  border-radius: var(--pp-radius);
-  font-size: 0.9rem;
-}
 .nav-toggle { width: 48px; height: 48px; align-items: center; justify-content: center; }
 .nav-toggle span { background: var(--pp-text); height: 1.5px; }
 .mobile-nav { top: var(--pp-header-h); background: var(--pp-ink); border-top: 0; border-bottom: 1px solid var(--pp-line); }
 .mobile-nav a { padding: 1rem var(--pp-gutter); font-size: 1.05rem; color: var(--pp-muted); border-bottom-color: var(--pp-line); }
-.mobile-nav .mobile-cta { margin: 1rem var(--pp-gutter) 0.5rem; min-height: 52px; display: flex; align-items: center; justify-content: center; border-radius: var(--pp-radius); }
+.mobile-nav a.mobile-cta { margin: 1rem var(--pp-gutter) 0.5rem; min-height: 52px; display: flex; }
 
 .hero { padding-top: calc(var(--pp-header-h) + clamp(3rem, 8vw, 5.5rem)); padding-bottom: clamp(3rem, 6vw, 5rem); }
 .hero h1 {
@@ -1116,21 +1180,6 @@ body > nav {
   letter-spacing: 0;
   color: var(--pp-text);
 }
-
-.btn-primary, .btn-secondary, .call-cta, .diagnosis-cta, .hiw-btn-primary, .hiw-btn-secondary, .call-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 52px;
-  padding: 0.85rem 1.6rem;
-  border-radius: var(--pp-radius);
-  font-size: 0.98rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
-}
-.btn-secondary, .diagnosis-cta, .hiw-btn-secondary { border: 1px solid var(--pp-line-strong); font-weight: 600; }
-.btn-secondary:hover, .diagnosis-cta:hover, .hiw-btn-secondary:hover { border-color: var(--pp-text); color: var(--pp-text); }
 
 body > section { padding: clamp(4.25rem, 9vw, 7rem) var(--pp-gutter); }
 body > section.hero { padding-left: var(--pp-gutter); padding-right: var(--pp-gutter); }
@@ -1172,7 +1221,7 @@ summary { padding: 1.3rem 0; font-size: 1.1rem; }
   background: var(--pp-ink);
 }
 .contact-form-wrap label { font-size: 0.86rem; letter-spacing: 0; }
-.contact-form-wrap button { min-height: 54px; border-radius: var(--pp-radius); font-size: 1rem; }
+.contact-form-wrap button { min-height: 48px; }
 .contact-form-wrap h3 { font-weight: 400; font-size: 1.6rem; letter-spacing: -0.01em; }
 .contact-info p, .contact-detail p, .contact-detail a { font-size: 1.02rem; }
 .contact-detail h4 { font-size: 0.72rem; letter-spacing: 0.15em; color: var(--pp-muted); }
@@ -1231,7 +1280,7 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-  .pp-btn--primary:hover, .pp-path:hover { transform: none; }
+  .pp-path:hover { transform: none; }
 }
 
 /* Phones: a field under 16px makes iOS zoom the page on focus, and a footer

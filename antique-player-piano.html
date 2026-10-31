@@ -109,7 +109,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@400;500;600;700&family=Josefin+Sans:wght@600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -134,7 +134,7 @@
 </header>
 
 <aside class="pp-hiring" aria-label="We're hiring">
-    <a href="/careers.html">We&rsquo;re hiring tuners, pneumatic restorers, a player-system apprentice and a lead responder. <span>See open roles&nbsp;&rarr;</span></a>
+    <a href="/careers.html">We&rsquo;re hiring tuners, pneumatic restorers, a player-system apprentice and a lead responder. <span>See open roles</span></a>
 </aside>
 
 <main id="main">
@@ -146,7 +146,7 @@
         <p class="pp-hero__lede">Ampico, Duo-Art, Welte-Mignon, Aeolian, Gulbransen, Nordiska and nickelodeon instruments. Not sure what you have? Send photos and we will identify it, free.</p>
         <div class="pp-hero__actions">
             <a class="pp-btn pp-btn--primary" href="#contact">Send photos for a free identification <span class="pp-arrow" aria-hidden="true">&rarr;</span></a>
-            <a class="pp-btn pp-btn--ghost" href="tel:4707589572">Call (470) 758-9572</a>
+            <a class="pp-btn pp-btn--secondary" href="tel:4707589572">Call (470) 758-9572</a>
         </div>
         <ul class="pp-facts">
             <li><strong>Six states</strong><span>We travel to you across the Southeast</span></li>
@@ -353,7 +353,7 @@
                 <div class="pp-contact__item">
                     <div><h4>Service Area</h4><p>Georgia, Florida, Alabama, South Carolina, North Carolina &amp; Tennessee &mdash; we travel to you</p></div>
                 </div>
-                <a href="tel:4707589572" class="pp-btn pp-btn--primary">Call (470) 758-9572</a>
+                <a href="tel:4707589572" class="pp-btn pp-btn--secondary">Call (470) 758-9572</a>
             </div>
             <div class="pp-form-panel">
                 <h3>What Have You Got?</h3>
@@ -372,7 +372,7 @@
                     <input type="text" id="c-system" name="system" placeholder="e.g. Gulbransen, Aeolian, Ampico, Nordiska">
                     <label for="c-issue">What is it doing &mdash; or not doing?</label>
                     <textarea id="c-issue" name="issue" placeholder="Does it have a paper roll? Do the pedals move air? Does anything sound at all? Any detail helps."></textarea>
-                    <button type="submit">Send Message &rarr;</button>
+                    <button class="pp-btn pp-btn--secondary" type="submit">Send Message &rarr;</button>
                 </form>
                 <div class="pp-photos" id="photos">
                     <h3>Send your photos</h3>
@@ -383,7 +383,7 @@
                         <label for="p-photos">Photos</label>
                         <input type="file" id="p-photos" name="photos" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple required>
                         <p class="pp-form__hint">Up to 5 photos, 5 MB each. JPEG, PNG, WebP or HEIC.</p>
-                        <button type="submit" id="photo-submit">Send photos &rarr;</button>
+                        <button class="pp-btn pp-btn--primary" type="submit" id="photo-submit">Send photos &rarr;</button>
                     </form>
                     <p class="pp-photos__status" id="photo-status" role="status" aria-live="polite"></p>
                     <p class="pp-form__hint">Rather use email? Send them to <a href="mailto:info@pianoplayertech.com?subject=Player%20piano%20photos%20for%20identification">info@pianoplayertech.com</a>.</p>
@@ -469,7 +469,7 @@
 
 <div class="pp-actionbar">
     <a class="pp-btn pp-btn--primary" href="#contact">Send photos, free ID</a>
-    <a class="pp-btn pp-btn--ghost" href="tel:4707589572" aria-label="Call (470) 758-9572">Call</a>
+    <a class="pp-btn pp-btn--secondary" href="tel:4707589572" aria-label="Call (470) 758-9572">Call</a>
 </div>
 
     <script src="/site.js" defer></script>

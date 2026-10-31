@@ -162,3 +162,68 @@ test('no public page or customer-facing email template names the owner', () => {
     assert.ok(!/\bEthan\b/.test(fs.readFileSync(p, 'utf8')), `${path.relative(ROOT, p)} names the owner`);
   }
 });
+
+// Buttons come in three tiers (primary brass plate, secondary brass outline,
+// tertiary engraved link). The rule that keeps them meaningful: a section
+// offers one primary action, and everything beside it steps down.
+const NOT_RESTYLED = new Set(['review.html', 'privacy-policy.html', 'terms-of-service.html', 'thank-you.html', 'checkout-return.html']);
+
+test('site.css defines the three button tiers, square and in Josefin caps', () => {
+  const css = read('site.css');
+  assert.match(css, /\.pp-btn--primary\b/, 'primary tier is missing');
+  assert.match(css, /\.pp-btn--secondary\b/, 'secondary tier is missing');
+  assert.match(css, /\.pp-btn--tertiary\b/, 'tertiary tier is missing');
+  assert.match(css, /inset 0 0 0 3px #0d0a08, inset 0 0 0 4px #c9a55c/, 'the primary nameplate line is missing');
+  assert.match(css, /--pp-caps:\s*'Josefin Sans'/, 'button labels are not Josefin Sans');
+  assert.match(css, /text-transform:\s*uppercase/, 'button labels are not all caps');
+  assert.doesNotMatch(css, /\.pp-btn\s*\{[^}]*border-radius:\s*[1-9]/, 'buttons must have square corners');
+});
+
+test('every restyled page loads Josefin Sans 600 and only that weight', () => {
+  for (const file of PUBLIC.filter((f) => !NOT_RESTYLED.has(f))) {
+    const html = read(file);
+    const fam = /family=Josefin\+Sans:wght@(\d+)/.exec(html);
+    assert.ok(fam, `${file} does not load Josefin Sans`);
+    assert.strictEqual(fam[1], '600', `${file} loads more than the 600 weight`);
+  }
+});
+
+test('no page section has more than one primary button', () => {
+  for (const file of PUBLIC.filter((f) => !NOT_RESTYLED.has(f))) {
+    const html = read(file);
+    const re = /<section\b[\s\S]*?<\/section>/g;
+    let m;
+    while ((m = re.exec(html))) {
+      const primaries = m[0].match(/\bpp-btn--primary\b/g) || [];
+      const id = (/<section\b[^>]*\bid="([^"]+)"/.exec(m[0]) || ['', m[0].slice(0, 40)])[1];
+      assert.ok(primaries.length <= 1, `${file} section "${id}" has ${primaries.length} primary buttons`);
+    }
+  }
+});
+
+test('every form section has exactly one primary: the submit, and no phone link competes with it', () => {
+  for (const file of PUBLIC.filter((f) => !NOT_RESTYLED.has(f))) {
+    const html = read(file);
+    const re = /<section\b[\s\S]*?<\/section>/g;
+    let m;
+    while ((m = re.exec(html))) {
+      if (!/<button\b[^>]*type="submit"/.test(m[0])) continue;
+      const primaries = m[0].match(/\bpp-btn--primary\b/g) || [];
+      assert.strictEqual(primaries.length, 1, `${file}: a section with a form should have one primary, the submit`);
+      for (const b of m[0].match(/<button\b[^>]*type="submit"[^>]*>/g)) {
+        assert.match(b, /pp-btn--(primary|secondary)/, `${file}: submit button has no tier: ${b}`);
+      }
+    }
+    assert.doesNotMatch(html, /pp-btn--primary[^>]*>Call \(470\)/, `${file} makes a phone link primary`);
+  }
+});
+
+test('in-card and banner links are tertiary', () => {
+  for (const file of PUBLIC.filter((f) => !NOT_RESTYLED.has(f))) {
+    const html = read(file);
+    for (const a of html.match(/<a\b[^>]*class="[^"]*pp-path__go[^"]*"[^>]*>/g) || []) {
+      assert.match(a, /pp-btn--tertiary/, `${file}: ${a} should be tertiary`);
+    }
+  }
+  assert.match(read('index.html'), /<a href="\/careers\.html" class="pp-btn--tertiary">See open roles<\/a>/, 'the home banner link is not tertiary');
+});
