@@ -104,7 +104,7 @@ test('every service page carries the hiring line, linking to the careers page', 
     'piano-tuning-atlanta.html', 'piano-tuning-cumming-ga.html', 'piano-tuning-gainesville-ga.html',
     'piano-tuning-marietta-ga.html', 'piano-detailing.html', 'piano-voicing-regulation.html', 'player-system-install.html'];
   for (const file of services) {
-    assert.match(read(file), /<aside class="pp-hiring"[^>]*>\s*<a href="\/careers\.html">We&rsquo;re hiring tuners, a player-system apprentice and a lead responder\. <span>See open roles/,
+    assert.match(read(file), /<aside class="pp-hiring"[^>]*>\s*<a href="\/careers\.html">We&rsquo;re hiring tuners, pneumatic restorers, a player-system apprentice and a lead responder\. <span>See open roles/,
       `${file} has no hiring line`);
   }
 });
@@ -149,3 +149,16 @@ test('each rebuilt page has one hero with one primary action', () => {
   }
 });
 
+
+test('no public page or customer-facing email template names the owner', () => {
+  const files = PUBLIC.map((f) => path.join(ROOT, f));
+  const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const p = path.join(dir, e.name);
+    return e.isDirectory() ? walk(p) : [p];
+  });
+  const fnDir = path.join(ROOT, 'functions');
+  for (const p of walk(fnDir).filter((p) => p.endsWith('.js') || p.endsWith('.mjs'))) files.push(p);
+  for (const p of files) {
+    assert.ok(!/\bEthan\b/.test(fs.readFileSync(p, 'utf8')), `${path.relative(ROOT, p)} names the owner`);
+  }
+});

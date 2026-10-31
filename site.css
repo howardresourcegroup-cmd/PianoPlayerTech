@@ -906,7 +906,8 @@ a:hover > .pp-arrow, .pp-btn:hover .pp-arrow { transform: translateX(3px); }
 body > .pp-hiring + section.hero { padding-top: clamp(3rem, 8vw, 5.5rem); margin-top: 0; }
 
 /* ---------- careers: one listing per seat ---------- */
-.pp-roles { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.pp-roles { grid-template-columns: 1fr; }
+@media (min-width: 900px) { .pp-roles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .pp-role { display: flex; flex-direction: column; }
 .pp-role__kind {
   margin: 0 0 0.5rem;

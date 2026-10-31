@@ -315,7 +315,7 @@ test('the job application still posts to Formspree only, with the role and exper
   assert.ok(form.noAirtable, 'never a CRM lead, never a customer confirmation');
   assert.ok(form.fields.some((x) => x.name === '_gotcha'), 'keeps its honeypot');
   const role = form.fields.find((x) => x.name === 'role');
-  assert.deepStrictEqual(role && role.options, ['', 'Lead Responder', 'Piano Tuner', 'Player System Apprentice', 'Other']);
+  assert.deepStrictEqual(role && role.options, ['', 'Lead Responder', 'Piano Tuner', 'Player System Apprentice', 'Pneumatic Restorer', 'Other']);
   assert.ok(form.fields.some((x) => x.name === 'experience' && x.type === 'select'));
   assert.ok(!ALL_FORMS.some((f) => f.file === 'index.html' && f.id === 'apply-form'));
 });
