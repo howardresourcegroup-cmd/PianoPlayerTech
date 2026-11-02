@@ -74,32 +74,35 @@ function esc(s) {
 }
 
 // The email to us. The subject says PHOTOS so it sorts beside the lead it
-// belongs to; reply goes to the customer.
-export function buildPhotoEmail(env, { email, name, note, photos }) {
+// belongs to; reply goes to the customer. From someone new there is no lead
+// to sort beside, so it reads as the new-lead alert it is.
+export function buildPhotoEmail(env, { email, name, phone, note, photos, isNew }) {
   const to = env.LEAD_NOTIFY_EMAIL || 'info@pianoplayertech.com';
   const from = env.LEAD_FROM_EMAIL || 'PianoPlayerTech <info@pianoplayertech.com>';
   const who = name || email;
   const count = `${photos.length} photo${photos.length === 1 ? '' : 's'}`;
+  const next = isNew ? 'This is a new lead, and it is in the dashboard.' : 'Match these to the message they sent through the form.';
   const text = [
     `PHOTOS FOR IDENTIFICATION`,
     '',
     `${count} from ${who}`,
     email,
+    phone || '(no phone)',
     '',
     note ? `Note: ${note}` : '(no note)',
     '',
-    'Match these to the message they sent through the form.'
+    next
   ].join('\n');
   const html = `<div style="font-family:-apple-system,Segoe UI,Inter,sans-serif;font-size:15px;line-height:1.6;color:#241d16;max-width:560px">
   <p style="margin:0 0 .3rem;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#96742a;font-weight:600">Photos for identification</p>
   <h2 style="margin:0 0 1rem;font-size:20px">${esc(count)} from ${esc(who)}</h2>
-  <p style="margin:0 0 1rem"><a href="mailto:${esc(email)}" style="color:#96742a">${esc(email)}</a></p>
+  <p style="margin:0 0 1rem"><a href="mailto:${esc(email)}" style="color:#96742a">${esc(email)}</a>${phone ? ` &nbsp;·&nbsp; ${esc(phone)}` : ''}</p>
   ${note ? `<p style="margin:0 0 1rem">${esc(note).replace(/\n/g, '<br>')}</p>` : ''}
-  <p style="margin:1.4rem 0 0;padding-top:.9rem;border-top:1px solid #ded3c0;font-size:13px;color:#7a6c5d">Match these to the message they sent through the form.</p>
+  <p style="margin:1.4rem 0 0;padding-top:.9rem;border-top:1px solid #ded3c0;font-size:13px;color:#7a6c5d">${next}</p>
 </div>`;
   return {
     from, to: [to],
-    subject: `PHOTOS — ${who}`,
+    subject: isNew ? `NEW REPAIR (photos) — ${who}` : `PHOTOS — ${who}`,
     text, html,
     reply_to: email,
     attachments: photos.map((p) => ({ filename: p.filename, content: toBase64(p.bytes) }))

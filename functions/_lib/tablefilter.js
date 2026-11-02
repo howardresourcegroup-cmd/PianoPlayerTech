@@ -36,6 +36,7 @@ export const FIELDS = {
   category:      { type: 'enum',   col: 'category',      label: 'Category', values: CATEGORIES },
   status:        { type: 'status', col: 'status',        label: 'Status' },
   source:        { type: 'text',   col: 'source',        label: 'Source (page or import)' },
+  lead_source:   { type: 'text',   col: 'lead_source',   label: 'How they found us' },
   assigned_to:   { type: 'person', col: 'assigned_to',   label: 'Assignee' },
   city:          { type: 'text',   col: 'city',          label: 'City' },
   system:        { type: 'text',   col: 'system',        label: 'Piano / system' },
@@ -65,7 +66,7 @@ export const OPS = {
 export const TABLE_COLUMNS = [
   'phone', 'status', 'scheduled_at', 'created_at', 'updated_at', 'category', 'system', 'service',
   'city', 'address', 'email', 'message', 'notes', 'referral_status', 'referral_paid_at',
-  'customer_type', 'pipeline', 'source', 'assigned_to', 'quoted_cents'
+  'customer_type', 'pipeline', 'source', 'lead_source', 'assigned_to', 'quoted_cents'
 ];
 
 export const DEFAULT_COLUMNS = [

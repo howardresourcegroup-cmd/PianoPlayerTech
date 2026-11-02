@@ -501,6 +501,22 @@
                     <input type="text" id="piano" name="piano" placeholder="e.g. Nordiska, Aeolian, not sure">
                     <label for="message">What's going on with your piano?</label>
                     <textarea id="message" name="message" placeholder="Describe what's happening — won't play, notes sticking, roll not advancing, etc." required></textarea>
+                    <label for="h-heard">How did you hear about us? (optional)</label>
+                    <select id="h-heard" name="heard_about">
+                        <option value="">Choose one&hellip;</option>
+                        <option>Google search</option>
+                        <option>Google Maps</option>
+                        <option>Piano teacher</option>
+                        <option>Friend or family</option>
+                        <option>Church or school</option>
+                        <option>Mover, dealer or estate sale</option>
+                        <option>Facebook</option>
+                        <option>Other</option>
+                    </select>
+                    <div data-referred-by hidden>
+                        <label for="h-referred">Who referred you?</label>
+                        <input type="text" id="h-referred" name="referred_by" placeholder="Their name" autocomplete="off">
+                    </div>
                     <button class="pp-btn pp-btn--primary" type="submit">Send Message →</button>
                 </form>
             </div>

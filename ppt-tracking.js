@@ -63,6 +63,59 @@
    window.fbq('track', 'PageView');
   }
 
+  // ---- Where this visitor came from.
+  //
+  // Remembered in this browser for 90 days and sent beside any form, so a
+  // lead can say which ad, search or website brought them even if they came
+  // back a week later by typing the address. A new ad click or campaign link
+  // replaces what is remembered; otherwise the first arrival stands. Only the
+  // referring site's name is kept, never the page: a query string can hold
+  // anything. With storage blocked it still works for the page they landed on.
+  var SOURCE_KEY = 'ppt_source';
+  var SOURCE_MS = 90 * 86400000;
+  var SOURCE_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+    'gclid', 'gbraid', 'wbraid', 'fbclid'];
+
+  function readSource() {
+    try {
+      var kept = JSON.parse(window.localStorage.getItem(SOURCE_KEY) || 'null');
+      return kept && Date.now() - kept.at < SOURCE_MS ? kept : null;
+    } catch (err) { return null; }
+  }
+
+  function noteSource() {
+    var seen = readSource();
+    try {
+      var found = { landing: location.pathname || '/', at: Date.now() };
+      var tagged = false;
+      var parts = String(location.search || '').replace(/^\?/, '').split('&');
+      for (var i = 0; i < parts.length; i++) {
+        var pair = parts[i].split('=');
+        if (SOURCE_PARAMS.indexOf(pair[0]) !== -1 && pair[1]) {
+          found[pair[0]] = decodeURIComponent(pair[1].replace(/\+/g, ' '));
+          tagged = true;
+        }
+      }
+      var from = /^https?:\/\/([^/?#]+)/i.exec(document.referrer || '');
+      var host = from ? from[1].toLowerCase() : '';
+      if (host && host !== location.hostname) found.referrer = host;
+      if (seen && !tagged) return seen;
+      try { window.localStorage.setItem(SOURCE_KEY, JSON.stringify(found)); } catch (err) { /* blocked */ }
+      return found;
+    } catch (err) { return seen; }
+  }
+
+  var source = noteSource();
+  window.pptSource = function () { return source; };
+
+  // "Who referred you?" appears only for the answers that have a who.
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (!t || t.name !== 'heard_about' || !t.form) return;
+    var box = t.form.querySelector('[data-referred-by]');
+    if (box) box.hidden = !/teacher|friend|church|mover/i.test(t.value);
+  });
+
   // One call per action, fanned out to whatever is configured. Nothing here
   // throws: an analytics failure must never affect a lead reaching the CRM.
   function report(kind) {
@@ -84,6 +137,13 @@
     if (!sendTo || /REPLACE_WITH/.test(sendTo)) return; // not configured yet
     gtag('event', 'conversion', { send_to: sendTo });
   }
+
+  // A lead reached us. Also called by the photo upload, once the server says
+  // that upload was a new lead rather than more photos from a known one.
+  window.pptConversion = function () {
+    fire(window.PPT_CONV.lead);
+    report('lead');
+  };
 
   // Tap-to-call — any tel: link, anywhere on the page.
   document.addEventListener('click', function (e) {
@@ -121,6 +181,7 @@
         fields: fields
       };
       if (hp) payload.hp = 1;
+      if (source) payload.attribution = source;
       var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
       if (navigator.sendBeacon) {
         navigator.sendBeacon('/api/lead', blob);
@@ -128,6 +189,11 @@
         fetch('/api/lead', { method: 'POST', body: blob, keepalive: true }).catch(function () {});
       }
     } catch (err) { /* never let lead capture affect the form */ }
+  }
+
+  function isBot(form) {
+    var trap = form.querySelector && form.querySelector('[name="_gotcha"]');
+    return !!trap && String(trap.value || '').trim() !== '';
   }
 
   // For the data-lead-after-ok forms, once Formspree has answered. `status`
@@ -144,12 +210,18 @@
   //   'refused'  Formspree refused the input; nothing was sent to the CRM
   //   'saved'    Formspree failed, but the CRM copy was sent
   //   'offline'  no answer at all; the CRM copy was attempted
+  //
+  // This is also where these forms count as a conversion: 'ok' and 'saved'
+  // are a lead we have. A refusal is not, and 'offline' is left out because
+  // the person is told to try again, and that retry would count twice.
   window.pptAfterFormspree = function (form, status) {
     var refused = status === 400 || status === 422;
     if (!refused) toAirtable(form, true);
-    if (status >= 200 && status < 300) return 'ok';
-    if (refused) return 'refused';
-    return status ? 'saved' : 'offline';
+    var how = status >= 200 && status < 300 ? 'ok' : refused ? 'refused' : status ? 'saved' : 'offline';
+    if ((how === 'ok' || how === 'saved') && !form.hasAttribute('data-no-conversion') && !isBot(form)) {
+      window.pptConversion();
+    }
+    return how;
   };
 
   // The words for each outcome, so the seven forms say the same true thing.
@@ -160,16 +232,16 @@
   };
 
   // Lead form submit — capture phase so it fires even when a handler
-  // calls preventDefault() (e.g. the AJAX fetch forms).
+  // calls preventDefault() (e.g. the AJAX fetch forms). A form that posts to
+  // Formspree itself counts once it knows the answer (pptAfterFormspree); a
+  // native form is leaving the page, so this is the last chance to count it.
   document.addEventListener('submit', function (e) {
     var f = e.target;
     if (!f || f.tagName !== 'FORM') return;
     toAirtable(f);
-    var trap = f.querySelector && f.querySelector('[name="_gotcha"]');
-    if (trap && String(trap.value || '').trim() !== '') return; // a bot is not a conversion
-    if (!f.hasAttribute('data-no-conversion')) {
-      fire(window.PPT_CONV.lead);
-      report('lead');
+    if (isBot(f)) return; // a bot is not a conversion
+    if (!f.hasAttribute('data-no-conversion') && !f.hasAttribute('data-lead-after-ok')) {
+      window.pptConversion();
     }
   }, true);
 })();

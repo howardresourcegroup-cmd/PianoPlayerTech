@@ -302,6 +302,22 @@
                     <input type="text" id="pi-piano" name="piano" placeholder="e.g. Yamaha C3, Kawai K-300" required>
                     <label for="pi-message">Anything else? <span>(optional)</span></label>
                     <textarea id="pi-message" name="message" placeholder="The system model, whether you have photos, timing, dealer details."></textarea>
+                    <label for="h-heard">How did you hear about us? (optional)</label>
+                    <select id="h-heard" name="heard_about">
+                        <option value="">Choose one&hellip;</option>
+                        <option>Google search</option>
+                        <option>Google Maps</option>
+                        <option>Piano teacher</option>
+                        <option>Friend or family</option>
+                        <option>Church or school</option>
+                        <option>Mover, dealer or estate sale</option>
+                        <option>Facebook</option>
+                        <option>Other</option>
+                    </select>
+                    <div data-referred-by hidden>
+                        <label for="h-referred">Who referred you?</label>
+                        <input type="text" id="h-referred" name="referred_by" placeholder="Their name" autocomplete="off">
+                    </div>
                     <button class="pp-btn pp-btn--primary" type="submit" id="install-submit">Request My Quote →</button>
                 </form>
             </div>

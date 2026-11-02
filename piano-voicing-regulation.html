@@ -297,6 +297,22 @@
                     <input type="text" id="pv-piano" name="piano" placeholder="e.g. Steinway M, Yamaha U1">
                     <label for="pv-notes">What are you hearing or feeling? <span>(optional)</span></label>
                     <textarea id="pv-notes" name="notes" placeholder="Bright or harsh tone, heavy or uneven keys, notes that won't repeat, last tuned..."></textarea>
+                    <label for="h-heard">How did you hear about us? (optional)</label>
+                    <select id="h-heard" name="heard_about">
+                        <option value="">Choose one&hellip;</option>
+                        <option>Google search</option>
+                        <option>Google Maps</option>
+                        <option>Piano teacher</option>
+                        <option>Friend or family</option>
+                        <option>Church or school</option>
+                        <option>Mover, dealer or estate sale</option>
+                        <option>Facebook</option>
+                        <option>Other</option>
+                    </select>
+                    <div data-referred-by hidden>
+                        <label for="h-referred">Who referred you?</label>
+                        <input type="text" id="h-referred" name="referred_by" placeholder="Their name" autocomplete="off">
+                    </div>
                     <button class="pp-btn pp-btn--primary" type="submit" id="voicing-submit">Request a Visit →</button>
                 </form>
             </div>

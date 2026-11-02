@@ -102,7 +102,7 @@ const COLUMNS = [
   'address', 'city', 'system', 'service', 'message', 'notes', 'source', 'customer_type',
   'referred_at', 'referral_status', 'referral_paid_at', 'referral_invoice_id',
   'scheduled_at', 'scheduled_mins', 'archived_at', 'fields',
-  'assigned_to', 'quoted_cents', 'category'
+  'assigned_to', 'quoted_cents', 'category', 'lead_source'
 ];
 
 // leads.category arrived with db/2026-10-23-custom-tables.sql. Code deployed

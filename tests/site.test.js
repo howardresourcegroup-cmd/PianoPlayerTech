@@ -120,6 +120,16 @@ test('every page with a nav links to the careers page', () => {
   }
 });
 
+test('an unknown address gets a real 404 page that search engines leave out', () => {
+  // Cloudflare Pages answers 404 only when this file exists. Without it every
+  // unknown address returns the home page as a success.
+  const html = read('404.html');
+  assert.match(html, /name="robots" content="noindex/);
+  assert.doesNotMatch(read('sitemap.xml'), /\/404</);
+  // It answers at any depth, so nothing it loads may be relative.
+  assert.doesNotMatch(html.replace(/https?:\/\/[^"]*/g, ''), /(?:src|href)="(?!\/|#|tel:|mailto:|")/, 'a relative link breaks on /a/b/c');
+});
+
 test('no page claims a certification', () => {
   for (const file of PUBLIC) {
     assert.doesNotMatch(read(file), /certif/i, `${file} mentions a certification`);

@@ -314,6 +314,22 @@
                     <input type="text" id="t-dates" name="preferred_dates" placeholder="e.g. weekday mornings, any Saturday in July" required>
                     <label for="t-notes">Anything else we should know? <span>(optional)</span></label>
                     <textarea id="t-notes" name="notes" placeholder="Piano make/model, last tuned, gate code, etc."></textarea>
+                    <label for="h-heard">How did you hear about us? (optional)</label>
+                    <select id="h-heard" name="heard_about">
+                        <option value="">Choose one&hellip;</option>
+                        <option>Google search</option>
+                        <option>Google Maps</option>
+                        <option>Piano teacher</option>
+                        <option>Friend or family</option>
+                        <option>Church or school</option>
+                        <option>Mover, dealer or estate sale</option>
+                        <option>Facebook</option>
+                        <option>Other</option>
+                    </select>
+                    <div data-referred-by hidden>
+                        <label for="h-referred">Who referred you?</label>
+                        <input type="text" id="h-referred" name="referred_by" placeholder="Their name" autocomplete="off">
+                    </div>
                     <button class="pp-btn pp-btn--primary" type="submit" id="booking-submit-btn">Request My Tuning</button>
                 </form>
             </div>

@@ -350,6 +350,22 @@
                 <input type="text" id="d-piano" name="piano">
                 <label for="d-notes">Anything else? <span style="font-weight:400;text-transform:none;letter-spacing:0;">(condition, last cleaned, selling soon, also want a tuning?)</span></label>
                 <textarea id="d-notes" name="notes"></textarea>
+                <label for="h-heard">How did you hear about us? (optional)</label>
+                <select id="h-heard" name="heard_about">
+                    <option value="">Choose one&hellip;</option>
+                    <option>Google search</option>
+                    <option>Google Maps</option>
+                    <option>Piano teacher</option>
+                    <option>Friend or family</option>
+                    <option>Church or school</option>
+                    <option>Mover, dealer or estate sale</option>
+                    <option>Facebook</option>
+                    <option>Other</option>
+                </select>
+                <div data-referred-by hidden>
+                    <label for="h-referred">Who referred you?</label>
+                    <input type="text" id="h-referred" name="referred_by" placeholder="Their name" autocomplete="off">
+                </div>
                 <button class="pp-btn pp-btn--primary" type="submit" id="detailing-submit">Request My Quote →</button>
             </form>
             <div id="quote-success">

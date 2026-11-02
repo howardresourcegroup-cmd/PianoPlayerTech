@@ -1089,7 +1089,19 @@ body > .pp-hiring + section.hero { padding-top: clamp(3rem, 8vw, 5.5rem); margin
 .pp-path__go--second { margin-top: 1.1rem; }
 
 /* ---------- photo upload ---------- */
-.pp-photos { margin-top: 2.25rem; padding-top: 2rem; border-top: 1px solid var(--_line); }
+.pp-photos {
+  /* The older repair pages keep their forms outside .pp-section, which is
+     what sets these. Without them the form's boxes have no border. */
+  --_bg: var(--pp-ink);
+  --_text: var(--pp-text);
+  --_muted: var(--pp-muted);
+  --_line: var(--pp-line);
+  --_line-strong: var(--pp-line-strong);
+  --_accent: var(--pp-brass);
+  margin-top: 2.25rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--_line);
+}
 .pp-photos > h3 {
   margin: 0 0 0.4rem;
   font-family: var(--pp-display);
@@ -1099,6 +1111,7 @@ body > .pp-hiring + section.hero { padding-top: clamp(3rem, 8vw, 5.5rem); margin
   color: var(--_text);
 }
 .pp-photos > p { margin: 0 0 1.25rem; font-size: 0.98rem; color: var(--_muted); }
+.pp-photos a { color: var(--_accent); }
 .pp-form input[type='file'] { padding: 0.7rem 0.75rem; cursor: pointer; }
 .pp-form input[type='file']::file-selector-button {
   margin-right: 0.9rem;
@@ -1293,3 +1306,9 @@ h1 {
 /* The spam trap on every lead form. Off-screen rather than display:none,
    which some bots skip; aria-hidden and tabindex keep people out of it. */
 .pp-hp{position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important}
+
+/* "Who referred you?" on the lead forms. The label and box sit inside a
+   wrapper, so the older pages' direct-child form spacing never reaches them. */
+[data-referred-by] label { display: block; margin-bottom: 0.4rem; }
+[data-referred-by] input { width: 100%; }
+[data-referred-by][hidden] { display: none; }

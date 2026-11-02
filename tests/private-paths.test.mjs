@@ -88,3 +88,15 @@ test('www still redirects to the bare domain', async () => {
   assert.strictEqual(res.status, 301);
   assert.strictEqual(res.headers.get('location'), 'https://pianoplayertech.com/player-repair?x=1');
 });
+
+test('the Pages address redirects to the real domain too', async () => {
+  const res = await get('/player-repair?x=1', 'pianoplayertech.pages.dev');
+  assert.strictEqual(res.status, 301);
+  assert.strictEqual(res.headers.get('location'), 'https://pianoplayertech.com/player-repair?x=1');
+});
+
+test('a branch preview stays reachable, or a branch could not be checked before it ships', async () => {
+  const res = await get('/player-repair', 'abc123.pianoplayertech.pages.dev');
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(await res.text(), 'static asset');
+});

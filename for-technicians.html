@@ -602,6 +602,22 @@
                     <input type="text" id="c-system" name="system" placeholder="e.g. PianoDisc PDS-128 power supply, QRS CD2000 board">
                     <label for="c-issue">Symptom &mdash; what does it do?</label>
                     <textarea id="c-issue" name="issue" placeholder="Clicking relay? No power? Dead rank of notes? Tell us what you've already ruled out."></textarea>
+                    <label for="h-heard">How did you hear about us? (optional)</label>
+                    <select id="h-heard" name="heard_about">
+                        <option value="">Choose one&hellip;</option>
+                        <option>Google search</option>
+                        <option>Google Maps</option>
+                        <option>Piano teacher</option>
+                        <option>Friend or family</option>
+                        <option>Church or school</option>
+                        <option>Mover, dealer or estate sale</option>
+                        <option>Facebook</option>
+                        <option>Other</option>
+                    </select>
+                    <div data-referred-by hidden>
+                        <label for="h-referred">Who referred you?</label>
+                        <input type="text" id="h-referred" name="referred_by" placeholder="Their name" autocomplete="off">
+                    </div>
                     <button class="pp-btn pp-btn--primary" type="submit">Send Enquiry &rarr;</button>
                 </form>
             </div>

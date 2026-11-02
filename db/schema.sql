@@ -31,6 +31,8 @@
 -- the three starting tables at the end of this file. On a database created
 -- before then, run that migration rather than this file: the index on
 -- leads.category below needs the column to exist.
+--
+-- Added 2026-11-02: leads.attribution (db/2026-11-02-lead-attribution.sql).
 
 CREATE TABLE IF NOT EXISTS leads (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,7 +74,12 @@ CREATE TABLE IF NOT EXISTS leads (
   assigned_to    TEXT,     -- Access email of whoever owns this lead
   person_id      INTEGER,  -- contractor performing the work (we pay them)
   partner_id     INTEGER,  -- partner the work was done for (they pay us)
+  -- How they found us, as a label: "Google Ads", "Teacher: Pat Lee". Set on
+  -- intake by functions/_lib/attribution.js; typed in for hand-entered leads.
   lead_source    TEXT,
+  -- The detail behind that label, as JSON: UTM tags, ad click ids, the
+  -- referring site and the landing page. NULL when nothing was recorded.
+  attribution    TEXT,
   piano_make     TEXT,
   piano_model    TEXT,
   estimated_cents INTEGER,

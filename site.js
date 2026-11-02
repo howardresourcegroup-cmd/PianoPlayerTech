@@ -64,15 +64,22 @@
       photoSubmit.disabled = true;
       photoSubmit.textContent = 'Sending\u2026';
       say('', '');
+      // An upload from someone new becomes a lead, so it needs what a form
+      // would have sent: the page, and how they got here.
+      var body = new window.FormData(photoForm);
+      body.append('source', location.pathname + ' #photo-form');
+      var from = window.pptSource && window.pptSource();
+      if (from) body.append('attribution', JSON.stringify(from));
       fetch(photoForm.action, {
         method: 'POST',
-        body: new window.FormData(photoForm),
+        body: body,
         headers: { Accept: 'application/json' }
       }).then(function (res) {
         return res.json().catch(function () { return {}; }).then(function (data) {
           if (res.ok && data.ok) {
             photoForm.style.display = 'none';
             say('ok', data.message || 'Photos received.');
+            if (data.lead && window.pptConversion) window.pptConversion();
           } else {
             say('error', data.message || ('We could not send those photos.' + EMAIL_INSTEAD));
           }

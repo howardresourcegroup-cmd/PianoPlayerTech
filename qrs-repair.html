@@ -528,8 +528,45 @@
                     <input type="text" id="c-system" name="system" placeholder="e.g. CD2000, PNOmation II">
                     <label for="c-issue">What's happening?</label>
                     <textarea id="c-issue" name="issue" placeholder="Describe what the system is doing — or not doing. The more detail, the better."></textarea>
+                    <label for="h-heard">How did you hear about us? (optional)</label>
+                    <select id="h-heard" name="heard_about">
+                        <option value="">Choose one&hellip;</option>
+                        <option>Google search</option>
+                        <option>Google Maps</option>
+                        <option>Piano teacher</option>
+                        <option>Friend or family</option>
+                        <option>Church or school</option>
+                        <option>Mover, dealer or estate sale</option>
+                        <option>Facebook</option>
+                        <option>Other</option>
+                    </select>
+                    <div data-referred-by hidden>
+                        <label for="h-referred">Who referred you?</label>
+                        <input type="text" id="h-referred" name="referred_by" placeholder="Their name" autocomplete="off">
+                    </div>
                     <button class="pp-btn pp-btn--primary" type="submit">Send Message →</button>
                 </form>
+            <div class="pp-photos" id="photos">
+                <h3>Or send a photo</h3>
+                <p>A photo of the control unit and its model label helps us see what you have. Send one with or without the form above.</p>
+                <form class="pp-form" id="photo-form" action="/api/photos" method="POST" enctype="multipart/form-data" data-no-conversion data-no-airtable>
+<div class="pp-hp" aria-hidden="true"><label>Leave this box empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
+                    <label for="p-name">Your name</label>
+                    <input type="text" id="p-name" name="name" placeholder="Your name" autocomplete="name" required>
+                    <label for="p-email">Your email</label>
+                    <input type="email" id="p-email" name="email" placeholder="your@email.com" autocomplete="email" required>
+                    <label for="p-phone">Phone (optional)</label>
+                    <input type="tel" id="p-phone" name="phone" placeholder="(470) 000-0000" autocomplete="tel">
+                    <label for="p-note">Anything we should know? (optional)</label>
+                    <textarea id="p-note" name="note" rows="3"></textarea>
+                    <label for="p-photos">Photos</label>
+                    <input type="file" id="p-photos" name="photos" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple required>
+                    <p class="pp-form__hint">Up to 5 photos, 5 MB each. JPEG, PNG, WebP or HEIC.</p>
+                    <button class="pp-btn pp-btn--secondary" type="submit" id="photo-submit">Send photos &rarr;</button>
+                </form>
+                <p class="pp-photos__status" id="photo-status" role="status" aria-live="polite"></p>
+                <p class="pp-form__hint">Rather use email? Send them to <a href="mailto:info@pianoplayertech.com?subject=Piano%20photos">info@pianoplayertech.com</a>.</p>
+            </div>
             </div>
         </div>
     </div>
@@ -567,6 +604,7 @@ if (btn && nav) {
 }
 </script>
 
+    <script src="/site.js" defer></script>
     <script src="/ppt-tracking.js"></script>
 </body>
 </html>

@@ -474,6 +474,22 @@
                     <input type="tel" id="c-phone" name="phone" placeholder="(706) 000-0000">
                     <label for="c-issue">What do you need?</label>
                     <textarea id="c-issue" name="issue" placeholder="Tell us about your piano — make, how many, when it was last tuned."></textarea>
+                    <label for="h-heard">How did you hear about us? (optional)</label>
+                    <select id="h-heard" name="heard_about">
+                        <option value="">Choose one&hellip;</option>
+                        <option>Google search</option>
+                        <option>Google Maps</option>
+                        <option>Piano teacher</option>
+                        <option>Friend or family</option>
+                        <option>Church or school</option>
+                        <option>Mover, dealer or estate sale</option>
+                        <option>Facebook</option>
+                        <option>Other</option>
+                    </select>
+                    <div data-referred-by hidden>
+                        <label for="h-referred">Who referred you?</label>
+                        <input type="text" id="h-referred" name="referred_by" placeholder="Their name" autocomplete="off">
+                    </div>
                     <button class="pp-btn pp-btn--primary" type="submit">Send Message →</button>
                 </form>
             </div>

@@ -20,14 +20,20 @@ function isPrivate(pathname) {
   return PRIVATE_DIRS.has(first) || PRIVATE_FILES.has(first);
 }
 
-// Canonical host redirect: force non-www.
-// 301s any request to www.pianoplayertech.com -> pianoplayertech.com,
-// preserving the path and query string. Everything else passes through.
+// Other names for the production site. pianoplayertech.pages.dev serves the
+// same pages, so without this it competes with the real domain in search.
+// Branch previews are subdomains of it (abc123.pianoplayertech.pages.dev) and
+// stay reachable: they are how a branch gets checked before it ships.
+const ALIASES = new Set(["www.pianoplayertech.com", "pianoplayertech.pages.dev"]);
+
+// Canonical host redirect: force the one real domain.
+// 301s any request on an alias -> pianoplayertech.com, preserving the path
+// and query string. Everything else passes through.
 export async function onRequest(context) {
   const { request, next } = context;
   const url = new URL(request.url);
 
-  if (url.hostname === "www.pianoplayertech.com") {
+  if (ALIASES.has(url.hostname)) {
     url.hostname = "pianoplayertech.com";
     return Response.redirect(url.toString(), 301);
   }

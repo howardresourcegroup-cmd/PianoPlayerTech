@@ -50,7 +50,7 @@ function formsIn(file) {
         .map((o) => { const v = /\bvalue="([^"]*)"/.exec(o[1]); return v ? v[1] : o[2].trim(); }) : [];
       fields.push({ name, type, value, options, required: /\brequired\b/.test(a) });
     }
-    out.push({ file, id: attr('id'), action: attr('action'),
+    out.push({ file, id: attr('id'), action: attr('action'), noConversion: /\bdata-no-conversion\b/.test(attrs),
       noAirtable: /\bdata-no-airtable\b/.test(attrs), afterOk: /\bdata-lead-after-ok\b/.test(attrs), fields });
   }
   return out;
@@ -88,24 +88,29 @@ function fill(form, over = {}) {
 // A data-lead-after-ok form sends nothing on submit; its page calls
 // pptAfterFormspree with Formspree's HTTP status (0 for no answer) once it
 // has one, which `formspree` stands in for. What that returned is on
-// the result as `.how`.
-async function submitThroughTracking(form, entries, pathname, { formspree = 200 } = {}) {
+// the result as `.how`, and how many Google Ads conversions fired as
+// `.conversions`. `search`, `referrer` and `storage` are how the visitor got
+// here: the page's query string, the referring URL, and their browser storage.
+async function submitThroughTracking(form, entries, pathname, { formspree = 200, search = '', referrer = '', storage } = {}) {
   let onSubmit = null;
   const beacons = [];
+  let conversions = 0;
   const page = {
-    document: { addEventListener: (type, fn) => { if (type === 'submit') onSubmit = fn; } },
-    location: { pathname, href: `https://pianoplayertech.com${pathname}` },
+    document: { referrer, addEventListener: (type, fn) => { if (type === 'submit') onSubmit = fn; } },
+    location: { pathname, search, hostname: 'pianoplayertech.com', href: `https://pianoplayertech.com${pathname}${search}` },
     navigator: { sendBeacon: (url, blob) => { beacons.push({ url, blob }); return true; } },
     Blob,
     FormData: function FormData() { return { forEach: (cb) => entries.forEach(([k, v]) => cb(v, k)) }; },
     fetch: () => Promise.resolve(),
-    gtag: () => {}
+    localStorage: storage,
+    gtag: (kind, name) => { if (kind === 'event' && name === 'conversion') conversions++; }
   };
   page.window = page;
   vm.runInNewContext(TRACKING, page);
   const el = {
     tagName: 'FORM', id: form.id,
-    hasAttribute: (n) => (n === 'data-no-airtable' && form.noAirtable) || (n === 'data-lead-after-ok' && form.afterOk),
+    hasAttribute: (n) => (n === 'data-no-airtable' && form.noAirtable) || (n === 'data-lead-after-ok' && form.afterOk) ||
+      (n === 'data-no-conversion' && form.noConversion),
     querySelector: (sel) => {
       const m = /\[name="([^"]+)"\]/.exec(sel);
       const hit = m && entries.find(([k]) => k === m[1]);
@@ -121,8 +126,15 @@ async function submitThroughTracking(form, entries, pathname, { formspree = 200 
   const out = [];
   for (const b of beacons) out.push({ url: b.url, body: JSON.parse(await b.blob.text()) });
   out.how = how;
+  out.conversions = conversions;
   out.message = how ? page.window.pptFormspreeMessage(how, 'email should be an email') : '';
   return out;
+}
+
+// Browser storage, for a test that needs a visitor to come back.
+function browserStorage() {
+  const kept = new Map();
+  return { getItem: (k) => (kept.has(k) ? kept.get(k) : null), setItem: (k, v) => { kept.set(k, String(v)); } };
 }
 
 // --------------------------------------------------- the server half, for real
@@ -348,7 +360,7 @@ test('a bot that fills the honeypot is told 204 and nothing is stored or sent', 
   assert.ok(rows.every((x) => x.archived_at));
 });
 
-test('the job application and the photo upload never become leads', async () => {
+test('the job application and the photo upload never go through the lead beacon', async () => {
   for (const key of ['careers.html#apply-form', 'antique-player-piano.html#photo-form']) {
     const form = ALL_FORMS.find((f) => formKey(f) === key);
     assert.ok(form && form.noAirtable, `${key} must carry data-no-airtable`);
@@ -460,6 +472,267 @@ test('a photo note needs exactly one recent live lead with that email', async ()
   assert.strictEqual(await sendPhotos(e, 'old@example.com'), 200);
   assert.strictEqual(await sendPhotos(e, 'nobody@example.com'), 200);
   assert.strictEqual(sqlite(e._file, 'SELECT COUNT(*) AS n FROM activities')[0].n, 0);
+});
+
+// ------------------------------------------------- photos as a first contact
+
+const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0]);
+
+async function upload(e, fields, { resend = 200 } = {}) {
+  const fd = new FormData();
+  for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+  fd.append('photos', new File([JPEG_BYTES], 'a.jpg', { type: 'image/jpeg' }));
+  const real = globalThis.fetch;
+  const emails = [];
+  globalThis.fetch = async (url, init) => {
+    emails.push(JSON.parse(init.body));
+    return new Response('{}', { status: resend });
+  };
+  try {
+    const ctx = context(new Request('https://pianoplayertech.com/api/photos', { method: 'POST', body: fd,
+      headers: { Accept: 'application/json', Origin: 'https://pianoplayertech.com' } }), e);
+    const res = await photosPost(ctx);
+    await ctx.settle();
+    return { status: res.status, json: await res.json(), emails };
+  } finally {
+    globalThis.fetch = real;
+  }
+}
+
+test('photos from someone new become a lead, categorised by the page they came from', async () => {
+  const e = env();
+  const r = await upload(e, { name: 'Pat Tester', email: 'pat@example.com', phone: '(770) 555-0199', note: 'Found this in the barn',
+    source: '/antique-player-piano #photo-form', attribution: JSON.stringify({ landing: '/antique-player-piano', gclid: 'abc' }) });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(r.json.lead, true, 'the page is told, so it can count the conversion');
+  assert.match(r.json.message, /take a look/);
+  const [row, ...more] = sqlite(e._file, 'SELECT * FROM leads');
+  assert.strictEqual(more.length, 0);
+  assert.strictEqual(row.pipeline, 'repair');
+  assert.strictEqual(row.status, 'new');
+  assert.strictEqual(row.category, 'pneumatic');
+  assert.strictEqual(row.source, '/antique-player-piano #photo-form');
+  assert.strictEqual(row.service, 'Photo Identification');
+  assert.strictEqual(row.name, 'Pat Tester');
+  assert.strictEqual(row.phone, '(770) 555-0199');
+  assert.strictEqual(row.message, 'Found this in the barn');
+  assert.strictEqual(row.lead_source, 'Google Ads');
+  assert.strictEqual(JSON.parse(row.attribution).gclid, 'abc');
+  assert.match(row.notes, /^1 photo was sent from the website/);
+  assert.match(r.emails[0].subject, /^NEW REPAIR \(photos\) — Pat Tester/);
+  assert.ok(r.emails[0].text.includes('(770) 555-0199'));
+  assert.strictEqual(sqlite(e._file, 'SELECT COUNT(*) AS n FROM activities')[0].n, 0, 'nobody has spoken to them yet');
+});
+
+test('the same page category rule holds on an electronic page, and an old script still gives the page', async () => {
+  const e = env();
+  await upload(e, { email: 'a@example.com', source: '/disklavier-repair #photo-form' });
+  assert.strictEqual(sqlite(e._file, 'SELECT category FROM leads')[0].category, 'electronic');
+  const e2 = env();
+  await upload(e2, { email: 'b@example.com' });
+  assert.strictEqual(sqlite(e2._file, 'SELECT COUNT(*) AS n FROM leads')[0].n, 1, 'no source sent is still a lead');
+});
+
+test('a second upload from the same person adds to their lead instead of making another', async () => {
+  const e = env();
+  await upload(e, { email: 'pat@example.com', source: '/player-repair #photo-form' });
+  const again = await upload(e, { email: 'Pat@Example.com', source: '/player-repair #photo-form' });
+  assert.ok(!again.json.lead, 'not a new lead, so not a conversion');
+  assert.match(again.json.message, /match them to your message/);
+  assert.match(again.emails[0].subject, /^PHOTOS — /);
+  assert.strictEqual(sqlite(e._file, 'SELECT COUNT(*) AS n FROM leads')[0].n, 1);
+  assert.strictEqual(sqlite(e._file, 'SELECT COUNT(*) AS n FROM activities')[0].n, 1);
+});
+
+test('a bot that fills the photo honeypot gets a success and nothing else', async () => {
+  const e = env();
+  const r = await upload(e, { email: 'x@spam.example', _gotcha: 'y' });
+  assert.strictEqual(r.status, 200);
+  assert.ok(!r.json.lead);
+  assert.strictEqual(r.emails.length, 0);
+  assert.strictEqual(sqlite(e._file, 'SELECT COUNT(*) AS n FROM leads')[0].n, 0);
+});
+
+test('photos that could not be emailed make no lead: the customer was told to email them instead', async () => {
+  const e = env();
+  const r = await upload(e, { email: 'pat@example.com' }, { resend: 500 });
+  assert.strictEqual(r.status, 502);
+  assert.strictEqual(sqlite(e._file, 'SELECT COUNT(*) AS n FROM leads')[0].n, 0);
+});
+
+test('with the database unreachable the photos still go out, and nobody is mistaken for new', async () => {
+  const r = await upload({ RESEND_API_KEY: 'test', LEAD_NOTIFY_EMAIL: NOTIFY, LEAD_FROM_EMAIL: 'PPT <info@ppt.test>' }, { email: 'pat@example.com' });
+  assert.strictEqual(r.status, 200);
+  assert.ok(!r.json.lead);
+  assert.strictEqual(r.emails.length, 1);
+});
+
+test('every repair page takes photos, and every photo form can stand alone', () => {
+  const pages = ['antique-player-piano.html', 'player-repair.html', 'disklavier-repair.html', 'disklavier-power-supply-repair.html',
+    'pianodisc-repair.html', 'qrs-repair.html', 'spirio-repair.html', 'player-unit-mail-in-repair.html', 'piano-repair.html'];
+  for (const file of pages) {
+    const form = ALL_FORMS.find((f) => f.file === file && f.id === 'photo-form');
+    assert.ok(form, `${file} has no photo form`);
+    assert.strictEqual(form.action, '/api/photos');
+    assert.ok(form.noAirtable && form.noConversion, `${file}: the server decides whether this is a lead, not the submit`);
+    const names = form.fields.map((f) => f.name);
+    for (const n of ['_gotcha', 'name', 'email', 'phone', 'note', 'photos']) assert.ok(names.includes(n), `${file} photo form has no ${n}`);
+    assert.match(fs.readFileSync(path.join(ROOT, file), 'utf8'), /<script src="\/site\.js"/, `${file} does not load the upload script`);
+  }
+});
+
+// ------------------------------------------------------ where a lead came from
+
+test('every customer form asks how they heard about us, and asks only when it matters who', () => {
+  const notCustomers = new Set(['piano-teachers.html#teacher-form', 'for-technicians.html#tech-referral-form']);
+  for (const form of ALL_FORMS.filter((f) => !f.noAirtable && !notCustomers.has(formKey(f)))) {
+    const heard = form.fields.find((f) => f.name === 'heard_about');
+    assert.ok(heard, `${formKey(form)} does not ask how they heard`);
+    assert.ok(!heard.required, `${formKey(form)}: the question must stay optional`);
+    assert.ok(heard.options.includes('Piano teacher'), `${formKey(form)} has no teacher option`);
+    assert.ok(form.fields.some((f) => f.name === 'referred_by'), `${formKey(form)} cannot name the referrer`);
+  }
+});
+
+const TUNING = () => ALL_FORMS.find((f) => formKey(f) === 'tuning.html#tuning-booking-form');
+
+test('an ad click is kept on the lead, beside the answers and not among them', async () => {
+  const form = TUNING();
+  const entries = fill(form, { heard_about: '', referred_by: '' });
+  const sent = await submitThroughTracking(form, entries, '/tuning', { search: '?utm_source=google&utm_campaign=tuning+fall&gclid=abc123&other=x' });
+  const body = sent[0].body;
+  assert.strictEqual(body.attribution.gclid, 'abc123');
+  assert.strictEqual(body.attribution.utm_campaign, 'tuning fall');
+  assert.strictEqual(body.attribution.landing, '/tuning');
+  assert.ok(!('other' in body.attribution), 'only the tags we asked for');
+  const e = env();
+  await postLead(e, body);
+  const [row] = sqlite(e._file, 'SELECT lead_source, attribution, fields FROM leads');
+  assert.strictEqual(row.lead_source, 'Google Ads');
+  assert.strictEqual(JSON.parse(row.attribution).gclid, 'abc123');
+  assert.ok(!JSON.parse(row.fields).gclid, 'fields stays what the person typed');
+});
+
+test('a teacher named on the form wins over an ad, because a teacher is owed for it', async () => {
+  const form = TUNING();
+  const sent = await submitThroughTracking(form, fill(form, { heard_about: 'Piano teacher', referred_by: 'Pat Lee' }), '/tuning', { search: '?gclid=abc' });
+  const e = env();
+  await postLead(e, sent[0].body);
+  assert.strictEqual(sqlite(e._file, 'SELECT lead_source FROM leads')[0].lead_source, 'Teacher: Pat Lee');
+});
+
+test('a visitor who comes back later is still credited to what first brought them', async () => {
+  const form = TUNING();
+  const entries = fill(form, { heard_about: '', referred_by: '' });
+  const storage = browserStorage();
+  await submitThroughTracking(form, entries, '/tuning', { search: '?gclid=first', storage });
+  const later = await submitThroughTracking(form, entries, '/piano-tuning-atlanta', { referrer: 'https://www.bing.com/search?q=piano', storage });
+  assert.strictEqual(later[0].body.attribution.gclid, 'first');
+  assert.strictEqual(later[0].body.attribution.landing, '/tuning');
+  // A new ad click is a new reason to credit.
+  const again = await submitThroughTracking(form, entries, '/tuning', { search: '?gclid=second', storage });
+  assert.strictEqual(again[0].body.attribution.gclid, 'second');
+});
+
+test('what is remembered goes stale after 90 days', async () => {
+  const form = TUNING();
+  const storage = browserStorage();
+  storage.setItem('ppt_source', JSON.stringify({ gclid: 'old', landing: '/tuning', at: Date.now() - 91 * 86400000 }));
+  const sent = await submitThroughTracking(form, fill(form), '/tuning', { storage });
+  assert.ok(!sent[0].body.attribution.gclid);
+});
+
+test('only the name of the referring site is kept, and our own pages do not count', async () => {
+  const form = TUNING();
+  const entries = fill(form, { heard_about: '', referred_by: '' });
+  const outside = await submitThroughTracking(form, entries, '/tuning', { referrer: 'https://www.google.com/search?q=private+words' });
+  assert.strictEqual(outside[0].body.attribution.referrer, 'www.google.com');
+  assert.doesNotMatch(JSON.stringify(outside[0].body), /private/);
+  const inside = await submitThroughTracking(form, entries, '/tuning', { referrer: 'https://pianoplayertech.com/' });
+  assert.ok(!inside[0].body.attribution.referrer);
+  const e = env();
+  await postLead(e, outside[0].body);
+  assert.strictEqual(sqlite(e._file, 'SELECT lead_source FROM leads')[0].lead_source, 'Google search');
+});
+
+test('blocked browser storage costs nothing but the memory', async () => {
+  const form = TUNING();
+  const storage = { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('denied'); } };
+  const sent = await submitThroughTracking(form, fill(form), '/tuning', { search: '?gclid=abc', storage });
+  assert.strictEqual(sent[0].body.attribution.gclid, 'abc');
+});
+
+test('a garbled query string never gets in the way of a lead', async () => {
+  const form = TUNING();
+  const sent = await submitThroughTracking(form, fill(form), '/tuning', { search: '?utm_source=%E0%A4%A' });
+  assert.strictEqual(sent.length, 1);
+});
+
+test('a lead is kept, with its label, on a database from before the attribution column', async () => {
+  const e = env();
+  const cols = sqlite(e._file, "SELECT name FROM pragma_table_info('leads')").map((r) => r.name).filter((n) => n !== 'attribution');
+  sqlite(e._file, `CREATE TABLE l2 AS SELECT ${cols.join(', ')} FROM leads; DROP TABLE leads; ALTER TABLE l2 RENAME TO leads;`);
+  const r = await postLead(e, { source: '/tuning #tuning-booking-form', attribution: { gclid: 'abc' },
+    fields: { name: 'Pat', email: 'p@example.com', service_type: 'Piano Tuning' } });
+  assert.strictEqual(r.status, 204);
+  assert.strictEqual(sqlite(e._file, 'SELECT lead_source FROM leads')[0].lead_source, 'Google Ads');
+});
+
+test('whatever a browser sends as attribution is reduced to what we keep', async () => {
+  const e = env();
+  await postLead(e, { source: '/', attribution: { gclid: 'x'.repeat(900), evil: '<script>', referrer: 42 },
+    fields: { name: 'Pat', email: 'p@example.com', message: 'hi' } });
+  const kept = JSON.parse(sqlite(e._file, 'SELECT attribution FROM leads')[0].attribution);
+  assert.deepStrictEqual(Object.keys(kept).sort(), ['gclid', 'referrer']);
+  assert.strictEqual(kept.gclid.length, 200);
+});
+
+test('the owner alert says how they found us', async () => {
+  const e = env();
+  const r = await postLead(e, { source: '/tuning #tuning-booking-form', attribution: { gclid: 'abc' },
+    fields: { name: 'Pat', email: 'p@example.com', service_type: 'Piano Tuning' } });
+  assert.match(r.emails.find((m) => m.to[0] === NOTIFY).text, /From \/tuning #tuning-booking-form \(Google Ads\)/);
+});
+
+// ----------------------------------------------------------------- conversions
+
+test('a form that posts to Formspree itself counts only once there is a lead', async () => {
+  const form = ALL_FORMS.find((f) => formKey(f) === 'piano-repair.html#repair-form');
+  assert.ok(form.afterOk);
+  const count = async (formspree) => (await submitThroughTracking(form, fill(form), '/piano-repair', { formspree })).conversions;
+  assert.strictEqual(await count(200), 1, 'accepted');
+  assert.strictEqual(await count(503), 1, 'Formspree failed, but the CRM copy went');
+  assert.strictEqual(await count(422), 0, 'refused: the person is shown why and sends it again');
+  assert.strictEqual(await count(400), 0, 'refused');
+  assert.strictEqual(await count(0), 0, 'no answer: they are told to try again, so that one counts instead');
+});
+
+test('a corrected resubmit is one conversion, not two', async () => {
+  const form = ALL_FORMS.find((f) => formKey(f) === 'piano-repair.html#repair-form');
+  const refused = await submitThroughTracking(form, fill(form, { email: 'pat@exmaple' }), '/piano-repair', { formspree: 422 });
+  const ok = await submitThroughTracking(form, fill(form), '/piano-repair');
+  assert.strictEqual(refused.conversions + ok.conversions, 1);
+});
+
+test('a native form counts at submit, once', async () => {
+  const form = ALL_FORMS.find((f) => formKey(f) === 'piano-tuning-atlanta.html#https://formspree.io/f/xzdlraeq');
+  assert.ok(!form.afterOk);
+  assert.strictEqual((await submitThroughTracking(form, fill(form), '/piano-tuning-atlanta')).conversions, 1);
+});
+
+test('a teacher signing up is a partner, not a customer lead', async () => {
+  const form = ALL_FORMS.find((f) => formKey(f) === 'piano-teachers.html#teacher-form');
+  const sent = await submitThroughTracking(form, fill(form), '/piano-teachers');
+  assert.strictEqual(sent.length, 1, 'still reaches the CRM');
+  assert.strictEqual(sent.conversions, 0);
+});
+
+test('a bot is never a conversion, on either kind of form', async () => {
+  for (const key of ['piano-repair.html#repair-form', 'piano-tuning-atlanta.html#https://formspree.io/f/xzdlraeq']) {
+    const form = ALL_FORMS.find((f) => formKey(f) === key);
+    const sent = await submitThroughTracking(form, fill(form, { _gotcha: 'http://spam.example' }), pathOf(form.file));
+    assert.strictEqual(sent.conversions, 0, key);
+  }
 });
 
 test('two identical submits arriving together store one lead and send one pair of emails', async () => {

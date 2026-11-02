@@ -18,6 +18,7 @@
 
 import { classifyCategory, CATEGORY_LABELS, REPAIR_PAGES, pagePath } from '../_lib/category.js';
 import { normEmail, normPhone, namesCompatible } from '../_lib/dedupe.js';
+import { cleanAttribution, leadSource } from '../_lib/attribution.js';
 
 const ALLOWED_HOSTS = new Set(['pianoplayertech.com', 'www.pianoplayertech.com']);
 
@@ -153,6 +154,11 @@ export async function onRequestPost(context) {
   // or a mail-in "location" counts) and the page they were on.
   lead.category = classifyCategory(lead, Object.values(fields).join(' \n '));
 
+  // How they got here, which is not the same thing as `source` (which page).
+  const attribution = cleanAttribution(body.attribution);
+  lead.lead_source = leadSource(attribution, fields);
+  lead.attribution = attribution ? JSON.stringify(attribution) : null;
+
   if (trapped) {
     // A count in the logs, so a spike of real people being caught shows up.
     console.log('lead honeypot hit', lead.source);
@@ -169,18 +175,20 @@ export async function onRequestPost(context) {
     // Linking a bot's submission to a real customer would be worse than useless.
     const contactId = trapped ? null : await matchContact(env, lead);
     const cols = ['created_at', 'pipeline', 'status', 'name', 'email', 'phone', 'service', 'system',
-      'city', 'address', 'message', 'source', 'fields', 'archived_at', 'notes', 'contact_id', 'category'];
+      'city', 'address', 'message', 'source', 'fields', 'archived_at', 'notes', 'contact_id', 'category',
+      'lead_source', 'attribution'];
     const vals = [lead.created_at, lead.pipeline, lead.status, lead.name, lead.email,
       lead.phone, lead.service, lead.system, lead.city, lead.address, lead.message,
-      lead.source, lead.fields, lead.archived_at || null, lead.notes || null, contactId, lead.category];
+      lead.source, lead.fields, lead.archived_at || null, lead.notes || null, contactId, lead.category,
+      lead.lead_source, lead.attribution];
     // A double submit is the same lead, so it gets no second row and no
     // second pair of emails. Only an exact repeat counts: if they changed a
     // word, it is new information and is kept. The check and the insert are
     // one statement, so two submits arriving together cannot both store.
     const since = new Date(Date.parse(lead.created_at) - DUPLICATE_WINDOW_MS).toISOString();
-    // The last two columns are newer than some databases. A missing column
-    // must cost the category, never the lead.
-    for (const n of [cols.length, cols.length - 2]) {
+    // The last few columns are newer than some databases. A missing column
+    // must cost that column, never the lead: attribution first, then the rest.
+    for (const n of [cols.length, cols.length - 1, cols.length - 4]) {
       try {
         const r = await env.DB.prepare(
           `INSERT INTO leads (${cols.slice(0, n).join(', ')})
@@ -277,7 +285,7 @@ async function notifyUs(env, lead, fields, stored) {
   </p>
   <table style="border-collapse:collapse;font-size:14px;width:100%">${rows}</table>
   <p style="margin:1.4rem 0 0;padding-top:.9rem;border-top:1px solid #ded3c0;font-size:13px;color:#7a6c5d">
-    From ${esc(lead.source || 'unknown page')} &nbsp;·&nbsp;
+    From ${esc(lead.source || 'unknown page')}${lead.lead_source ? ` (${esc(lead.lead_source)})` : ''} &nbsp;·&nbsp;
     <a href="https://pianoplayertech.com/leads" style="color:#96742a">Open the dashboard &rarr;</a><br>
     You told them someone would call within 30 minutes to an hour.
   </p>
@@ -292,7 +300,7 @@ async function notifyUs(env, lead, fields, stored) {
     '',
     ...Object.keys(fields).map((k) => `${label(k)}: ${fields[k]}`),
     '',
-    `From ${lead.source || 'unknown page'}`,
+    `From ${lead.source || 'unknown page'}${lead.lead_source ? ` (${lead.lead_source})` : ''}`,
     stored ? '' : 'WARNING: not saved to the dashboard — keep this email.',
     'You told them someone would call within 30 minutes to an hour.',
     'https://pianoplayertech.com/leads'

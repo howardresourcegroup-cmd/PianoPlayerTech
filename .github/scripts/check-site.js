@@ -3,9 +3,9 @@
  * PianoPlayerTech site health check.
  *
  * Every rule here exists because the corresponding failure actually happened
- * on this site, and none of them surface at runtime: Cloudflare Pages serves
- * its 404 with a 200 status, so a missing image or a dead link fails silently
- * in production. The only way to catch them is before the deploy.
+ * on this site, and none of them surface at runtime: a missing image or a
+ * dead link fails silently in production, and a visitor only sees a broken
+ * picture or the 404 page. The only way to catch them is before the deploy.
  */
 const fs = require('fs');
 const path = require('path');

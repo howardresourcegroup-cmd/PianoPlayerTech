@@ -322,6 +322,22 @@
                     <input type="text" id="pd-piano" name="piano" placeholder="e.g. Yamaha upright, baby grand">
                     <label for="pd-notes">Anything else? <span>(optional)</span></label>
                     <textarea id="pd-notes" name="notes" placeholder="Condition, last cleaned, selling soon, what else it needs."></textarea>
+                    <label for="h-heard">How did you hear about us? (optional)</label>
+                    <select id="h-heard" name="heard_about">
+                        <option value="">Choose one&hellip;</option>
+                        <option>Google search</option>
+                        <option>Google Maps</option>
+                        <option>Piano teacher</option>
+                        <option>Friend or family</option>
+                        <option>Church or school</option>
+                        <option>Mover, dealer or estate sale</option>
+                        <option>Facebook</option>
+                        <option>Other</option>
+                    </select>
+                    <div data-referred-by hidden>
+                        <label for="h-referred">Who referred you?</label>
+                        <input type="text" id="h-referred" name="referred_by" placeholder="Their name" autocomplete="off">
+                    </div>
                     <button class="pp-btn pp-btn--primary" type="submit" id="detailing-quote-submit">Book My Detailing →</button>
                 </form>
             </div>

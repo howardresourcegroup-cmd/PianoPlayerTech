@@ -28,6 +28,7 @@ export const CATALOG = {
   customer_type: {k:'customer_type', label:'Type', type:'select', opts:['homeowner','business','dealer'], labels:TYPE_LABEL, blank:true, w:110},
   pipeline: {k:'pipeline', label:'Pipeline', type:'select', opts:['repair','tuning'], w:100},
   source: {k:'source', label:'Source', type:'ro', w:180},
+  lead_source: {k:'lead_source', label:'Found us via', type:'ro', w:170},
   assigned_to: {k:'assigned_to', label:'Assignee', type:'ro', w:170},
   quoted_cents: {k:'quoted_cents', label:'Quoted', type:'money', w:100}
 };
@@ -89,5 +90,5 @@ if (view === 'table') {
       {k:'referral_paid_at', label:'$' + D.fee + ' paid', type:'paid', w:80}
     );
   }
-  COLS.push(CATALOG.category, CATALOG.customer_type, CATALOG.pipeline);
+  COLS.push(CATALOG.lead_source, CATALOG.category, CATALOG.customer_type, CATALOG.pipeline);
 }

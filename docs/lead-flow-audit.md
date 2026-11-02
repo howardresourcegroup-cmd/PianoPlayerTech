@@ -27,7 +27,7 @@ A guard test fails if a lead-sending form exists that has no case.
 | Contact (no id) | `/` | Formspree + `/api/lead` | repair / blank | Repair |
 | Technician application `#apply-form` | `/` | Formspree only (after fix) | not a lead | none |
 | Inquiry (no id) | `/antique-player-piano` | Formspree + `/api/lead` | repair / pneumatic | Pneumatic |
-| Photo upload `#photo-form` | `/antique-player-piano` | `/api/photos` (emails photos) | not a lead | none (a note is added to the matching lead) |
+| Photo upload `#photo-form` | `/antique-player-piano` and the eight repair pages listed below | `/api/photos` (emails photos) | repair, category from the page, when the person has no live lead from the last 30 days; otherwise a note on their lead | Pneumatic or Repair |
 | Inquiry | `/disklavier-power-supply-repair` | Formspree + `/api/lead` | repair / electronic | Repair |
 | Inquiry | `/disklavier-repair` | Formspree + `/api/lead` | repair / electronic | Repair |
 | Trade enquiry | `/for-technicians` | Formspree + `/api/lead` | repair / electronic | Repair |
@@ -46,7 +46,7 @@ A guard test fails if a lead-sending form exists that has no case.
 
 | # | Form | Endpoint | What was wrong | What was fixed | Test |
 |---|---|---|---|---|---|
-| 1 | Technician application (`index.html#apply-form`) | `/api/lead` | Job applications were sent to the CRM as **repair leads**. The owner got a "NEW REPAIR" alert. The applicant got "Thanks for getting in touch about your player piano… someone will call you within 30 minutes". | Added `data-no-airtable`. The application still goes to Formspree. | *the job application and the photo upload never become leads* |
+| 1 | Technician application (`index.html#apply-form`) | `/api/lead` | Job applications were sent to the CRM as **repair leads**. The owner got a "NEW REPAIR" alert. The applicant got "Thanks for getting in touch about your player piano… someone will call you within 30 minutes". | Added `data-no-airtable`. The application still goes to Formspree. | *the job application and the photo upload never go through the lead beacon* |
 | 2 | Every lead form | `/api/lead` | **No spam handling at all.** `ppt-tracking.js` stripped any honeypot field before sending, and no form had one. A bot filling a form created a lead, an alert, and a confirmation email to whatever address it typed. | Added a hidden `_gotcha` honeypot to all 20 lead forms and the job application, which Formspree also honours. The tracking script sends `hp: 1` when it is filled. `/api/lead` answers 204 and sends no emails for `hp` or a filled `_gotcha`. The row is still stored, already archived and closed, with a note saying why, and a log line is written. A real person caught by autofill can be restored from the Archive tab, and the archive purge clears the rest after 30 days. The endpoint also now returns 400 on a non-object body, where it used to throw. | *a bot that fills the honeypot…*, and the honeypot check in *every form on the site that sends a lead has a case here* |
 | 3 | `/tuning`, `/piano-repair`, `/piano-cleaning`, `/piano-teachers` | Formspree (fetch) | **Validation errors were never shown.** These four forms showed the thank-you or success message whatever Formspree answered, including a refusal such as a bad email. Only a network failure showed an error. | Each now checks `res.ok`. On a refusal it keeps the form and shows Formspree's message, or "please check the form or call…". `/player-repair` and the quizzes already did this. | *every form that posts with fetch shows a refusal instead of a false success* |
 | 4 | All repair-pipeline forms (cleaning, piano repair, home page contact, teacher sign-up) | `/api/lead` | The customer confirmation said "about **your player piano**" for every repair lead, including a cleaning quote, an ordinary piano repair and a general question. A teacher partner was thanked for "tuning your piano". | The wording now follows the category. Player work says "your player piano", tuning says "tuning your piano", partners get "referring your students", and everything else gets "your piano". The owner alert subject now names the category, e.g. `NEW REPAIR (Pneumatic player) — …`. | every per-form case checks the confirmation wording |
@@ -92,3 +92,39 @@ A guard test fails if a lead-sending form exists that has no case.
   refreshes, the old script still sends leads but strips the honeypot, so
   a bot caught by it still reaches the CRM. Formspree drops it either way.
   The server also refuses a direct post that carries a filled `_gotcha`.
+
+## Source, conversions and photos (2026-11-02)
+
+A later pass, on what the first one left out. Each has tests in
+`tests/lead-flow.test.mjs` and `tests/attribution.test.mjs`.
+
+- **Every lead now says how they found us.** `ppt-tracking.js` remembers UTM
+  tags, ad click ids, the referring site's name and the landing page in the
+  browser for 90 days, and sends them beside the form's answers, never among
+  them. `functions/_lib/attribution.js` turns that into `leads.lead_source`, a
+  short label, and keeps the detail in `leads.attribution`. The label order is
+  on `leadSource()`: a teacher first, because a teacher is owed for it.
+- **Customer forms ask how they heard about us.** The question is optional. The
+  teacher sign-up and the technician referral form do not ask: the first is not
+  a customer, and the second already names who referred them. Choosing an answer
+  that has a person behind it reveals "Who referred you?".
+- **Conversions fire when there is a lead.** A `data-lead-after-ok` form counts
+  from `pptAfterFormspree`, on `ok` or `saved` and never on a refusal or no
+  answer. A native form still counts at submit, because it is leaving the page.
+  It cannot see a Formspree refusal, so that small overcount remains.
+- **A teacher signing up no longer counts as a Google Ads lead**
+  (`data-no-conversion`). Trade enquiries from `/for-technicians` still do:
+  they are paying repair work.
+- **Photos from someone new are a lead.** The upload is on
+  `/antique-player-piano`, `/player-repair`, `/disklavier-repair`,
+  `/disklavier-power-supply-repair`, `/pianodisc-repair`, `/qrs-repair`,
+  `/spirio-repair`, `/player-unit-mail-in-repair` and `/piano-repair`. With no
+  live lead from the last 30 days under that email it creates one, and only then
+  counts a conversion. With exactly one it adds the note, as before. With several
+  it does neither, and neither when the database cannot be read, because
+  "could not tell" must not read as "new". The photos are still only in the
+  email. A new photo lead is not linked to a contact and gets no customer
+  confirmation: the upload page says the photos arrived.
+- **Unknown addresses are real 404s** (`404.html`), and
+  `pianoplayertech.pages.dev` redirects to the real domain. Branch previews on
+  its subdomains do not.
